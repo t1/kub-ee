@@ -32,9 +32,8 @@ public class Cluster {
     }
 
     private URI uri(Stage stage, int index) {
-        String indexFormat = (stage.getIndexLength() == 0) ? "" : ("0" + stage.getIndexLength());
-        return URI.create(format("http://%s%s%s%" + indexFormat + "d:%d",
-                stage.getPrefix(), name, stage.getSuffix(), index, port));
+        return URI.create(format("http://%s%s%s%s:%d",
+                stage.getPrefix(), name, stage.getSuffix(), stage.formattedIndex(index), port));
     }
 
 

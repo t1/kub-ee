@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import java.util.List;
 
 import static com.github.t1.metadeployer.model.YamlTools.*;
+import static java.lang.String.*;
 
 @Value
 @Builder
@@ -15,6 +16,10 @@ public class Stage {
     String suffix;
     int count;
     int indexLength;
+
+    public String formattedIndex(int index) {
+        return (indexLength == 0) ? Integer.toString(index) : format("%0" + indexLength + "d", index);
+    }
 
     public static class StageBuilder {
         public static Stage from(NodeTuple tuple) {

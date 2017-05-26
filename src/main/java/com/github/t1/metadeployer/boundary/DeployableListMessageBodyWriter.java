@@ -12,7 +12,7 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 import static javax.ws.rs.core.MediaType.*;
 
@@ -46,6 +46,12 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
         private final Writer out;
 
         public void write(List<Deployable> deployables) {
+            header();
+            body();
+            footer();
+        }
+
+        private void header() {
             out("<!DOCTYPE html>\n"
                     + "<html>\n"
                     + "<head>\n"
@@ -54,8 +60,11 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "    <link rel='stylesheet' href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\" />\n"
                     + "    <link rel='stylesheet' href=\"../style.css\" />\n"
                     + "</head>\n"
-                    + "<body>\n"
-                    + "<div class=\"table-responsive\">\n"
+                    + "<body>\n");
+        }
+
+        private void body() {
+            out("<div class=\"table-responsive\">\n"
                     + "<table class=\"table table-striped service-table\">\n"
                     + "<tr>\n"
                     + "    <th>Cluster</th>\n"
@@ -64,15 +73,11 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
             out("</tr>\n"
                     + "<tr>\n"
                     + "    <th></th>\n"
-                    + "    <th></th>\n"
-                    + "    <th class=\"node\">01</th>\n"
-                    + "    <th class=\"node\">02</th>\n"
-                    + "    <th class=\"node\">01</th>\n"
-                    + "    <th class=\"node\">02</th>\n"
-                    + "    <th class=\"node\">01</th>\n"
-                    + "    <th class=\"node\">02</th>\n"
-                    + "    <th class=\"node\">03</th>\n"
-                    + "</tr>\n");
+                    + "    <th></th>\n");
+            clusters.stream().flatMap(Cluster::stages).forEach(stage ->
+                    IntStream.range(1, stage.getCount() + 1).forEach(index ->
+                            out("    <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
+            out("</tr>\n");
 
             // CLUSTERS.forEach(cluster -> {
             //     List<String> deployableNames = deployableNames(deployers, cluster);
@@ -102,8 +107,11 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
             // });
 
             out("</table>\n"
-                    + "</div>\n"
-                    + "</body>\n"
+                    + "</div>\n");
+        }
+
+        private void footer() {
+            out("</body>\n"
                     + "</html>\n");
         }
 
