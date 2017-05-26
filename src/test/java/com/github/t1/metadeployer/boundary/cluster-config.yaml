@@ -1,0 +1,18 @@
+my.boss:
+  port: 8080
+  stages:
+    DEV:
+      suffix: .dev
+      count: 5
+      indexLength: 2
+    QA:
+      prefix: qa.
+    PROD:
+      count: 3
+      indexLength: 2
+other.boss:
+  stages:
+    DEV:
+      count: 2
+third.boss:
+  some: dummy

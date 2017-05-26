@@ -21,6 +21,12 @@
 
     <build>
         <finalName>${project.artifactId}</finalName>
+        <testResources>
+            <testResource>
+                <directory>src/test/java</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
     </build>
 
     <dependencies>

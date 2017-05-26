@@ -6,10 +6,12 @@ import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import org.junit.Test;
 
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static com.github.t1.metadeployer.boundary.TestData.*;
 import static javax.ws.rs.core.MediaType.*;
+import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
 
 public class MetaDeployerIT {
@@ -31,16 +33,14 @@ public class MetaDeployerIT {
 
     @Test
     public void shouldGetAsHtml() throws Exception {
-        String response = ClientBuilder.newClient()
-                                       .target("http://localhost:8080/meta-deployer")
-                                       .request(TEXT_HTML_TYPE)
-                                       .get(String.class);
+        Response response = ClientBuilder.newClient()
+                                         .target("http://localhost:8080/meta-deployer")
+                                         .request(TEXT_HTML_TYPE)
+                                         .get();
 
-        assertThat(response).isEqualTo("<html><head></head><body>"
-                + "DeployerGateway.Deployable(name=deployer, groupId=unknown, artifactId=unknown, type=unknown, "
-                + "version=unknown, error=empty checksum)"
-                + "DeployerGateway.Deployable(name=meta-deployer, groupId=unknown, artifactId=unknown, type=unknown, "
-                + "version=unknown, error=empty checksum)"
-                + "</body></html>");
+        assertThat(response.getStatusInfo()).isEqualTo(OK);
+        assertThat(response.readEntity(String.class))
+                .contains("<th colspan=\"3\" class=\"stage\">PROD</th>")
+                .contains("<th class='service'>meta-deployer</th>");
     }
 }
