@@ -14,6 +14,8 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.*;
 
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -47,7 +49,7 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
 
         public void write(List<Deployable> deployables) {
             header();
-            body();
+            body(deployables);
             footer();
         }
 
@@ -63,7 +65,7 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "<body>\n");
         }
 
-        private void body() {
+        private void body(List<Deployable> deployables) {
             out("<div class=\"table-responsive\">\n"
                     + "<table class=\"table table-striped service-table\">\n"
                     + "<tr>\n"
@@ -79,32 +81,31 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                             out("    <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
             out("</tr>\n");
 
-            // CLUSTERS.forEach(cluster -> {
-            //     List<String> deployableNames = deployableNames(deployers, cluster);
-            //     deployableNames.forEach(deployableName -> {
-            //         out("<tr>\n");
-            //         if (deployableName.equals(deployableNames.get(0)))
-            //             out("  <th class='cluster' rowspan='" + deployableNames.size() + "'>" + cluster + "</th>\n");
-            //         out("  <th class='service'>");
-            //         out(deployableName);
-            //         out("</th>\n");
-            //
-            //         cluster.allNodes()
-            //                .forEach(node -> deployers
-            //                        .stream()
-            //                        .filter(instance -> instance.isOn(node))
-            //                        .forEach(instance -> {
-            //                            out("  <td>");
-            //                            out(instance.hasError() ? instance.getError()
-            //                                    : instance.deployable(deployableName)
-            //                                              .map(Deployable::getVersion)
-            //                                              .orElse("-"));
-            //                            out("</td>\n");
-            //                        }));
-            //
-            //         out("</tr>\n");
-            //     });
-            // });
+            clusters.forEach(cluster -> {
+                List<String> deployableNames = deployableNames(deployables, cluster);
+                deployableNames.forEach(deployableName -> {
+                    out("<tr>\n");
+                    if (deployableName.equals(deployableNames.get(0)))
+                        out("  <th class='cluster' rowspan='" + deployableNames.size() + "'>" + cluster.getName() + "</th>\n");
+                    out("  <th class='service'>");
+                    out(deployableName);
+                    out("</th>\n");
+
+                    // clusters.forEach(node -> deployables
+                    //         .stream()
+                    //         .filter(instance -> instance.isOn(node))
+                    //         .forEach(instance -> {
+                    //             out("  <td>");
+                    //             out(instance.hasError() ? instance.getError()
+                    //                     : instance.deployable(deployableName)
+                    //                               .map(Deployable::getVersion)
+                    //                               .orElse("-"));
+                    //             out("</td>\n");
+                    //         }));
+
+                    out("</tr>\n");
+                });
+            });
 
             out("</table>\n"
                     + "</div>\n");
@@ -127,16 +128,17 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
 
-        // private List<String> deployableNames(List<DeployerInstance> deployers, Cluster cluster) {
-        //     List<String> deployableNames = deployers.stream()
-        //                                             .filter(instance -> instance.isOn(cluster))
-        //                                             .flatMap(DeployerInstance::deployableNames)
-        //                                             .distinct()
-        //                                             .collect(toList());
-        //     if (deployableNames.isEmpty())
-        //         deployableNames = singletonList("?");
-        //     return deployableNames;
-        // }
+        private List<String> deployableNames(List<Deployable> deployables, Cluster cluster) {
+            List<String> deployableNames = deployables
+                    .stream()
+                    // .filter(instance -> instance.isOn(cluster))
+                    .map(Deployable::getName)
+                    .distinct()
+                    .collect(toList());
+            if (deployableNames.isEmpty())
+                deployableNames = singletonList("?");
+            return deployableNames;
+        }
 
         @SneakyThrows(IOException.class) private void out(String str) { out.write(str); }
     }

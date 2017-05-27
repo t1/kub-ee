@@ -25,7 +25,7 @@ public class MetaDeployerIT {
                                        .get(String.class);
 
         List<Deployable> list = MAPPER.readValue(response, new TypeReference<List<Deployable>>() {});
-        assertThat(list).containsOnly(
+        assertThat(list).contains(
                 emptyChecksumDeployable("deployer"),
                 emptyChecksumDeployable("meta-deployer")
         );

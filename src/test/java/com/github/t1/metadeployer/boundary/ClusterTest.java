@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.net.URI;
 
+import static com.github.t1.metadeployer.model.Stage.*;
 import static org.assertj.core.api.Assertions.*;
 
 public class ClusterTest {
@@ -18,6 +19,7 @@ public class ClusterTest {
                    .stage(Stage.builder().name("DEV").prefix("").suffix("").count(2).indexLength(0).build())
                     .build(),
             Cluster.builder().name("third.boss").port(80)
+                   .stage(NULL_STAGE)
                     .build()
     };
 
@@ -38,7 +40,7 @@ public class ClusterTest {
                 URI.create("http://my.boss.dev03:8080"),
                 URI.create("http://my.boss.dev04:8080"),
                 URI.create("http://my.boss.dev05:8080"),
-                URI.create("http://qa.my.boss1:8080"),
+                URI.create("http://qa.my.boss:8080"),
                 URI.create("http://my.boss01:8080"),
                 URI.create("http://my.boss02:8080"),
                 URI.create("http://my.boss03:8080")

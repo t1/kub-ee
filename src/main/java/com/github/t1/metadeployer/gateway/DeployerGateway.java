@@ -11,12 +11,10 @@ import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
-import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.Response.Status.Family.*;
 import static javax.ws.rs.core.Response.Status.*;
@@ -63,23 +61,17 @@ public class DeployerGateway {
 
     private final Client httpClient = ClientBuilder.newClient();
 
-    public CompletableFuture<List<Deployable>> getDeployments(URI uri) {
-        Invocation request = buildRequest(uri);
-        Future<Response> future = request.submit();
-        // log.info("getting system check {}", request.getURI());
-        return CompletableFuture.supplyAsync(() -> execute(future)).thenApply(response -> convert(uri, response));
+    public List<Deployable> fetchDeployments(URI uri) {
+        return convert(uri, from(uri));
     }
 
-    private Invocation buildRequest(URI uri) {
-        return httpClient.target(uri)
-                         .request()
-                         .accept(APPLICATION_YAML_TYPE)
-                         .buildGet();
-    }
-
-    @SneakyThrows({ InterruptedException.class, ExecutionException.class, TimeoutException.class })
-    private Response execute(Future<Response> request) {
-        return request.get(5, SECONDS);
+    private Response from(URI uri) {
+        return httpClient
+                .target(uri)
+                .request()
+                .accept(APPLICATION_YAML_TYPE)
+                .buildGet()
+                .invoke();
     }
 
     @SneakyThrows(IOException.class)

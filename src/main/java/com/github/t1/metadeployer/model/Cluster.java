@@ -1,15 +1,14 @@
 package com.github.t1.metadeployer.model;
 
-import com.github.t1.metadeployer.model.Stage.StageBuilder;
+import com.github.t1.metadeployer.model.Stage.*;
+import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
-import org.yaml.snakeyaml.nodes.Node;
-import org.yaml.snakeyaml.nodes.*;
 
 import java.net.URI;
 import java.util.List;
 import java.util.stream.*;
 
-import static com.github.t1.metadeployer.model.YamlTools.*;
+import static com.github.t1.metadeployer.model.Stage.*;
 import static java.lang.String.*;
 import static java.util.stream.Collectors.*;
 
@@ -25,10 +24,10 @@ public class Cluster {
     public Stream<Stage> stages() { return stages.stream(); }
 
 
-    public Stream<URI> allUris() {
-        return stages.stream().flatMap(stage ->
-                IntStream.range(1, stage.getCount() + 1)
-                         .mapToObj(index -> uri(stage, index)));
+    public Stream<URI> allUris() { return stages.stream().flatMap(this::uris); }
+
+    private Stream<URI> uris(Stage stage) {
+        return IntStream.range(1, stage.getCount() + 1).mapToObj(index -> uri(stage, index));
     }
 
     private URI uri(Stage stage, int index) {
@@ -37,22 +36,30 @@ public class Cluster {
     }
 
 
-    public static List<Cluster> readAllFrom(Node node) {
-        return mappingValue(node).map(ClusterBuilder::from).collect(toList());
+    public static List<Cluster> readAllFrom(YamlDocument document) {
+        return document.mapping().map(ClusterBuilder::from).collect(toList());
     }
 
     public static class ClusterBuilder {
-        public static Cluster from(NodeTuple tuple) {
+        public static Cluster from(YamlEntry entry) {
             return builder()
-                    .name(getScalarValue(tuple.getKeyNode()))
-                    .read(getMappingValue(tuple.getValueNode()))
+                    .name(entry.key().asString())
+                    .read(entry.value().asMapping())
                     .build();
         }
 
-        private ClusterBuilder read(List<NodeTuple> value) {
-            port(toInt(get(value, "port"), DEFAULT_HTTP_PORT));
-            mappingValue(get(value, "stages")).map(StageBuilder::from).forEach(this::stage);
+        private ClusterBuilder read(YamlMapping value) {
+            port(value.get("port").asIntOr(DEFAULT_HTTP_PORT));
+            readStages(value);
             return this;
+        }
+
+        private void readStages(YamlMapping value) {
+            YamlNode stages = value.get("stages");
+            if (stages.isNull())
+                stage(NULL_STAGE);
+            else
+                stages.mapping().map(StageBuilder::from).forEach(this::stage);
         }
     }
 }

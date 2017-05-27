@@ -1,16 +1,16 @@
 package com.github.t1.metadeployer.model;
 
+import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
-import org.yaml.snakeyaml.nodes.NodeTuple;
 
-import java.util.List;
-
-import static com.github.t1.metadeployer.model.YamlTools.*;
 import static java.lang.String.*;
 
 @Value
 @Builder
 public class Stage {
+    public static final Stage NULL_STAGE =
+            Stage.builder().name("").prefix("").suffix("").count(1).indexLength(0).build();
+
     String name;
     String prefix;
     String suffix;
@@ -18,22 +18,28 @@ public class Stage {
     int indexLength;
 
     public String formattedIndex(int index) {
-        return (indexLength == 0) ? Integer.toString(index) : format("%0" + indexLength + "d", index);
+        if (indexLength == 0)
+            if (count == 1)
+                return "";
+            else
+                return Integer.toString(index);
+        else
+            return format("%0" + indexLength + "d", index);
     }
 
     public static class StageBuilder {
-        public static Stage from(NodeTuple tuple) {
+        public static Stage from(YamlEntry entry) {
             return builder()
-                    .name(getScalarValue(tuple.getKeyNode()))
-                    .read(getMappingValue(tuple.getValueNode()))
+                    .name(entry.key().asString())
+                    .read(entry.value().asMapping())
                     .build();
         }
 
-        public StageBuilder read(List<NodeTuple> value) {
-            suffix(getScalarValue(get(value, "suffix"), ""));
-            prefix(getScalarValue(get(value, "prefix"), ""));
-            count(toInt(get(value, "count"), 1));
-            indexLength(toInt(get(value, "indexLength"), 0));
+        public StageBuilder read(YamlMapping value) {
+            suffix(value.get("suffix").asStringOr(""));
+            prefix(value.get("prefix").asStringOr(""));
+            count(value.get("count").asIntOr(1));
+            indexLength(value.get("indexLength").asIntOr(0));
             return this;
         }
     }
