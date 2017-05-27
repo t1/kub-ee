@@ -18,10 +18,10 @@ public class YamlMapping {
     private final List<NodeTuple> entries;
 
     public YamlNode get(String key) {
-        for (NodeTuple tuple : entries)
-            if (key.equals(scalar(tuple.getKeyNode())))
-                return new YamlNode(tuple.getValueNode());
-        return NULL_NODE;
+        return stream()
+                .flatMap(entry -> entry.withKey(key))
+                .findFirst()
+                .orElse(NULL_NODE);
     }
 
     public Stream<YamlEntry> stream() {

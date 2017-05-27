@@ -25,13 +25,9 @@ public class YamlNode {
 
     public String asStringOr(String defaultValue) { return (node == null) ? defaultValue : asString(); }
 
-    public String asString() { return scalar(node); }
+    public int asIntOr(int defaultValue) { return (node == null) ? defaultValue : Integer.parseInt(asString()); }
 
-    public int asIntOr(int defaultValue) {
-        return (node == null) ? defaultValue : Integer.parseInt(scalar(node));
-    }
-
-    static String scalar(Node node) {
+    public String asString() {
         assert node.getNodeId() == scalar : "expected " + scalar + " but got " + node.getNodeId();
         return ((ScalarNode) node).getValue();
     }
