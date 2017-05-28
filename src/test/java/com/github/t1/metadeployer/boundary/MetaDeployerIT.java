@@ -9,7 +9,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static com.github.t1.metadeployer.boundary.TestData.*;
 import static javax.ws.rs.core.MediaType.*;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
@@ -19,13 +18,17 @@ public class MetaDeployerIT {
 
     public static Deployment emptyChecksumDeployment(String name) {
         Cluster cluster = Cluster.builder().name("localhost").port(8080).defaultStage().add().build();
-        return unknownDeployment()
-                .cluster(cluster)
-                .stage(cluster.getStages().get(0))
-                .node(1)
-                .name(name)
-                .error("empty checksum")
-                .build();
+        return Deployment.builder()
+                         .groupId("unknown")
+                         .artifactId("unknown")
+                         .type("unknown")
+                         .version("unknown")
+                         .cluster(cluster)
+                         .stage(cluster.getStages().get(0))
+                         .node(1)
+                         .name(name)
+                         .error("empty checksum")
+                         .build();
     }
 
     @Test

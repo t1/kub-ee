@@ -1,7 +1,6 @@
-package com.github.t1.metadeployer.boundary.model;
+package com.github.t1.metadeployer.model;
 
 import com.github.t1.metadeployer.boundary.ClusterConfig;
-import com.github.t1.metadeployer.model.*;
 import org.junit.Test;
 
 import java.net.URI;

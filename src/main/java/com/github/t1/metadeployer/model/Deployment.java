@@ -3,7 +3,7 @@ package com.github.t1.metadeployer.model;
 import lombok.*;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class Deployment {
     Cluster cluster;
     Stage stage;

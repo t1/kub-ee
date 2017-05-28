@@ -28,17 +28,17 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
     }
 
     @Override
-    public long getSize(List<Deployment> deployables, Class<?> type, Type genericType, Annotation[] annotations,
+    public long getSize(List<Deployment> deployments, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType) {
         return -1;
     }
 
     @Override
-    public void writeTo(List<Deployment> deployables, Class<?> type, Type genericType,
+    public void writeTo(List<Deployment> deployments, Class<?> type, Type genericType,
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new DeploymentsWriter(out).write(deployables);
+        new DeploymentsWriter(out).write(deployments);
         out.flush();
     }
 
@@ -46,9 +46,9 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
     private class DeploymentsWriter {
         private final Writer out;
 
-        public void write(List<Deployment> deployables) {
+        public void write(List<Deployment> deployments) {
             header();
-            body(deployables);
+            body(deployments);
             footer();
         }
 
@@ -59,56 +59,57 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "    <title>Meta-Deployer</title>\n"
                     + "    <meta charset=\"utf-8\" />\n"
                     + "    <link rel='stylesheet' href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\" />\n"
-                    + "    <link rel='stylesheet' href=\"../style.css\" />\n"
                     + "</head>\n"
                     + "<body>\n");
         }
 
-        private void body(List<Deployment> deployables) {
-            out("<div class=\"table-responsive\">\n"
-                    + "<table class=\"table table-striped service-table\">\n"
-                    + "<tr>\n"
-                    + "    <th>Cluster</th>\n"
-                    + "    <th>Application</th>\n");
+        private void body(List<Deployment> deployments) {
+            out(""
+                    + "<div class=\"table-responsive\">\n"
+                    + "    <table class=\"table table-striped service-table\">\n"
+                    + "        <tr>\n"
+                    + "            <th>Cluster</th>\n"
+                    + "            <th>Application</th>\n");
             mergedStages().forEach(this::out);
-            out("</tr>\n"
-                    + "<tr>\n"
-                    + "    <th></th>\n"
-                    + "    <th></th>\n");
+            out(""
+                    + "        </tr>\n"
+                    + "        <tr>\n"
+                    + "            <th></th>\n"
+                    + "            <th></th>\n");
             clusters.stream().flatMap(Cluster::stages).forEach(
                     stage -> stage.indexes().forEach(
-                            index -> out("    <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
-            out("</tr>\n");
+                            index -> out("            <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
+            out("        </tr>\n");
 
             clusters.forEach(cluster -> {
-                List<String> deployableNames = deployableNames(deployables, cluster);
-                deployableNames.forEach(deployableName -> {
-                    out("<tr>\n");
-                    if (deployableName.equals(deployableNames.get(0)))
-                        out("  <th class='cluster' rowspan='" + deployableNames.size() + "'>"
+                List<String> deploymentNames = deploymentNames(deployments, cluster);
+                deploymentNames.forEach(deploymentName -> {
+                    out("        <tr>\n");
+                    if (deploymentName.equals(deploymentNames.get(0)))
+                        out("            <th class='cluster' rowspan='" + deploymentNames.size() + "'>"
                                 + cluster.getName()
                                 + "</th>\n");
-                    out("  <th class='service'>");
-                    out(deployableName);
+                    out("            <th class='service'>");
+                    out(deploymentName);
                     out("</th>\n");
 
-                    // clusters.forEach(node -> deployables
+                    // clusters.forEach(node -> deployments
                     //         .stream()
                     //         .filter(instance -> instance.isOn(node))
                     //         .forEach(instance -> {
                     //             out("  <td>");
                     //             out(instance.hasError() ? instance.getError()
-                    //                     : instance.deployable(deployableName)
+                    //                     : instance.deployment(deploymentName)
                     //                               .map(Deployment::getVersion)
                     //                               .orElse("-"));
                     //             out("</td>\n");
                     //         }));
 
-                    out("</tr>\n");
+                    out("        </tr>\n");
                 });
             });
 
-            out("</table>\n"
+            out("    </table>\n"
                     + "</div>\n");
         }
 
@@ -125,20 +126,20 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
         private void out(Stage stage) {
-            out("    <th colspan=\"" + stage.getCount() + "\" class=\"stage\">" + stage.getName() + "</th>\n");
+            out("            <th colspan=\"" + stage.getCount() + "\" class=\"stage\">" + stage.getName() + "</th>\n");
         }
 
 
-        private List<String> deployableNames(List<Deployment> deployables, Cluster cluster) {
-            List<String> deployableNames = deployables
+        private List<String> deploymentNames(List<Deployment> deployments, Cluster cluster) {
+            List<String> deploymentNames = deployments
                     .stream()
-                    // .filter(instance -> instance.isOn(cluster))
+                    .filter(deployment -> deployment.getCluster().getName().equals(cluster.getName()))
                     .map(Deployment::getName)
                     .distinct()
                     .collect(toList());
-            if (deployableNames.isEmpty())
-                deployableNames = singletonList("?");
-            return deployableNames;
+            if (deploymentNames.isEmpty())
+                deploymentNames = singletonList("?");
+            return deploymentNames;
         }
 
         @SneakyThrows(IOException.class) private void out(String str) { out.write(str); }

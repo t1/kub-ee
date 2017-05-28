@@ -1,13 +1,12 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.boundary.model.ClusterTest;
-import com.github.t1.metadeployer.model.Deployment;
+import com.github.t1.metadeployer.model.*;
+import com.github.t1.metadeployer.model.Deployment.DeploymentBuilder;
 import org.junit.*;
 
 import java.io.*;
 import java.util.List;
 
-import static com.github.t1.metadeployer.boundary.TestData.*;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -16,70 +15,39 @@ public class DeploymentListMessageBodyWriterTest {
 
     @Before public void setUp() { writer.clusters = ClusterTest.readClusterConfig().clusters(); }
 
+    private DeploymentBuilder createDeployment(String name) {
+        return Deployment.builder()
+                         .groupId(name + "-group")
+                         .artifactId(name + "-art")
+                         .type(name + "-type")
+                         .version(name + "-version")
+                         .name(name);
+    }
+
     @Test
     public void shouldWriteHtml() throws Exception {
+        Cluster cluster0 = writer.clusters.get(0);
+        Stage stage0dev = cluster0.getStages().get(0);
+        Stage stage0qa = cluster0.getStages().get(1);
+        Stage stage0prod = cluster0.getStages().get(2);
+
+        Cluster cluster1 = writer.clusters.get(1);
+        Stage stage1dev = cluster1.getStages().get(0);
+
+        DeploymentBuilder foo = createDeployment("foo").cluster(cluster0);
+        DeploymentBuilder bar = createDeployment("bar").cluster(cluster1);
         List<Deployment> deployables = asList(
-                unknownDeployment().name("foo").build(),
-                unknownDeployment().name("bar").error("error-hint").build());
+                foo.stage(stage0dev).node(1).build(),
+                foo.stage(stage0qa).node(1).build(),
+                foo.stage(stage0prod).node(1).build(),
+                foo.stage(stage0prod).node(2).build(),
+                foo.stage(stage0prod).node(3).build(),
+                bar.stage(stage1dev).node(1).error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
-        assertThat(out.toString()).isEqualTo("<!DOCTYPE html>\n"
-                + "<html>\n"
-                + "<head>\n"
-                + "    <title>Meta-Deployer</title>\n"
-                + "    <meta charset=\"utf-8\" />\n"
-                + "    <link rel='stylesheet' href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\" />\n"
-                + "    <link rel='stylesheet' href=\"../style.css\" />\n"
-                + "</head>\n"
-                + "<body>\n"
-                + "<div class=\"table-responsive\">\n"
-                + "<table class=\"table table-striped service-table\">\n"
-                + "<tr>\n"
-                + "    <th>Cluster</th>\n"
-                + "    <th>Application</th>\n"
-                + "    <th colspan=\"2\" class=\"stage\">DEV</th>\n"
-                + "    <th colspan=\"1\" class=\"stage\">QA</th>\n"
-                + "    <th colspan=\"3\" class=\"stage\">PROD</th>\n"
-                + "    <th colspan=\"1\" class=\"stage\"></th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "    <th></th>\n"
-                + "    <th></th>\n"
-                + "    <th class=\"node\">01</th>\n"
-                + "    <th class=\"node\"></th>\n"
-                + "    <th class=\"node\">01</th>\n"
-                + "    <th class=\"node\">02</th>\n"
-                + "    <th class=\"node\">03</th>\n"
-                + "    <th class=\"node\">1</th>\n"
-                + "    <th class=\"node\">2</th>\n"
-                + "    <th class=\"node\"></th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='cluster' rowspan='2'>my.boss</th>\n"
-                + "  <th class='service'>foo</th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='service'>bar</th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='cluster' rowspan='2'>other.boss</th>\n"
-                + "  <th class='service'>foo</th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='service'>bar</th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='cluster' rowspan='2'>third.boss</th>\n"
-                + "  <th class='service'>foo</th>\n"
-                + "</tr>\n"
-                + "<tr>\n"
-                + "  <th class='service'>bar</th>\n"
-                + "</tr>\n"
-                + "</table>\n"
-                + "</div>\n"
-                + "</body>\n"
-                + "</html>\n");
+        assertThat(out.toString())
+                .isEqualTo(contentOf(DeploymentListMessageBodyWriterTest.class.getResource("expected.html")));
     }
 }
