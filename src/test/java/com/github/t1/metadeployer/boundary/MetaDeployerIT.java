@@ -2,7 +2,7 @@ package com.github.t1.metadeployer.boundary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.model.*;
 import org.junit.Test;
 
 import javax.ws.rs.client.ClientBuilder;
@@ -17,6 +17,17 @@ import static org.assertj.core.api.Assertions.*;
 public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    public static Deployment emptyChecksumDeployment(String name) {
+        Cluster cluster = Cluster.builder().name("localhost").port(8080).defaultStage().add().build();
+        return unknownDeployment()
+                .cluster(cluster)
+                .stage(cluster.getStages().get(0))
+                .node(1)
+                .name(name)
+                .error("empty checksum")
+                .build();
+    }
+
     @Test
     public void shouldGetAsJson() throws Exception {
         String response = ClientBuilder.newClient()
@@ -24,10 +35,10 @@ public class MetaDeployerIT {
                                        .request(APPLICATION_JSON_TYPE)
                                        .get(String.class);
 
-        List<Deployable> list = MAPPER.readValue(response, new TypeReference<List<Deployable>>() {});
+        List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
         assertThat(list).contains(
-                emptyChecksumDeployable("deployer"),
-                emptyChecksumDeployable("meta-deployer")
+                emptyChecksumDeployment("deployer"),
+                emptyChecksumDeployment("meta-deployer")
         );
     }
 

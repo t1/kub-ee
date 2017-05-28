@@ -61,7 +61,8 @@ public class DeployerGateway {
 
     private final Client httpClient = ClientBuilder.newClient();
 
-    public List<Deployable> fetchDeployments(URI uri) {
+    public List<Deployable> fetchDeployablesOn(URI uri) {
+        uri = UriBuilder.fromUri(uri).path("/deployer").build();
         return convert(uri, from(uri));
     }
 
@@ -77,6 +78,9 @@ public class DeployerGateway {
     @SneakyThrows(IOException.class)
     private List<Deployable> convert(URI uri, Response response) {
         try {
+            String contentType = response.getHeaderString("Content-Type");
+            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
+                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE + " but got " + contentType);
             String string = response.readEntity(String.class);
             if (response.getStatusInfo() == NOT_FOUND)
                 throw new DeployerNotFoundException();

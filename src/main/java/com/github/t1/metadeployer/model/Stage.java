@@ -1,46 +1,56 @@
 package com.github.t1.metadeployer.model;
 
+import com.github.t1.metadeployer.model.Cluster.ClusterBuilder;
 import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
+
+import java.util.stream.*;
 
 import static java.lang.String.*;
 
 @Value
 @Builder
 public class Stage {
-    public static final Stage NULL_STAGE =
-            Stage.builder().name("").prefix("").suffix("").count(1).indexLength(0).build();
-
     String name;
     String prefix;
     String suffix;
     int count;
     int indexLength;
 
-    public String formattedIndex(int index) {
-        if (indexLength == 0)
-            if (count == 1)
-                return "";
-            else
-                return Integer.toString(index);
-        else
-            return format("%0" + indexLength + "d", index);
+    public Stream<ClusterNode> nodes(Cluster cluster) {
+        return indexes().mapToObj(index -> new ClusterNode(cluster, this, index));
     }
 
+    public IntStream indexes() { return IntStream.range(1, this.count + 1); }
+
+    public String formattedIndex(int index) {
+        return (indexLength == 0)
+                ? (count == 1) ? "" : Integer.toString(index)
+                : format("%0" + indexLength + "d", index);
+    }
+
+
     public static class StageBuilder {
-        public static Stage from(YamlEntry entry) {
-            return builder()
-                    .name(entry.key().asString())
-                    .read(entry.value().asMapping())
-                    .build();
+        private ClusterBuilder clusterBuilder;
+
+        StageBuilder read(YamlEntry entry) {
+            name(entry.key().asString());
+            return read(entry.value().asMapping());
         }
 
-        public StageBuilder read(YamlMapping value) {
+        private StageBuilder read(YamlMapping value) {
             suffix(value.get("suffix").asStringOr(""));
             prefix(value.get("prefix").asStringOr(""));
             count(value.get("count").asIntOr(1));
             indexLength(value.get("indexLength").asIntOr(0));
             return this;
         }
+
+        StageBuilder clusterBuilder(ClusterBuilder clusterBuilder) {
+            this.clusterBuilder = clusterBuilder;
+            return this;
+        }
+
+        public ClusterBuilder add() { return clusterBuilder.stage(this.build()); }
     }
 }

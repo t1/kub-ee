@@ -1,6 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.boundary.model.ClusterTest;
+import com.github.t1.metadeployer.model.Deployment;
 import org.junit.*;
 
 import java.io.*;
@@ -10,19 +11,16 @@ import static com.github.t1.metadeployer.boundary.TestData.*;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class DeployableListMessageBodyWriterTest {
-    private DeployableListMessageBodyWriter writer = new DeployableListMessageBodyWriter();
+public class DeploymentListMessageBodyWriterTest {
+    private DeploymentListMessageBodyWriter writer = new DeploymentListMessageBodyWriter();
 
-    @Before
-    public void setUp() throws Exception {
-        ClusterConfig clusterConfig = new ClusterConfig();
-        clusterConfig.readFrom(ClusterTest.class.getResourceAsStream("cluster-config.yaml"));
-        writer.clusters = clusterConfig.clusters();
-    }
+    @Before public void setUp() { writer.clusters = ClusterTest.readClusterConfig().clusters(); }
 
     @Test
-    public void shouldWrite() throws Exception {
-        List<Deployable> deployables = asList(deployable().name("foo").build(), deployable().name("bar").build());
+    public void shouldWriteHtml() throws Exception {
+        List<Deployment> deployables = asList(
+                unknownDeployment().name("foo").build(),
+                unknownDeployment().name("bar").error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);
@@ -41,7 +39,7 @@ public class DeployableListMessageBodyWriterTest {
                 + "<tr>\n"
                 + "    <th>Cluster</th>\n"
                 + "    <th>Application</th>\n"
-                + "    <th colspan=\"5\" class=\"stage\">DEV</th>\n"
+                + "    <th colspan=\"2\" class=\"stage\">DEV</th>\n"
                 + "    <th colspan=\"1\" class=\"stage\">QA</th>\n"
                 + "    <th colspan=\"3\" class=\"stage\">PROD</th>\n"
                 + "    <th colspan=\"1\" class=\"stage\"></th>\n"
@@ -50,10 +48,6 @@ public class DeployableListMessageBodyWriterTest {
                 + "    <th></th>\n"
                 + "    <th></th>\n"
                 + "    <th class=\"node\">01</th>\n"
-                + "    <th class=\"node\">02</th>\n"
-                + "    <th class=\"node\">03</th>\n"
-                + "    <th class=\"node\">04</th>\n"
-                + "    <th class=\"node\">05</th>\n"
                 + "    <th class=\"node\"></th>\n"
                 + "    <th class=\"node\">01</th>\n"
                 + "    <th class=\"node\">02</th>\n"

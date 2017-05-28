@@ -3,7 +3,7 @@ my.boss:
   stages:
     DEV:
       suffix: .dev
-      count: 5
+      count: 1
       indexLength: 2
     QA:
       prefix: qa.

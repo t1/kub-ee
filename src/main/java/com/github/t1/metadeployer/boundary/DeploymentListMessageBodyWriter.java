@@ -1,6 +1,5 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import com.github.t1.metadeployer.model.*;
 import lombok.*;
 
@@ -12,7 +11,7 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
@@ -20,7 +19,7 @@ import static javax.ws.rs.core.MediaType.*;
 
 @Provider
 @Produces(TEXT_HTML)
-public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<Deployable>> {
+public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<Deployment>> {
     @Inject List<Cluster> clusters;
 
     @Override
@@ -29,25 +28,25 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
     }
 
     @Override
-    public long getSize(List<Deployable> deployables, Class<?> type, Type genericType, Annotation[] annotations,
+    public long getSize(List<Deployment> deployables, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType) {
         return -1;
     }
 
     @Override
-    public void writeTo(List<Deployable> deployables, Class<?> type, Type genericType,
+    public void writeTo(List<Deployment> deployables, Class<?> type, Type genericType,
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new DeployablesWriter(out).write(deployables);
+        new DeploymentsWriter(out).write(deployables);
         out.flush();
     }
 
     @RequiredArgsConstructor
-    private class DeployablesWriter {
+    private class DeploymentsWriter {
         private final Writer out;
 
-        public void write(List<Deployable> deployables) {
+        public void write(List<Deployment> deployables) {
             header();
             body(deployables);
             footer();
@@ -65,7 +64,7 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "<body>\n");
         }
 
-        private void body(List<Deployable> deployables) {
+        private void body(List<Deployment> deployables) {
             out("<div class=\"table-responsive\">\n"
                     + "<table class=\"table table-striped service-table\">\n"
                     + "<tr>\n"
@@ -76,9 +75,9 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "<tr>\n"
                     + "    <th></th>\n"
                     + "    <th></th>\n");
-            clusters.stream().flatMap(Cluster::stages).forEach(stage ->
-                    IntStream.range(1, stage.getCount() + 1).forEach(index ->
-                            out("    <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
+            clusters.stream().flatMap(Cluster::stages).forEach(
+                    stage -> stage.indexes().forEach(
+                            index -> out("    <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
             out("</tr>\n");
 
             clusters.forEach(cluster -> {
@@ -86,7 +85,9 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                 deployableNames.forEach(deployableName -> {
                     out("<tr>\n");
                     if (deployableName.equals(deployableNames.get(0)))
-                        out("  <th class='cluster' rowspan='" + deployableNames.size() + "'>" + cluster.getName() + "</th>\n");
+                        out("  <th class='cluster' rowspan='" + deployableNames.size() + "'>"
+                                + cluster.getName()
+                                + "</th>\n");
                     out("  <th class='service'>");
                     out(deployableName);
                     out("</th>\n");
@@ -98,7 +99,7 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
                     //             out("  <td>");
                     //             out(instance.hasError() ? instance.getError()
                     //                     : instance.deployable(deployableName)
-                    //                               .map(Deployable::getVersion)
+                    //                               .map(Deployment::getVersion)
                     //                               .orElse("-"));
                     //             out("</td>\n");
                     //         }));
@@ -128,11 +129,11 @@ public class DeployableListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
 
-        private List<String> deployableNames(List<Deployable> deployables, Cluster cluster) {
+        private List<String> deployableNames(List<Deployment> deployables, Cluster cluster) {
             List<String> deployableNames = deployables
                     .stream()
                     // .filter(instance -> instance.isOn(cluster))
-                    .map(Deployable::getName)
+                    .map(Deployment::getName)
                     .distinct()
                     .collect(toList());
             if (deployableNames.isEmpty())
