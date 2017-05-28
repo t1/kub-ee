@@ -22,6 +22,9 @@ public class Boundary {
 
     DeployerGateway deployer = new DeployerGateway();
 
+    @Path("/clusters")
+    @GET public List<Cluster> getClusters() { return clusters; }
+
     @GET public List<Deployment> get() {
         return clusters.stream().flatMap(this::fromCluster).collect(toList());
     }

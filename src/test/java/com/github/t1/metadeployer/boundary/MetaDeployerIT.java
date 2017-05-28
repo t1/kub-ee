@@ -17,7 +17,9 @@ public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static Deployment emptyChecksumDeployment(String name) {
-        Cluster cluster = Cluster.builder().name("localhost").port(8080).defaultStage().add().build();
+        Cluster cluster = Cluster.builder().name("localhost").port(8080)
+                                 .stage().name("PROD").count(1).prefix("").suffix("").add()
+                                 .build();
         return Deployment.builder()
                          .groupId("unknown")
                          .artifactId("unknown")

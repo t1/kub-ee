@@ -20,7 +20,6 @@ public class DeploymentListMessageBodyWriterTest {
                          .groupId(name + "-group")
                          .artifactId(name + "-art")
                          .type(name + "-type")
-                         .version(name + "-version")
                          .name(name);
     }
 
@@ -37,12 +36,12 @@ public class DeploymentListMessageBodyWriterTest {
         DeploymentBuilder foo = createDeployment("foo").cluster(cluster0);
         DeploymentBuilder bar = createDeployment("bar").cluster(cluster1);
         List<Deployment> deployables = asList(
-                foo.stage(stage0dev).node(1).build(),
-                foo.stage(stage0qa).node(1).build(),
-                foo.stage(stage0prod).node(1).build(),
-                foo.stage(stage0prod).node(2).build(),
-                foo.stage(stage0prod).node(3).build(),
-                bar.stage(stage1dev).node(1).error("error-hint").build());
+                foo.version("1.2.5-SNAPSHOT").stage(stage0dev).node(1).build(),
+                foo.version("1.2.4").stage(stage0qa).node(1).build(),
+                foo.version("1.2.3").stage(stage0prod).node(1).build(),
+                foo.version("1.2.3").stage(stage0prod).node(2).build(),
+                foo.version("1.2.3").stage(stage0prod).node(3).build(),
+                bar.version("2.1.3").stage(stage1dev).node(1).error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);

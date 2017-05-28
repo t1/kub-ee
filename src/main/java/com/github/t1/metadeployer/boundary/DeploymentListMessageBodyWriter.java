@@ -9,7 +9,7 @@ import javax.ws.rs.core.*;
 import javax.ws.rs.ext.*;
 import java.io.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -24,7 +24,9 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return true;
+        return genericType instanceof ParameterizedType
+                && ((ParameterizedType) genericType).getRawType().equals(List.class)
+                && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(Deployment.class);
     }
 
     @Override
@@ -46,6 +48,8 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
     private class DeploymentsWriter {
         private final Writer out;
 
+        @SneakyThrows(IOException.class) private void out(String str) { out.write(str); }
+
         public void write(List<Deployment> deployments) {
             header();
             body(deployments);
@@ -61,6 +65,11 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "    <link rel='stylesheet' href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\" />\n"
                     + "</head>\n"
                     + "<body>\n");
+        }
+
+        private void footer() {
+            out("</body>\n"
+                    + "</html>\n");
         }
 
         private void body(List<Deployment> deployments) {
@@ -93,17 +102,16 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                     out(deploymentName);
                     out("</th>\n");
 
-                    // clusters.forEach(node -> deployments
-                    //         .stream()
-                    //         .filter(instance -> instance.isOn(node))
-                    //         .forEach(instance -> {
-                    //             out("  <td>");
-                    //             out(instance.hasError() ? instance.getError()
-                    //                     : instance.deployment(deploymentName)
-                    //                               .map(Deployment::getVersion)
-                    //                               .orElse("-"));
-                    //             out("</td>\n");
-                    //         }));
+                    clusters.stream()
+                            .flatMap(Cluster::stages)
+                            .flatMap(stage -> stage.nodes(cluster))
+                            .map(node -> deployments
+                                    .stream()
+                                    .filter(deployment -> deployment.isOn(node))
+                                    .findAny()
+                                    .map(this::cell)
+                                    .orElse("-"))
+                            .forEach(cell -> out("            <td>" + cell + "</td>\n"));
 
                     out("        </tr>\n");
                 });
@@ -113,11 +121,6 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                     + "</div>\n");
         }
 
-        private void footer() {
-            out("</body>\n"
-                    + "</html>\n");
-        }
-
         private Stream<Stage> mergedStages() {
             Map<String, Stage> map = new LinkedHashMap<>();
             clusters.stream().flatMap(Cluster::stages).forEach(stage -> map.merge(stage.getName(), stage,
@@ -125,15 +128,10 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
             return map.values().stream();
         }
 
-        private void out(Stage stage) {
-            out("            <th colspan=\"" + stage.getCount() + "\" class=\"stage\">" + stage.getName() + "</th>\n");
-        }
-
-
         private List<String> deploymentNames(List<Deployment> deployments, Cluster cluster) {
             List<String> deploymentNames = deployments
                     .stream()
-                    .filter(deployment -> deployment.getCluster().getName().equals(cluster.getName()))
+                    .filter(deployment -> on(cluster, deployment))
                     .map(Deployment::getName)
                     .distinct()
                     .collect(toList());
@@ -142,6 +140,16 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
             return deploymentNames;
         }
 
-        @SneakyThrows(IOException.class) private void out(String str) { out.write(str); }
+        private void out(Stage stage) {
+            out("            <th colspan=\"" + stage.getCount() + "\" class=\"stage\">" + stage.getName() + "</th>\n");
+        }
+
+        private String cell(Deployment deployment) {
+            return deployment.hasError() ? deployment.getError() : deployment.getVersion();
+        }
+
+        private boolean on(Cluster cluster, Deployment deployment) {
+            return deployment.getCluster().getName().equals(cluster.getName());
+        }
     }
 }

@@ -19,7 +19,14 @@ public class Deployment {
     @Override public String toString() {
         return "Deployment(" + name + ":" + type
                 + "|" + groupId + ":" + artifactId + ":" + version
-                + "|" + cluster.getName() + ":" + stage.getName() + ":" + node
-                + ((error == null) ? "" : "|error=" + error);
+                + "|" + stage.getPrefix() + "`" + cluster.getName() + "`" + stage.getSuffix() + ":" + cluster.getPort()
+                + "|" + stage.getName() + ":" + stage.getCount() + ":" + stage.getIndexLength() + ":" + node
+                + (hasError() ? "" : "|error=" + error);
+    }
+
+    public boolean hasError() { return error != null && !error.isEmpty(); }
+
+    public boolean isOn(ClusterNode node) {
+        return cluster.equals(node.getCluster()) && stage.equals(node.getStage()) && this.node == node.getIndex();
     }
 }
