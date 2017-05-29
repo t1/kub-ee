@@ -7,7 +7,7 @@ import com.github.t1.metadeployer.model.*;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import java.net.URI;
+import java.net.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -74,6 +74,12 @@ public class Boundary {
         while (out.startsWith(ExecutionException.class.getName() + ": ")
                 || out.startsWith(RuntimeException.class.getName() + ": "))
             out = out.substring(out.indexOf(": ") + 2);
+        if (out.endsWith(UNKNOWN_HOST_SUFFIX))
+            out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
+        if (out.startsWith(UnknownHostException.class.getName() + ": "))
+            out = "unknown host: " + out.substring(out.indexOf(": ") + 2);
         return out;
     }
+
+    private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
 }
