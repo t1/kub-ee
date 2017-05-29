@@ -123,7 +123,8 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
 
         private Stream<Stage> mergedStages() {
             Map<String, Stage> map = new LinkedHashMap<>();
-            clusters.stream().flatMap(Cluster::stages).forEach(stage -> map.merge(stage.getName(), stage,
+            clusters.stream().flatMap(Cluster::stages).forEach(stage -> map.merge(stage.getName(),
+                    Stage.builder().name(stage.getName()).count(stage.getCount()).build(),
                     (l, r) -> (l.getCount() > r.getCount()) ? l : r));
             return map.values().stream();
         }
