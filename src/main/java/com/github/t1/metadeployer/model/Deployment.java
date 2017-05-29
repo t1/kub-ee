@@ -19,7 +19,7 @@ public class Deployment {
     @Override public String toString() {
         return "Deployment(" + name + ":" + type
                 + "|" + groupId + ":" + artifactId + ":" + version
-                + "|" + stage.getPrefix() + "`" + cluster.getName() + "`" + stage.getSuffix() + ":" + cluster.getPort()
+                + "|" + stage.getPrefix() + "`" + cluster.getHost() + "`" + stage.getSuffix() + ":" + cluster.getPort()
                 + "|" + stage.getName() + ":" + stage.getCount() + ":" + stage.getIndexLength() + ":" + node
                 + (hasError() ? "" : "|error=" + error);
     }

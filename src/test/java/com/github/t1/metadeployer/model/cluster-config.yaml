@@ -2,11 +2,11 @@ my.boss:
   port: 8080
   stages:
     DEV:
-      suffix: .dev
+      suffix: dev
       count: 1
       indexLength: 2
     QA:
-      prefix: qa.
+      prefix: qa
     PROD:
       count: 3
       indexLength: 2

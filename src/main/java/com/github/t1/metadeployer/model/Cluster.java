@@ -1,5 +1,6 @@
 package com.github.t1.metadeployer.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.t1.metadeployer.model.Stage.StageBuilder;
 import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
@@ -14,7 +15,7 @@ import static java.util.stream.Collectors.*;
 public class Cluster {
     public static final int DEFAULT_HTTP_PORT = 80;
 
-    private final String name;
+    private final String host;
     private final int port;
     private final List<Stage> stages;
 
@@ -25,10 +26,18 @@ public class Cluster {
         return document.mapping().map(ClusterBuilder::from).collect(toList());
     }
 
+    @JsonIgnore
+    public String getSimpleName() { return hostSplit()[0]; }
+
+    @JsonIgnore
+    public String getDomainName() { return (hostSplit().length == 1) ? "" : hostSplit()[1]; }
+
+    private String[] hostSplit() { return host.split("\\.", 2); }
+
     public static class ClusterBuilder {
         private static Cluster from(YamlEntry entry) {
             return builder()
-                    .name(entry.key().asString())
+                    .host(entry.key().asString())
                     .read(entry.value().asMapping())
                     .build();
         }

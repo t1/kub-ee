@@ -95,7 +95,7 @@ public class ClusterListMessageBodyWriter implements MessageBodyWriter<List<Clus
         private void out(Cluster cluster) {
             out(""
                     + "            <tr>\n"
-                    + "                <th>" + cluster.getName() + ":" + cluster.getPort() + "</th>\n"
+                    + "                <th>" + cluster.getHost() + ":" + cluster.getPort() + "</th>\n"
                     + "                <td>\n"
                     + stage(cluster).collect(joining("                </td>\n                <td>\n"))
                     + "                </td>\n"

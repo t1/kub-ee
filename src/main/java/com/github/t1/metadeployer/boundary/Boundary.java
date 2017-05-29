@@ -57,7 +57,7 @@ public class Boundary {
         } catch (Exception e) {
             return singletonList(Deployable
                     .builder()
-                    .name("?")
+                    .name("deployer not found")
                     .groupId("unknown")
                     .artifactId("unknown")
                     .type("unknown")

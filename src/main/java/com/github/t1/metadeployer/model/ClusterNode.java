@@ -13,7 +13,8 @@ public class ClusterNode {
     int index;
 
     public URI uri() {
-        return URI.create(format("http://%s%s%s%s:%d",
-                stage.getPrefix(), cluster.getName(), stage.getSuffix(), stage.formattedIndex(index), cluster.getPort()));
+        return URI.create(format("http://%s%s%s%s.%s:%d",
+                stage.getPrefix(), cluster.getSimpleName(), stage.getSuffix(), stage.formattedIndex(index),
+                cluster.getDomainName(), cluster.getPort()));
     }
 }

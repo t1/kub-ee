@@ -1,6 +1,5 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.gateway;
 
-import com.github.t1.metadeployer.gateway.DeployerGateway;
 import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import org.junit.Test;
 
@@ -25,8 +24,14 @@ public class DeployerGatewayIT {
     public void shouldFetchDeployables() throws Exception {
         List<Deployable> deployables = new DeployerGateway().fetchDeployablesOn(URI.create("http://localhost:8080"));
 
-        assertThat(deployables).containsOnly(
-                emptyChecksumDeployable("deployer"),
+        assertThat(deployables).contains(
+                Deployable.builder()
+                          .name("deployer")
+                          .groupId("com.github.t1")
+                          .artifactId("deployer")
+                          .type("war")
+                          .version("2.9.2~")
+                          .build(),
                 emptyChecksumDeployable("meta-deployer")
         );
     }

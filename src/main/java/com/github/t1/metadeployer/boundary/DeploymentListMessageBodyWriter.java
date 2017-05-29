@@ -96,7 +96,7 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                     out("        <tr>\n");
                     if (deploymentName.equals(deploymentNames.get(0)))
                         out("            <th class='cluster' rowspan='" + deploymentNames.size() + "'>"
-                                + cluster.getName()
+                                + cluster.getHost()
                                 + "</th>\n");
                     out("            <th class='service'>");
                     out(deploymentName);
@@ -150,7 +150,7 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {
-            return deployment.getCluster().getName().equals(cluster.getName());
+            return deployment.getCluster().getHost().equals(cluster.getHost());
         }
     }
 }

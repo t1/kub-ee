@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +17,7 @@ public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static Deployment emptyChecksumDeployment(String name) {
-        Cluster cluster = Cluster.builder().name("localhost").port(8080)
+        Cluster cluster = Cluster.builder().host("localhost").port(8080)
                                  .stage().name("PROD").count(1).prefix("").suffix("").add()
                                  .build();
         return Deployment.builder()
@@ -41,10 +41,7 @@ public class MetaDeployerIT {
                                        .get(String.class);
 
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
-        assertThat(list).contains(
-                emptyChecksumDeployment("deployer"),
-                emptyChecksumDeployment("meta-deployer")
-        );
+        assertThat(list).contains(emptyChecksumDeployment("meta-deployer"));
     }
 
     @Test
