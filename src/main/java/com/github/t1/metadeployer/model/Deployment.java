@@ -5,9 +5,7 @@ import lombok.*;
 @Value
 @Builder(toBuilder = true)
 public class Deployment {
-    Cluster cluster;
-    Stage stage;
-    int node;
+    ClusterNode clusterNode;
 
     String name;
     String groupId;
@@ -19,14 +17,9 @@ public class Deployment {
     @Override public String toString() {
         return "Deployment(" + name + ":" + type
                 + "|" + groupId + ":" + artifactId + ":" + version
-                + "|" + stage.getPrefix() + "`" + cluster.getHost() + "`" + stage.getSuffix() + ":" + cluster.getPort()
-                + "|" + stage.getName() + ":" + stage.getCount() + ":" + stage.getIndexLength() + ":" + node
+                + "|" + clusterNode
                 + (hasError() ? "" : "|error=" + error);
     }
 
     public boolean hasError() { return error != null && !error.isEmpty(); }
-
-    public boolean isOn(ClusterNode node) {
-        return cluster.equals(node.getCluster()) && stage.equals(node.getStage()) && this.node == node.getIndex();
-    }
 }

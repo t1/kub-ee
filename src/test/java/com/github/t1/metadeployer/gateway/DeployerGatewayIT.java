@@ -9,17 +9,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 public class DeployerGatewayIT {
-    public static Deployable emptyChecksumDeployable(String name) {
-        return Deployable.builder()
-                         .name(name)
-                         .groupId("unknown")
-                         .artifactId("unknown")
-                         .type("unknown")
-                         .version("unknown")
-                         .error("empty checksum")
-                         .build();
-    }
-
     @Test
     public void shouldFetchDeployables() throws Exception {
         List<Deployable> deployables = new DeployerGateway().fetchDeployablesOn(URI.create("http://localhost:8080"));
@@ -30,9 +19,16 @@ public class DeployerGatewayIT {
                           .groupId("com.github.t1")
                           .artifactId("deployer")
                           .type("war")
-                          .version("2.9.2~")
+                          .version("2.9.2")
                           .build(),
-                emptyChecksumDeployable("meta-deployer")
+                Deployable.builder()
+                          .name("meta-deployer")
+                          .groupId("unknown")
+                          .artifactId("unknown")
+                          .type("unknown")
+                          .version("unknown")
+                          .error("empty checksum")
+                          .build()
         );
     }
 }

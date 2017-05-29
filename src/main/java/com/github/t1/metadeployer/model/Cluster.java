@@ -21,6 +21,8 @@ public class Cluster {
 
     public Stream<Stage> stages() { return (stages == null) ? Stream.empty() : stages.stream(); }
 
+    public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
+
 
     public static List<Cluster> readAllFrom(YamlDocument document) {
         return document.mapping().map(ClusterBuilder::from).collect(toList());

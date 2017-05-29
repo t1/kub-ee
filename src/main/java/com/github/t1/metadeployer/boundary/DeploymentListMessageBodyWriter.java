@@ -1,7 +1,8 @@
 package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.metadeployer.model.*;
-import lombok.*;
+import lombok.RequiredArgsConstructor;
+import org.jsoup.nodes.*;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -11,8 +12,8 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
@@ -47,89 +48,97 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
     @RequiredArgsConstructor
     private class DeploymentsWriter {
         private final Writer out;
+        private Document html;
+        private Element table;
+        private List<Deployment> deployments;
+        private Collection<Stage> mergedStages;
+        private List<ClusterNode> mergedNodes;
 
-        @SneakyThrows(IOException.class) private void out(String str) { out.write(str); }
+        public void write(List<Deployment> deployments) throws IOException {
+            this.deployments = deployments;
+            this.mergedStages = mergedStages();
+            this.mergedNodes = mergedStages.stream().flatMap(Stage::nodes).collect(toList());
 
-        public void write(List<Deployment> deployments) {
             header();
-            body(deployments);
-            footer();
+            tableHeader();
+            tableBody();
+
+            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
+        }
+
+        private Collection<Stage> mergedStages() {
+            Map<String, Stage> map = new LinkedHashMap<>();
+            clusters.stream().flatMap(Cluster::stages)
+                    .map(this::copyNameCountLength)
+                    .forEach(stage -> map.merge(stage.getName(), stage, Stage::largerCount));
+            return map.values();
+        }
+
+        private Stage copyNameCountLength(Stage stage) {
+            return Stage.builder()
+                        .name(stage.getName())
+                        .count(stage.getCount())
+                        .indexLength(stage.getIndexLength())
+                        .build();
         }
 
         private void header() {
-            out("<!DOCTYPE html>\n"
-                    + "<html>\n"
-                    + "<head>\n"
-                    + "    <title>Meta-Deployer</title>\n"
-                    + "    <meta charset=\"utf-8\" />\n"
-                    + "    <link rel='stylesheet' href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\" />\n"
-                    + "</head>\n"
-                    + "<body>\n");
+            html = Document.createShell("");
+            html.title("Meta-Deployer");
+            html.charset(UTF_8);
+            html.head().appendElement("link")
+                .attr("rel", "stylesheet")
+                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
         }
 
-        private void footer() {
-            out("</body>\n"
-                    + "</html>\n");
+        private void tableHeader() {
+            table = html.body()
+                        .appendElement("div").addClass("table-responsive")
+                        .appendElement("table").addClass("table table-striped")
+                        .appendElement("tbody");
+            stagesHeader();
+            nodesHeader();
         }
 
-        private void body(List<Deployment> deployments) {
-            out(""
-                    + "<div class=\"table-responsive\">\n"
-                    + "    <table class=\"table table-striped service-table\">\n"
-                    + "        <tr>\n"
-                    + "            <th>Cluster</th>\n"
-                    + "            <th>Application</th>\n");
-            mergedStages().forEach(this::out);
-            out(""
-                    + "        </tr>\n"
-                    + "        <tr>\n"
-                    + "            <th></th>\n"
-                    + "            <th></th>\n");
-            clusters.stream().flatMap(Cluster::stages).forEach(
-                    stage -> stage.indexes().forEach(
-                            index -> out("            <th class=\"node\">" + stage.formattedIndex(index) + "</th>\n")));
-            out("        </tr>\n");
+        private void stagesHeader() {
+            Element row = table.appendElement("tr");
+            row.appendElement("th").text("Cluster");
+            row.appendElement("th").text("Application");
+            mergedStages.forEach(stage -> row.appendElement("th").attr("colspan", Integer.toString(stage.getCount()))
+                                             .text(stage.getName()));
+        }
 
+        private void nodesHeader() {
+            Element row = table.appendElement("tr");
+            row.appendElement("th");
+            row.appendElement("th");
+            mergedNodes.forEach(node -> row.appendElement("th").text(node.getStage().formattedIndex(node.getIndex())));
+        }
+
+        private void tableBody() {
             clusters.forEach(cluster -> {
-                List<String> deploymentNames = deploymentNames(deployments, cluster);
+                List<String> deploymentNames = deploymentNames(cluster);
                 deploymentNames.forEach(deploymentName -> {
-                    out("        <tr>\n");
+                    Element row = table.appendElement("tr");
                     if (deploymentName.equals(deploymentNames.get(0)))
-                        out("            <th class='cluster' rowspan='" + deploymentNames.size() + "'>"
-                                + cluster.getHost()
-                                + "</th>\n");
-                    out("            <th class='service'>");
-                    out(deploymentName);
-                    out("</th>\n");
+                        row.appendElement("th").attr("rowspan", Integer.toString(deploymentNames.size()))
+                           .text(cluster.getHost());
+                    row.appendElement("th").text(deploymentName);
 
-                    clusters.stream()
-                            .flatMap(Cluster::stages)
-                            .flatMap(stage -> stage.nodes(cluster))
-                            .map(node -> deployments
-                                    .stream()
-                                    .filter(deployment -> deployment.isOn(node))
-                                    .findAny()
-                                    .map(this::cell)
-                                    .orElse("-"))
-                            .forEach(cell -> out("            <td>" + cell + "</td>\n"));
-
-                    out("        </tr>\n");
+                    mergedNodes.stream()
+                               .map(n -> deployments
+                                       .stream()
+                                       .filter(deployment -> deployment.getName().equals(deploymentName))
+                                       .filter(deployment -> deployment.getClusterNode().matchStageNameAndIndex(n))
+                                       .findAny()
+                                       .map(this::cell)
+                                       .orElse("-"))
+                               .forEach(cell -> row.appendElement("td").text(cell));
                 });
             });
-
-            out("    </table>\n"
-                    + "</div>\n");
         }
 
-        private Stream<Stage> mergedStages() {
-            Map<String, Stage> map = new LinkedHashMap<>();
-            clusters.stream().flatMap(Cluster::stages).forEach(stage -> map.merge(stage.getName(),
-                    Stage.builder().name(stage.getName()).count(stage.getCount()).build(),
-                    (l, r) -> (l.getCount() > r.getCount()) ? l : r));
-            return map.values().stream();
-        }
-
-        private List<String> deploymentNames(List<Deployment> deployments, Cluster cluster) {
+        private List<String> deploymentNames(Cluster cluster) {
             List<String> deploymentNames = deployments
                     .stream()
                     .filter(deployment -> on(cluster, deployment))
@@ -141,16 +150,12 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
             return deploymentNames;
         }
 
-        private void out(Stage stage) {
-            out("            <th colspan=\"" + stage.getCount() + "\" class=\"stage\">" + stage.getName() + "</th>\n");
-        }
-
         private String cell(Deployment deployment) {
             return deployment.hasError() ? deployment.getError() : deployment.getVersion();
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {
-            return deployment.getCluster().getHost().equals(cluster.getHost());
+            return deployment.getClusterNode().getCluster().getHost().equals(cluster.getHost());
         }
     }
 }

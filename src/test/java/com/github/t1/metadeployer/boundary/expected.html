@@ -1,70 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Meta-Deployer</title>
-    <meta charset="utf-8" />
-    <link rel='stylesheet' href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
-</head>
-<body>
-<div class="table-responsive">
-    <table class="table table-striped service-table">
-        <tr>
-            <th>Cluster</th>
-            <th>Application</th>
-            <th colspan="2" class="stage">DEV</th>
-            <th colspan="1" class="stage">QA</th>
-            <th colspan="3" class="stage">PROD</th>
-            <th colspan="1" class="stage"></th>
-        </tr>
-        <tr>
-            <th></th>
-            <th></th>
-            <th class="node">01</th>
-            <th class="node"></th>
-            <th class="node">01</th>
-            <th class="node">02</th>
-            <th class="node">03</th>
-            <th class="node">1</th>
-            <th class="node">2</th>
-            <th class="node"></th>
-        </tr>
-        <tr>
-            <th class='cluster' rowspan='1'>my.boss</th>
-            <th class='service'>foo</th>
-            <td>1.2.5-SNAPSHOT</td>
-            <td>1.2.4</td>
-            <td>1.2.3</td>
-            <td>1.2.3</td>
-            <td>1.2.3</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-        </tr>
-        <tr>
-            <th class='cluster' rowspan='1'>other.boss</th>
-            <th class='service'>bar</th>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>error-hint</td>
-            <td>-</td>
-            <td>-</td>
-        </tr>
-        <tr>
-            <th class='cluster' rowspan='1'>third.boss</th>
-            <th class='service'>?</th>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-        </tr>
-    </table>
-</div>
-</body>
+ <head>
+  <title>Meta-Deployer</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+ </head>
+ <body>
+  <div class="table-responsive">
+   <table class="table table-striped">
+    <tbody>
+     <tr>
+      <th>Cluster</th>
+      <th>Application</th>
+      <th colspan="2">DEV</th>
+      <th colspan="1">QA</th>
+      <th colspan="3">PROD</th>
+      <th colspan="1"></th>
+     </tr>
+     <tr>
+      <th></th>
+      <th></th>
+      <th>01</th>
+      <th>02</th>
+      <th></th>
+      <th>01</th>
+      <th>02</th>
+      <th>03</th>
+      <th></th>
+     </tr>
+     <tr>
+      <th rowspan="1">my.boss</th>
+      <th>foo</th>
+      <td>1.2.5-SNAPSHOT</td>
+      <td>-</td>
+      <td>1.2.4</td>
+      <td>1.2.3</td>
+      <td>1.2.3</td>
+      <td>1.2.3</td>
+      <td>-</td>
+     </tr>
+     <tr>
+      <th rowspan="2">other.boss</th>
+      <th>bar</th>
+      <td>2.0.1</td>
+      <td>2.0.2</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+     </tr>
+     <tr>
+      <th>baz</th>
+      <td>-</td>
+      <td>error-hint</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+     </tr>
+     <tr>
+      <th rowspan="1">third.boss</th>
+      <th>?</th>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+ </body>
 </html>

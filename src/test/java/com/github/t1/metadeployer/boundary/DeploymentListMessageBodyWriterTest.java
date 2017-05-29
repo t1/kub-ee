@@ -25,28 +25,34 @@ public class DeploymentListMessageBodyWriterTest {
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        Cluster cluster0 = writer.clusters.get(0);
-        Stage stage0dev = cluster0.getStages().get(0);
-        Stage stage0qa = cluster0.getStages().get(1);
-        Stage stage0prod = cluster0.getStages().get(2);
+        Cluster my = writer.clusters.get(0);
+        ClusterNode my_dev_1 = my.getStages().get(0).index(my, 1);
+        ClusterNode my_qa_1 = my.getStages().get(1).index(my, 1);
+        ClusterNode my_prod_1 = my.getStages().get(2).index(my, 1);
+        ClusterNode my_prod_2 = my.getStages().get(2).index(my, 2);
+        ClusterNode my_prod_3 = my.getStages().get(2).index(my, 3);
 
-        Cluster cluster1 = writer.clusters.get(1);
-        Stage stage1dev = cluster1.getStages().get(0);
+        Cluster other = writer.clusters.get(1);
+        ClusterNode other_dev_1 = other.getStages().get(0).index(other, 1);
+        ClusterNode other_dev_2 = other.getStages().get(0).index(other, 2);
 
-        DeploymentBuilder foo = createDeployment("foo").cluster(cluster0);
-        DeploymentBuilder bar = createDeployment("bar").cluster(cluster1);
+        DeploymentBuilder foo = createDeployment("foo");
+        DeploymentBuilder bar = createDeployment("bar");
+        DeploymentBuilder baz = createDeployment("baz");
         List<Deployment> deployables = asList(
-                foo.version("1.2.5-SNAPSHOT").stage(stage0dev).node(1).build(),
-                foo.version("1.2.4").stage(stage0qa).node(1).build(),
-                foo.version("1.2.3").stage(stage0prod).node(1).build(),
-                foo.version("1.2.3").stage(stage0prod).node(2).build(),
-                foo.version("1.2.3").stage(stage0prod).node(3).build(),
-                bar.version("2.1.3").stage(stage1dev).node(1).error("error-hint").build());
+                foo.clusterNode(my_dev_1).version("1.2.5-SNAPSHOT").build(),
+                foo.clusterNode(my_qa_1).version("1.2.4").build(),
+                foo.clusterNode(my_prod_1).version("1.2.3").build(),
+                foo.clusterNode(my_prod_2).version("1.2.3").build(),
+                foo.clusterNode(my_prod_3).version("1.2.3").build(),
+                bar.clusterNode(other_dev_1).version("2.0.1").build(),
+                bar.clusterNode(other_dev_2).version("2.0.2").build(),
+                baz.clusterNode(other_dev_2).version("2.1.3").error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
-        assertThat(out.toString())
-                .isEqualTo(contentOf(DeploymentListMessageBodyWriterTest.class.getResource("expected.html")));
+        assertThat(out.toString()).isEqualTo(
+                contentOf(DeploymentListMessageBodyWriterTest.class.getResource("expected.html")).trim());
     }
 }

@@ -17,9 +17,13 @@ public class Stage {
     int count;
     int indexLength;
 
+    public Stream<ClusterNode> nodes() { return nodes(null); }
+
     public Stream<ClusterNode> nodes(Cluster cluster) {
-        return indexes().mapToObj(index -> new ClusterNode(cluster, this, index));
+        return indexes().mapToObj(index -> index(cluster, index));
     }
+
+    public ClusterNode index(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
 
     public IntStream indexes() { return IntStream.range(1, this.count + 1); }
 
@@ -27,6 +31,10 @@ public class Stage {
         return (indexLength == 0)
                 ? (count == 1) ? "" : Integer.toString(index)
                 : format("%0" + indexLength + "d", index);
+    }
+
+    public Stage largerCount(Stage other) {
+        return (getCount() > other.getCount()) ? this : other;
     }
 
 

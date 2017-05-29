@@ -37,9 +37,7 @@ public class Boundary {
         List<Deployable> deployables = fetchDeployablesFrom(node.uri());
         return deployables.stream().map(deployable ->
                 Deployment.builder()
-                          .cluster(node.getCluster())
-                          .stage(node.getStage())
-                          .node(node.getIndex())
+                          .clusterNode(node)
                           .name(deployable.getName())
                           .groupId(orUnknown(deployable.getGroupId()))
                           .artifactId(orUnknown(deployable.getArtifactId()))

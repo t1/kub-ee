@@ -16,7 +16,7 @@ public class ClusterTest {
                    .stage().name("PROD").prefix("").suffix("").count(3).indexLength(2).add()
                     .build(),
             Cluster.builder().host("other.boss").port(80)
-                   .stage().name("DEV").prefix("").suffix("").count(2).indexLength(0).add()
+                   .stage().name("DEV").prefix("").suffix("").count(2).indexLength(2).add()
                     .build(),
             Cluster.builder().host("third.boss").port(80)
                    .stage().name("").prefix("").suffix("").count(1).indexLength(0).add()
@@ -41,8 +41,8 @@ public class ClusterTest {
         Cluster cluster = CLUSTERS[0];
         Stream<URI> uris = cluster.stages().flatMap(stage -> stage.nodes(cluster)).map(ClusterNode::uri);
         assertThat(uris).containsOnly(
-                URI.create("http://mydev01.boss:8080"),
-                URI.create("http://qamy.boss:8080"),
+                URI.create("http://my" + "dev01.boss:8080"),
+                URI.create("http://qa" + "my.boss:8080"),
                 URI.create("http://my01.boss:8080"),
                 URI.create("http://my02.boss:8080"),
                 URI.create("http://my03.boss:8080")
