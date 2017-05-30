@@ -50,7 +50,7 @@ public class Stage {
             suffix(value.get("suffix").asStringOr(""));
             prefix(value.get("prefix").asStringOr(""));
             count(value.get("count").asIntOr(1));
-            indexLength(value.get("indexLength").asIntOr(0));
+            value.get("indexLength").ifPresent(node -> indexLength(node.asInt()));
             return this;
         }
 

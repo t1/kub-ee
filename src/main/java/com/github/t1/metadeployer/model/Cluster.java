@@ -47,6 +47,7 @@ public class Cluster {
 
     private static class ClusterBuilderContext {
         private Map<String, Slot> slots = new HashMap<>();
+        private int indexLength = 0;
 
         public Stream<Cluster> from(YamlEntry entry) {
             String key = entry.key().asString();
@@ -68,7 +69,7 @@ public class Cluster {
                 return Stream.of(builder()
                         .host(key)
                         .slot(slot)
-                        .readStages(entry.value())
+                        .readStages(entry.value(), indexLength)
                         .build());
             }
         }
@@ -80,6 +81,9 @@ public class Cluster {
                 String name = split[1];
                 slots.put(name, Slot.from(name, value.asMapping()));
                 break;
+            case "indexLength":
+                indexLength = value.asInt();
+                break;
             default:
                 log.warn("unknown config key '{}'", key);
             }
@@ -87,16 +91,12 @@ public class Cluster {
     }
 
     public static class ClusterBuilder {
-        private ClusterBuilder readStages(YamlNode stages) {
+        private ClusterBuilder readStages(YamlNode stages, int indexLength) {
             if (stages.isEmpty())
-                defaultStage().add();
+                stage().name("").prefix("").suffix("").count(1).indexLength(indexLength).add();
             else
-                stages.mapping().forEach(entry -> stage().read(entry).add());
+                stages.mapping().forEach(entry -> stage().indexLength(indexLength).read(entry).add());
             return this;
-        }
-
-        public StageBuilder defaultStage() {
-            return stage().name("").prefix("").suffix("").count(1).indexLength(0);
         }
 
         public StageBuilder stage() { return Stage.builder().clusterBuilder(this); }

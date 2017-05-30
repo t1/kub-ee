@@ -63,7 +63,7 @@ public class ClusterListMessageBodyWriterTest {
                 + "    <td> - </td> \n"
                 + "    <td> - </td> \n"
                 + "    <td> - </td> \n"
-                + "    <td> prefix: '' <br> suffix: '' <br> count: 1 <br> indexLength: 0 </td> \n"
+                + "    <td> prefix: '' <br> suffix: '' <br> count: 1 <br> indexLength: 2 </td> \n"
                 + "   </tr> \n"
                 + "  </tbody> \n"
                 + " </table> \n"

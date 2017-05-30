@@ -26,7 +26,7 @@ public class ClusterTest {
                    .stage().name("DEV").prefix("").suffix("").count(2).indexLength(2).add()
                     .build(),
             Cluster.builder().host("third.boss").slot(DEFAULT_SLOT)
-                   .stage().name("").prefix("").suffix("").count(1).indexLength(0).add()
+                   .stage().name("").prefix("").suffix("").count(1).indexLength(2).add()
                     .build()
     };
 
