@@ -3,6 +3,7 @@ package com.github.t1.metadeployer.tools.yaml;
 import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.*;
 
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.github.t1.metadeployer.tools.yaml.YamlMapping.*;
@@ -22,14 +23,24 @@ public class YamlNode {
 
     public boolean isEmpty() { return isNull() || (node.getNodeId() == scalar && asString().isEmpty()); }
 
+    public void ifPresent(Consumer<YamlNode> consumer) {
+        if (!isNull())
+            consumer.accept(this);
+    }
+
 
     public String asStringOr(String defaultValue) { return (node == null) ? defaultValue : asString(); }
-
-    public int asIntOr(int defaultValue) { return (node == null) ? defaultValue : Integer.parseInt(asString()); }
 
     public String asString() {
         assert node.getNodeId() == scalar : "expected " + scalar + " but got " + node.getNodeId();
         return ((ScalarNode) node).getValue();
+    }
+
+    public int asIntOr(int defaultValue) { return (node == null) ? defaultValue : asInt(); }
+
+    public int asInt() {
+        assert node != null;
+        return Integer.parseInt(asString());
     }
 
 

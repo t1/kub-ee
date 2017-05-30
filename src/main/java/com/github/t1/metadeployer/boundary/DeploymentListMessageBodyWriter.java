@@ -121,8 +121,9 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                 deploymentNames.forEach(deploymentName -> {
                     Element row = table.appendElement("tr");
                     if (deploymentName.equals(deploymentNames.get(0)))
-                        row.appendElement("th").attr("rowspan", Integer.toString(deploymentNames.size()))
-                           .text(cluster.getHost());
+                        row.appendElement("th")
+                           .attr("rowspan", Integer.toString(deploymentNames.size()))
+                           .text(cluster.hostAndSlot());
                     row.appendElement("th").text(deploymentName);
 
                     mergedNodes.stream()
@@ -155,7 +156,8 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {
-            return deployment.getClusterNode().getCluster().getHost().equals(cluster.getHost());
+            return deployment.getClusterNode().getCluster().getHost().equals(cluster.getHost())
+                    && Objects.equals(deployment.getSlotName(), cluster.getSlotName());
         }
     }
 }

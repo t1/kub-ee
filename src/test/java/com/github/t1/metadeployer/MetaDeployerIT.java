@@ -9,13 +9,14 @@ import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
+import static com.github.t1.metadeployer.model.ClusterTest.*;
 import static javax.ws.rs.core.MediaType.*;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
 
 public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Cluster CLUSTER = Cluster.builder().host("localhost").port(8080)
+    private static final Cluster CLUSTER = Cluster.builder().host("localhost").slot(SLOT_0)
                                                   .stage().name("PROD").count(1).prefix("").suffix("").add()
                                                   .build();
     private static final WebTarget META_DEPLOYER =
@@ -27,7 +28,7 @@ public class MetaDeployerIT {
 
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
-        assertThat(list).contains(Deployment.builder()
+        Deployment expected = Deployment.builder()
                                             .groupId("unknown")
                                             .artifactId("unknown")
                                             .type("unknown")
@@ -35,7 +36,8 @@ public class MetaDeployerIT {
                                             .clusterNode(new ClusterNode(CLUSTER, CLUSTER.getStages().get(0), 1))
                                             .name("meta-deployer")
                                             .error("empty checksum")
-                                            .build());
+                                            .build();
+        assertThat(list).contains(expected);
     }
 
     @Test

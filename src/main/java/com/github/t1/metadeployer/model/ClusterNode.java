@@ -13,13 +13,14 @@ public class ClusterNode {
     int index;
 
     @Override public String toString() {
-        return ((cluster == null) ? "" : cluster.getHost()) + ":" + stage.getName() + ":" + index;
+        return ((cluster == null) ? "" : cluster.getHost() + ":slot-" + cluster.getSlot().getName())
+                + ":" + stage.getName() + ":node-" + index;
     }
 
     public URI uri() {
         return URI.create(format("http://%s%s%s%s.%s:%d",
                 stage.getPrefix(), cluster.getSimpleName(), stage.getSuffix(), stage.formattedIndex(index),
-                cluster.getDomainName(), cluster.getPort()));
+                cluster.getDomainName(), cluster.getSlot().getHttp()));
     }
 
     public boolean matchStageNameAndIndex(ClusterNode that) {

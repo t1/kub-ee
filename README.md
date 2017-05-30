@@ -1,5 +1,7 @@
 # Meta-Deployer
 
+Manage the applications on multiple Java EE clusters.
+
 ## User Journey
 
 * Tom is responsible for a pool of JBoss machines and the applications running there.
@@ -27,7 +29,7 @@
 ## New Requirements For The Deployer
 
 * Report to meta-deployer:
-  * Maybe Web-Sockets to push audits
+  * Web-Sockets to push audits
   * Load Metrics; by app & total
   * Put root bundle
 * Deployables _containing_ config bundle, or matching config bundle GAV with classifier `bundle`.

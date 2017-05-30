@@ -3,6 +3,7 @@ package com.github.t1.metadeployer.boundary;
 import com.github.t1.metadeployer.gateway.DeployerGateway;
 import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import com.github.t1.metadeployer.model.*;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
+@Slf4j
 @Path("/")
 @Stateless
 public class Boundary {
@@ -34,25 +36,32 @@ public class Boundary {
     }
 
     private Stream<Deployment> fetch(ClusterNode node) {
-        List<Deployable> deployables = fetchDeployablesFrom(node.uri());
-        return deployables.stream().map(deployable ->
-                Deployment.builder()
-                          .clusterNode(node)
-                          .name(deployable.getName())
-                          .groupId(orUnknown(deployable.getGroupId()))
-                          .artifactId(orUnknown(deployable.getArtifactId()))
-                          .version(orUnknown(deployable.getVersion()))
-                          .type(orUnknown(deployable.getType()))
-                          .error(deployable.getError())
-                          .build());
+        List<Deployable> deployables = fetchDeployablesFrom(node);
+        //noinspection unchecked
+        log.debug("fetched deployables from {}:", node);
+        return deployables.stream()
+                          .peek(deployable -> log.debug("  - {}", deployable.getName()))
+                          .map(deployable ->
+                                  Deployment.builder()
+                                            .clusterNode(node)
+                                            .name(deployable.getName())
+                                            .groupId(orUnknown(deployable.getGroupId()))
+                                            .artifactId(orUnknown(deployable.getArtifactId()))
+                                            .version(orUnknown(deployable.getVersion()))
+                                            .type(orUnknown(deployable.getType()))
+                                            .error(deployable.getError())
+                                            .build());
     }
 
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 
-    private List<Deployable> fetchDeployablesFrom(URI uri) {
+    private List<Deployable> fetchDeployablesFrom(ClusterNode node) {
+        URI uri = node.uri();
         try {
             return deployer.fetchDeployablesOn(uri);
         } catch (Exception e) {
+            String error = errorString(e);
+            log.debug("deployer not found on {}: {}: {}", node, uri, error);
             return singletonList(Deployable
                     .builder()
                     .name("deployer not found")
@@ -60,7 +69,7 @@ public class Boundary {
                     .artifactId("unknown")
                     .type("unknown")
                     .version("unknown")
-                    .error(errorString(e))
+                    .error(error)
                     .build());
         }
     }
@@ -70,6 +79,7 @@ public class Boundary {
             e = e.getCause();
         String out = e.toString();
         while (out.startsWith(ExecutionException.class.getName() + ": ")
+                || out.startsWith(ConnectException.class.getName() + ": ")
                 || out.startsWith(RuntimeException.class.getName() + ": "))
             out = out.substring(out.indexOf(": ") + 2);
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))

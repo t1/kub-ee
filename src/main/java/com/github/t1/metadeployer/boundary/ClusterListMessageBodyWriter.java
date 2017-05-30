@@ -86,7 +86,7 @@ public class ClusterListMessageBodyWriter implements MessageBodyWriter<List<Clus
 
         private void clusterRow(Cluster cluster) {
             Element row = table.appendElement("tr");
-            row.appendElement("th").text(cluster.getHost() + ":" + cluster.getPort());
+            row.appendElement("th").text(cluster.hostAndSlot());
             stage(cluster).forEach(s -> row.appendElement("td").append(s));
         }
 

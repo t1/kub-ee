@@ -1,18 +1,29 @@
-my.boss:
-  port: 8080
-  stages:
-    DEV:
-      suffix: dev
-      count: 1
-      indexLength: 2
-    QA:
-      prefix: qa
-    PROD:
-      count: 3
-      indexLength: 2
+# TODO pull `indexLength` to root level meta-config
+# TODO pull `prefix` & `suffix` & `count` to stage level meta-config
+# TODO pull `DEV.prefix` & `DEV.suffix` & `DEV.count` to root level meta-config
+# TODO pull `port` to root level meta-config
+:slot:0:
+  http: 8080
+  https: 8443
+:slot:1:
+  http: 8180
+  https: 8543
+my.boss:0:
+  DEV:
+    suffix: dev
+    count: 1
+    indexLength: 2
+  QA:
+    prefix: qa
+  PROD:
+    count: 3
+    indexLength: 2
 other.boss:
-  stages:
-    DEV:
-      count: 2
-      indexLength: 2
+  DEV:
+    count: 2
+    indexLength: 2
+other.boss:1:
+  DEV:
+    count: 2
+    indexLength: 2
 third.boss:

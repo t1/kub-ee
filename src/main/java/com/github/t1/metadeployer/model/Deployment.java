@@ -1,5 +1,6 @@
 package com.github.t1.metadeployer.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 @Value
@@ -18,8 +19,11 @@ public class Deployment {
         return "Deployment(" + name + ":" + type
                 + "|" + groupId + ":" + artifactId + ":" + version
                 + "|" + clusterNode
-                + (hasError() ? "" : "|error=" + error);
+                + (hasError() ? "" : "|error=" + error)
+                + ")";
     }
 
     public boolean hasError() { return error != null && !error.isEmpty(); }
+
+    @JsonIgnore public String getSlotName() { return clusterNode.getCluster().getSlot().getName(); }
 }
