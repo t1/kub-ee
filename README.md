@@ -33,8 +33,3 @@ Manage the applications on multiple Java EE clusters.
   * Load Metrics; by app & total
   * Put root bundle
 * Deployables _containing_ config bundle, or matching config bundle GAV with classifier `bundle`.
-
-## Links
-
-* [Drag&Drop Sample](https://mdn.github.io/dom-examples/drag-and-drop/copy-move-DataTransfer.html)
-* [Drag&Drop API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)

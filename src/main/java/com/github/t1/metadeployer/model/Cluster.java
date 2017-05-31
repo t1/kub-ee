@@ -39,7 +39,7 @@ public class Cluster {
 
     private String[] hostSplit() { return host.split("\\.", 2); }
 
-    public String hostAndSlot() { return host + ((slot.getName() == null) ? "" : ":" + slot.getName()); }
+    public String id() { return getSimpleName() + ((slot.getName() == null) ? "" : ":" + slot.getName()); }
 
     @JsonIgnore
     public String getSlotName() { return slot.getName(); }

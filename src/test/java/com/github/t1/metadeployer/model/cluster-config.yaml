@@ -1,6 +1,5 @@
 # TODO pull `prefix` & `suffix` & `count` to stage level meta-config
 # TODO pull `DEV.prefix` & `DEV.suffix` & `DEV.count` to root level meta-config
-# TODO pull `port` to root level meta-config
 :indexLength: 2
 :slot:0:
   http: 8080

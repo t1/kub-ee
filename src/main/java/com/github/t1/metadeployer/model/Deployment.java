@@ -26,4 +26,6 @@ public class Deployment {
     public boolean hasError() { return error != null && !error.isEmpty(); }
 
     @JsonIgnore public String getSlotName() { return clusterNode.getCluster().getSlot().getName(); }
+
+    public String id() { return clusterNode.id() + ":" + name; }
 }

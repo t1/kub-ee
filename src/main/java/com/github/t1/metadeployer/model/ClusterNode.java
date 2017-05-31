@@ -26,4 +26,6 @@ public class ClusterNode {
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;
     }
+
+    public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
 }

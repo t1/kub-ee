@@ -64,11 +64,11 @@ public class Boundary {
             log.debug("deployer not found on {}: {}: {}", node, uri, error);
             return singletonList(Deployable
                     .builder()
-                    .name("deployer not found")
-                    .groupId("unknown")
-                    .artifactId("unknown")
-                    .type("unknown")
-                    .version("unknown")
+                    .name("-")
+                    .groupId("-")
+                    .artifactId("-")
+                    .type("-")
+                    .version("-")
                     .error(error)
                     .build());
         }
@@ -86,6 +86,8 @@ public class Boundary {
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
         if (out.startsWith(UnknownHostException.class.getName() + ": "))
             out = "unknown host: " + out.substring(out.indexOf(": ") + 2);
+        if (out.equals("Connection refused (Connection refused)"))
+            out = "connection refused";
         return out;
     }
 
