@@ -36,21 +36,20 @@ public class Boundary {
     }
 
     private Stream<Deployment> fetch(ClusterNode node) {
-        List<Deployable> deployables = fetchDeployablesFrom(node);
-        //noinspection unchecked
-        log.debug("fetched deployables from {}:", node);
-        return deployables.stream()
-                          .peek(deployable -> log.debug("  - {}", deployable.getName()))
-                          .map(deployable ->
-                                  Deployment.builder()
-                                            .clusterNode(node)
-                                            .name(deployable.getName())
-                                            .groupId(orUnknown(deployable.getGroupId()))
-                                            .artifactId(orUnknown(deployable.getArtifactId()))
-                                            .version(orUnknown(deployable.getVersion()))
-                                            .type(orUnknown(deployable.getType()))
-                                            .error(deployable.getError())
-                                            .build());
+        log.debug("fetch deployables from {}:", node);
+        return fetchDeployablesFrom(node)
+                .stream()
+                .peek(deployable -> log.debug("  - {}", deployable.getName()))
+                .map(deployable ->
+                        Deployment.builder()
+                                  .clusterNode(node)
+                                  .name(deployable.getName())
+                                  .groupId(orUnknown(deployable.getGroupId()))
+                                  .artifactId(orUnknown(deployable.getArtifactId()))
+                                  .version(orUnknown(deployable.getVersion()))
+                                  .type(orUnknown(deployable.getType()))
+                                  .error(deployable.getError())
+                                  .build());
     }
 
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }

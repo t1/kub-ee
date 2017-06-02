@@ -20,7 +20,7 @@ public class MetaDeployerIT {
                                                   .stage().name("PROD").count(1).prefix("").suffix("").add()
                                                   .build();
     private static final WebTarget META_DEPLOYER =
-            ClientBuilder.newClient().target("http://localhost:8080/meta-deployer");
+            ClientBuilder.newClient().target("http://localhost:8080/meta-deployer/api");
 
     @Test
     public void shouldGetAsJson() throws Exception {
@@ -46,7 +46,7 @@ public class MetaDeployerIT {
 
         assertThat(response.getStatusInfo()).isEqualTo(OK);
         assertThat(response.readEntity(String.class))
-                .contains("<th colspan=\"3\">PROD</th>")
-                .contains("<th>meta-deployer</th>");
+                .contains("<th class=\"stage\" colspan=\"3\">PROD</th>")
+                .contains("<th class=\"app\">meta-deployer</th>");
     }
 }

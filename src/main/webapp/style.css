@@ -1,0 +1,32 @@
+@CHARSET "UTF-8";
+
+body {
+    font-size: 16px;
+}
+
+.table > thead > tr > th,
+.table > tbody > tr > th,
+.table > tfoot > tr > th,
+.table > thead > tr > td,
+.table > tbody > tr > td,
+.table > tfoot > tr > td {
+    padding: 2px;
+    text-align: center;
+}
+
+.table th.cluster {
+    width: 20pt;
+    text-align: left;
+}
+
+.table th.app {
+    width: 20pt;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table th.stage {
+    font-weight: bold;
+    border-left: 1px solid gray;
+    border-right: 1px solid gray;
+}

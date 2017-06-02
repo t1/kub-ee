@@ -71,8 +71,7 @@ public class DeployerGateway {
                 .target(uri)
                 .request()
                 .accept(APPLICATION_YAML_TYPE)
-                .buildGet()
-                .invoke();
+                .get();
     }
 
     @SneakyThrows(IOException.class)
