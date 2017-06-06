@@ -1,0 +1,48 @@
+:slot:0:
+  http: 8080
+  https: 8443
+:slot:1:
+  http: 8180
+  https: 8543
+:slot:2:
+  http: 8280
+  https: 8643
+accappboss.server.lan:1:
+  DEV:
+    suffix: dev
+    count: 2
+    indexLength: 2
+  AC1:
+    prefix: ac1
+    count: 2
+    indexLength: 2
+  PROD:
+    count: 3
+    indexLength: 2
+accappboss.server.lan:2:
+  DEV:
+    suffix: dev
+    count: 2
+    indexLength: 2
+  AC1:
+    prefix: ac1
+    count: 2
+    indexLength: 2
+  PROD:
+    count: 3
+    indexLength: 2
+accmibboss.server.lan:2:
+  DEV:
+    suffix: test
+    count: 2
+    indexLength: 2
+  AC1:
+    prefix: ac1
+    count: 2
+    indexLength: 2
+  PROD:
+    count: 3
+    indexLength: 2
+localhost:0:
+  PROD:
+    count: 1

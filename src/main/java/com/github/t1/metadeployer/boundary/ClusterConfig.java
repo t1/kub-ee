@@ -15,7 +15,10 @@ public class ClusterConfig {
     @Produces public List<Cluster> clusters() { return clusters; }
 
     @PostConstruct void read() {
-        Path path = Paths.get(System.getProperty("jboss.server.config.dir"), "cluster-config.yaml");
+        String root = System.getProperty("jboss.server.config.dir");
+        if (root == null)
+            root = System.getProperty("user.dir");
+        Path path = Paths.get(root, "cluster-config.yaml");
         try (InputStream stream = Files.newInputStream(path)) {
             readFrom(stream);
         } catch (IOException e) {

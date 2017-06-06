@@ -1,3 +1,5 @@
+// see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+
 function drag_start(ev) {
     ev.currentTarget.style.border = "dashed";
     ev.dataTransfer.setData("text", ev.target.id);
@@ -17,6 +19,12 @@ function drag_leave(ev) {
     ev.currentTarget.style.background = null;
 }
 
+function drag_end(ev) {
+    ev.preventDefault();
+    ev.target.style.border = null;
+    ev.dataTransfer.clearData();
+}
+
 function drop_handler(ev) {
     ev.preventDefault();
     var id = ev.dataTransfer.getData("text");
@@ -29,10 +37,4 @@ function drop_handler(ev) {
         console.log("move " + id + "->" + ev.target.id);
         ev.target.appendChild(document.getElementById(id));
     }
-}
-
-function drag_end(ev) {
-    ev.preventDefault();
-    ev.target.style.border = null;
-    ev.dataTransfer.clearData();
 }

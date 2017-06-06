@@ -78,13 +78,14 @@ public class DeployerGateway {
     private List<Deployable> convert(URI uri, Response response) {
         try {
             String contentType = response.getHeaderString("Content-Type");
-            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
-                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE + " but got " + contentType);
             String string = response.readEntity(String.class);
             if (response.getStatusInfo() == NOT_FOUND)
                 throw new DeployerNotFoundException();
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw new RuntimeException(response.getStatusInfo() + " on " + uri);
+                throw new RuntimeException(response.getStatusInfo() + " on " + uri + ": " + string);
+            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
+                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
+                        + " but got " + contentType + ": " + string);
             return YAML.readValue(string, Plan.class)
                        .getDeployables()
                        .entrySet()
