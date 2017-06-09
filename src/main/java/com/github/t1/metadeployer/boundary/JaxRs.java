@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer;
+package com.github.t1.metadeployer.boundary;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;

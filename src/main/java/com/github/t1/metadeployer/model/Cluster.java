@@ -1,7 +1,7 @@
 package com.github.t1.metadeployer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.github.t1.metadeployer.model.Stage.StageBuilder;
+import com.github.t1.metadeployer.model.Stage.*;
 import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static com.github.t1.metadeployer.model.Slot.*;
+import static com.github.t1.metadeployer.model.Stage.*;
 import static java.util.stream.Collectors.*;
 
 @Slf4j
@@ -44,6 +45,28 @@ public class Cluster {
     @JsonIgnore
     public String getSlotName() { return slot.getName(); }
 
+    public String toYaml() {
+        StringBuilder out = new StringBuilder();
+        out.append(":slot:").append(slot.getName()).append(":\n");
+        if (slot.getHttp() > 0)
+            out.append("  http: ").append(slot.getHttp()).append("\n");
+        if (slot.getHttps() > 0)
+            out.append("  https: ").append(slot.getHttps()).append("\n");
+        out.append(host).append(":").append(slot.getName()).append(":\n");
+        stages().forEach(stage -> {
+            out.append("  ").append(stage.getName()).append(":\n");
+            if (!stage.getPrefix().isEmpty())
+                out.append("    prefix: ").append(stage.getPrefix()).append("\n");
+            if (!stage.getSuffix().isEmpty())
+                out.append("    suffix: ").append(stage.getSuffix()).append("\n");
+            if (stage.getIndexLength() > 0)
+                out.append("    indexLength: ").append(stage.getIndexLength()).append("\n");
+            out.append("    count: ").append(stage.getCount()).append("\n");
+            if (!stage.getDeployerPath().equals(DEFAULT_DEPLOYER_PATH))
+                out.append("    deployerPath: ").append(stage.getDeployerPath()).append("\n");
+        });
+        return out.toString();
+    }
 
     private static class ClusterBuilderContext {
         private Map<String, Slot> slots = new HashMap<>();

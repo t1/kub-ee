@@ -55,7 +55,7 @@ public class Boundary {
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 
     private List<Deployable> fetchDeployablesFrom(ClusterNode node) {
-        URI uri = node.uri();
+        URI uri = node.deployerUri();
         try {
             return deployer.fetchDeployablesOn(uri);
         } catch (Exception e) {

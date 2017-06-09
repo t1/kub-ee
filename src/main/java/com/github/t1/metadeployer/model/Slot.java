@@ -4,15 +4,17 @@ import com.github.t1.metadeployer.tools.yaml.YamlMapping;
 import lombok.*;
 
 @Value
-@Builder
+@Builder(builderMethodName = "internal_builder")
 public class Slot {
     public static final int DEFAULT_HTTP_PORT = 80;
     public static final int DEFAULT_HTTPS_PORT = 443;
 
-    public static final Slot DEFAULT_SLOT = Slot.builder().http(DEFAULT_HTTP_PORT).https(DEFAULT_HTTPS_PORT).build();
+    public static final Slot DEFAULT_SLOT = Slot.builder().build();
 
     String name;
     int http, https;
+
+    public static SlotBuilder builder() { return internal_builder().http(DEFAULT_HTTP_PORT).https(DEFAULT_HTTPS_PORT); }
 
     public static Slot from(String name, YamlMapping value) {
         return builder()

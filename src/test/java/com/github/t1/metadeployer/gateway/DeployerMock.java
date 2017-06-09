@@ -3,7 +3,7 @@ package com.github.t1.metadeployer.gateway;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
-@Path("/deployer")
+@Path("/")
 public class DeployerMock {
     @GET public Response get() {
         return Response.ok(""

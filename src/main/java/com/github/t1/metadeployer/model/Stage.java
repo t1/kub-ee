@@ -11,9 +11,12 @@ import static java.lang.String.*;
 @Value
 @Builder
 public class Stage {
+    public static final String DEFAULT_DEPLOYER_PATH = "deployer";
+
     String name;
     String prefix;
     String suffix;
+    String deployerPath;
     int count;
     int indexLength;
 
@@ -33,12 +36,11 @@ public class Stage {
                 : format("%0" + indexLength + "d", index);
     }
 
-    public Stage largerCount(Stage other) {
-        return (getCount() > other.getCount()) ? this : other;
-    }
+    public Stage largerCount(Stage other) { return (getCount() > other.getCount()) ? this : other; }
 
 
     public static class StageBuilder {
+        private String deployerPath = DEFAULT_DEPLOYER_PATH;
         private ClusterBuilder clusterBuilder;
 
         StageBuilder read(YamlEntry entry) {
@@ -51,6 +53,7 @@ public class Stage {
             prefix(value.get("prefix").asStringOr(""));
             count(value.get("count").asIntOr(1));
             value.get("indexLength").ifPresent(node -> indexLength(node.asInt()));
+            value.get("deployerPath").ifPresent(node -> deployerPath(node.asString()));
             return this;
         }
 

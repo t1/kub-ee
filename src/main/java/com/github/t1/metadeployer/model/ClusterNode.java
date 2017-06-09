@@ -2,6 +2,7 @@ package com.github.t1.metadeployer.model;
 
 import lombok.Value;
 
+import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 import static java.lang.String.*;
@@ -14,8 +15,10 @@ public class ClusterNode {
 
     @Override public String toString() {
         return ((cluster == null) ? "" : cluster.getHost() + ":slot-" + cluster.getSlot().getName())
-                + ":" + stage.getName() + ":node-" + index;
+                + ":" + stage.getName() + ":" + stage.getDeployerPath() + ":node-" + index;
     }
+
+    public URI deployerUri() { return UriBuilder.fromUri(uri()).path("/" + stage.getDeployerPath()).build(); }
 
     public URI uri() {
         return URI.create(format("http://%s%s%s%s.%s:%d",

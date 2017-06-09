@@ -61,10 +61,7 @@ public class DeployerGateway {
 
     private final Client httpClient = ClientBuilder.newClient();
 
-    public List<Deployable> fetchDeployablesOn(URI uri) {
-        uri = UriBuilder.fromUri(uri).path("/deployer").build();
-        return convert(uri, from(uri));
-    }
+    public List<Deployable> fetchDeployablesOn(URI uri) { return convert(uri, from(uri)); }
 
     private Response from(URI uri) {
         return httpClient
@@ -79,10 +76,10 @@ public class DeployerGateway {
         try {
             String contentType = response.getHeaderString("Content-Type");
             String string = response.readEntity(String.class);
-            if (response.getStatusInfo() == NOT_FOUND)
+            if (NOT_FOUND.getStatusCode() == response.getStatus())
                 throw new DeployerNotFoundException();
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw new RuntimeException(response.getStatusInfo() + " on " + uri + ": " + string);
+                throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
                 throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
                         + " but got " + contentType + ": " + string);
@@ -96,6 +93,8 @@ public class DeployerGateway {
             response.close();
         }
     }
+
+    private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
 
     private Deployable flatten(Map.Entry<String, Deployable> entry) {
         Deployable deployable = entry.getValue();

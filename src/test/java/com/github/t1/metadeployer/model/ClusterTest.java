@@ -15,9 +15,9 @@ public class ClusterTest {
 
     private static final Cluster[] CLUSTERS = {
             Cluster.builder().host("my.boss").slot(SLOT_0)
-                   .stage().name("DEV").prefix("").suffix("dev").count(1).indexLength(2).add()
-                   .stage().name("QA").prefix("qa").suffix("").count(1).indexLength(0).add()
-                   .stage().name("PROD").prefix("").suffix("").count(3).indexLength(2).add()
+                   .stage().name("DEV").prefix("").suffix("dev").indexLength(2).count(1).add()
+                   .stage().name("QA").prefix("qa").suffix("").indexLength(0).count(1).add()
+                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3).add()
                     .build(),
             Cluster.builder().host("other.boss").slot(DEFAULT_SLOT)
                    .stage().name("DEV").prefix("").suffix("").count(2).indexLength(2).add()
