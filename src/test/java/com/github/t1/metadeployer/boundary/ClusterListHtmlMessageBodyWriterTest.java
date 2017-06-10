@@ -27,7 +27,8 @@ public class ClusterListHtmlMessageBodyWriterTest {
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
                 .containsOnly("http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
-        assertThat(html.body().html()).isEqualTo("<div class=\"table-responsive\"> \n"
+        assertThat(html.body().html()).isEqualTo(""
+                + "<div class=\"table-responsive\"> \n"
                 + " <table class=\"table table-striped\"> \n"
                 + "  <tbody> \n"
                 + "   <tr> \n"

@@ -59,8 +59,8 @@ public class MetaDeployerIT {
         String response = metaDeployer().request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("{"
-                + "\"clusters\":\"/clusters\","
-                + "\"applications\":\"/applications\""
+                + "\"clusters\":\"http://localhost:8080/api/clusters\","
+                + "\"applications\":\"http://localhost:8080/api/applications\""
                 + "}");
     }
 

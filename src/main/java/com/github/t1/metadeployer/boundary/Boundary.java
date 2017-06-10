@@ -27,9 +27,13 @@ public class Boundary {
 
     @GET public Map<String, URI> getLinks(@Context UriInfo uriInfo) {
         Map<String, URI> map = new LinkedHashMap<>();
-        map.put("clusters", UriBuilder.fromMethod(Boundary.class, "getClusters").build());
-        map.put("applications", UriBuilder.fromMethod(Boundary.class, "getApplications").build());
+        map.put("clusters", linkForMethod(uriInfo, "getClusters"));
+        map.put("applications", linkForMethod(uriInfo, "getApplications"));
         return map;
+    }
+
+    private URI linkForMethod(@Context UriInfo uriInfo, String method) {
+        return uriInfo.getBaseUriBuilder().path(Boundary.class, method).build();
     }
 
     @Path("/clusters")
