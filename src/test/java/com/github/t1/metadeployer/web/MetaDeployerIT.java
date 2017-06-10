@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.*;
 @RunWith(OrderedJUnitRunner.class)
 public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final WebDriverRule driver = new WebDriverRule();
+
     private static Cluster CLUSTER;
 
     private static final String CLUSTER_CONFIG = "target/meta-deployer-it-cluster-config.yaml";
@@ -34,6 +36,8 @@ public class MetaDeployerIT {
     @ClassRule public static WildflySwarmTestRule master = new WildflySwarmTestRule()
             .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG);
 
+    private static ApplicationsPage applications;
+
     @BeforeClass @SneakyThrows public static void setup() {
         CLUSTER = Cluster.builder()
                          .host(worker.baseUri().getHost())
@@ -42,9 +46,9 @@ public class MetaDeployerIT {
                          .build();
         Files.write(Paths.get(CLUSTER_CONFIG), CLUSTER.toYaml().getBytes());
         master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
+        applications = new ApplicationsPage(driver, master.baseUri().resolve("/api"));
     }
 
-    // @ClassRule public static final WebDriverRule driver = Pages.driver;
 
     private WebTarget metaDeployer() { return ClientBuilder.newClient().target(master.baseUri()).path("/api"); }
 
@@ -73,5 +77,12 @@ public class MetaDeployerIT {
         assertThat(response.readEntity(String.class))
                 .contains("<th class=\"stage\" colspan=\"1\">PROD</th>")
                 .contains("<th class=\"app\">dummy</th>");
+    }
+
+    @Test
+    public void shouldGetApplications() throws Exception {
+        applications.navigateTo();
+
+        applications.assertOpen();
     }
 }
