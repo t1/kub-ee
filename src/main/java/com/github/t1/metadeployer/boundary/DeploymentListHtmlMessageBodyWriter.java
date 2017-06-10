@@ -168,10 +168,10 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                     .attr("draggable", "true")
                     .attr("ondragstart", "drag_start(event);")
                     .attr("ondragend", "drag_end(event);")
-                    .attr("ondrop", "drop_handler(event);")
                     .attr("ondragenter", "drag_enter(event);")
                     .attr("ondragover", "drag_over(event);")
                     .attr("ondragleave", "drag_leave(event);")
+                    .attr("ondrop", "drop_handler(event);")
                     .text(deployment.hasError() ? deployment.getError() : deployment.getVersion());
         }
 
