@@ -7,6 +7,9 @@ import java.net.URI;
 
 import static java.lang.String.*;
 
+/**
+ * A JVM, i.e. one node of one stage of a cluster
+ */
 @Value
 public class ClusterNode {
     Cluster cluster;
@@ -15,10 +18,10 @@ public class ClusterNode {
 
     @Override public String toString() {
         return ((cluster == null) ? "" : cluster.getHost() + ":slot-" + cluster.getSlot().getName())
-                + ":" + stage.getName() + ":" + stage.getDeployerPath() + ":node-" + index;
+                + ":" + stage.getName() + ":" + stage.getPath() + ":node-" + index;
     }
 
-    public URI deployerUri() { return UriBuilder.fromUri(uri()).path("/" + stage.getDeployerPath()).build(); }
+    public URI deployerUri() { return UriBuilder.fromUri(uri()).path("/" + stage.getPath()).build(); }
 
     public URI uri() {
         return URI.create(format("http://%s%s%s%s.%s:%d",

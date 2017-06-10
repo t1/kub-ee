@@ -19,7 +19,7 @@ import static javax.ws.rs.core.MediaType.*;
 
 @Provider
 @Produces(TEXT_HTML)
-public class ClusterListMessageBodyWriter implements MessageBodyWriter<List<Cluster>> {
+public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<Cluster>> {
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return genericType instanceof ParameterizedType

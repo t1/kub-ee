@@ -11,20 +11,29 @@ import static java.lang.String.*;
 @Value
 @Builder
 public class Stage {
-    public static final String DEFAULT_DEPLOYER_PATH = "deployer";
+    public static final String DEFAULT_PATH = "deployer";
 
+    /** a logical name for the stage, such as 'DEV' or 'PROD' */
     String name;
+
+    /** prefix to host names in this stage */
     String prefix;
+    /** suffix to host names in this stage */
     String suffix;
-    String deployerPath;
+
+    /** The path to 'The Deployer' used to fetch the deployed applications */
+    String path;
+
+    /** The number of nodes on this stage */
     int count;
+
+    /** The digits used for the host names on this stage, i.e. 2 would result in a host name `...01` */
     int indexLength;
+
 
     public Stream<ClusterNode> nodes() { return nodes(null); }
 
-    public Stream<ClusterNode> nodes(Cluster cluster) {
-        return indexes().mapToObj(index -> index(cluster, index));
-    }
+    public Stream<ClusterNode> nodes(Cluster cluster) { return indexes().mapToObj(index -> index(cluster, index)); }
 
     public ClusterNode index(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
 
@@ -40,7 +49,7 @@ public class Stage {
 
 
     public static class StageBuilder {
-        private String deployerPath = DEFAULT_DEPLOYER_PATH;
+        private String path = DEFAULT_PATH;
         private ClusterBuilder clusterBuilder;
 
         StageBuilder read(YamlEntry entry) {
@@ -53,7 +62,7 @@ public class Stage {
             prefix(value.get("prefix").asStringOr(""));
             count(value.get("count").asIntOr(1));
             value.get("indexLength").ifPresent(node -> indexLength(node.asInt()));
-            value.get("deployerPath").ifPresent(node -> deployerPath(node.asString()));
+            value.get("path").ifPresent(node -> path(node.asString()));
             return this;
         }
 

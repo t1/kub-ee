@@ -13,6 +13,9 @@ import static com.github.t1.metadeployer.model.Slot.*;
 import static com.github.t1.metadeployer.model.Stage.*;
 import static java.util.stream.Collectors.*;
 
+/**
+ * A set of slots on slots and machines, forming one physical cluster per stage.
+ */
 @Slf4j
 @Value
 @Builder
@@ -62,8 +65,8 @@ public class Cluster {
             if (stage.getIndexLength() > 0)
                 out.append("    indexLength: ").append(stage.getIndexLength()).append("\n");
             out.append("    count: ").append(stage.getCount()).append("\n");
-            if (!stage.getDeployerPath().equals(DEFAULT_DEPLOYER_PATH))
-                out.append("    deployerPath: ").append(stage.getDeployerPath()).append("\n");
+            if (!stage.getPath().equals(DEFAULT_PATH))
+                out.append("    path: ").append(stage.getPath()).append("\n");
         });
         return out.toString();
     }

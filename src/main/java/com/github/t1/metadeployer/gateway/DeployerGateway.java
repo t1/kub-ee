@@ -35,7 +35,7 @@ public class DeployerGateway {
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
     @Data
-    public static class Plan {
+    public static class Deployables {
         @JsonProperty
         private Map<String, Deployable> deployables;
     }
@@ -83,7 +83,7 @@ public class DeployerGateway {
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
                 throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
                         + " but got " + contentType + ": " + string);
-            return YAML.readValue(string, Plan.class)
+            return YAML.readValue(string, Deployables.class)
                        .getDeployables()
                        .entrySet()
                        .stream()

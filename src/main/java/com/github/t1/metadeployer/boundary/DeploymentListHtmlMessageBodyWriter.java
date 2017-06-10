@@ -20,7 +20,7 @@ import static javax.ws.rs.core.MediaType.*;
 
 @Provider
 @Produces(TEXT_HTML)
-public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<Deployment>> {
+public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<List<Deployment>> {
     @Inject List<Cluster> clusters;
 
     @Override
@@ -140,7 +140,7 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
                                .map(n -> deployments
                                        .stream()
                                        .filter(deployment -> deployment.getName().equals(deploymentName))
-                                       .filter(deployment -> deployment.getClusterNode().matchStageNameAndIndex(n))
+                                       .filter(deployment -> deployment.getNode().matchStageNameAndIndex(n))
                                        .findAny()
                                        .map(this::cell)
                                        .orElse(new Element("div").addClass("no-deployment").html("-")))
@@ -176,7 +176,7 @@ public class DeploymentListMessageBodyWriter implements MessageBodyWriter<List<D
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {
-            return deployment.getClusterNode().getCluster().getHost().equals(cluster.getHost())
+            return deployment.getNode().getCluster().getHost().equals(cluster.getHost())
                     && Objects.equals(deployment.getSlotName(), cluster.getSlotName());
         }
     }

@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.net.URI;
 import java.nio.file.*;
 import java.util.List;
 
@@ -39,10 +40,11 @@ public class MetaDeployerIT {
     private static ApplicationsPage applications;
 
     @BeforeClass @SneakyThrows public static void setup() {
+        URI deployerBase = worker.baseUri();
         CLUSTER = Cluster.builder()
-                         .host(worker.baseUri().getHost())
-                         .slot(Slot.builder().name("0").http(worker.baseUri().getPort()).build())
-                         .stage().name("PROD").prefix("").suffix("").count(1).deployerPath("application/").add()
+                         .host(deployerBase.getHost())
+                         .slot(Slot.builder().name("0").http(deployerBase.getPort()).build())
+                         .stage().name("PROD").prefix("").suffix("").count(1).path("application/").add()
                          .build();
         Files.write(Paths.get(CLUSTER_CONFIG), CLUSTER.toYaml().getBytes());
         master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
@@ -63,7 +65,7 @@ public class MetaDeployerIT {
                                         .artifactId("dummy")
                                         .type("war")
                                         .version("1.2.3")
-                                        .clusterNode(new ClusterNode(CLUSTER, CLUSTER.getStages().get(0), 1))
+                                        .node(new ClusterNode(CLUSTER, CLUSTER.getStages().get(0), 1))
                                         .name("dummy")
                                         .build();
         assertThat(list).contains(expected);

@@ -10,8 +10,8 @@ import java.util.List;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class DeploymentListMessageBodyWriterTest {
-    private DeploymentListMessageBodyWriter writer = new DeploymentListMessageBodyWriter();
+public class DeploymentListHtmlMessageBodyWriterTest {
+    private DeploymentListHtmlMessageBodyWriter writer = new DeploymentListHtmlMessageBodyWriter();
 
     @Before public void setUp() { writer.clusters = ClusterTest.readClusterConfig().clusters(); }
 
@@ -40,19 +40,19 @@ public class DeploymentListMessageBodyWriterTest {
         DeploymentBuilder bar = createDeployment("bar");
         DeploymentBuilder baz = createDeployment("baz");
         List<Deployment> deployables = asList(
-                foo.clusterNode(my_dev_1).version("1.2.5-SNAPSHOT").build(),
-                foo.clusterNode(my_qa_1).version("1.2.4").build(),
-                foo.clusterNode(my_prod_1).version("1.2.3").build(),
-                foo.clusterNode(my_prod_2).version("1.2.3").build(),
-                foo.clusterNode(my_prod_3).version("1.2.3").build(),
-                bar.clusterNode(other_dev_1).version("2.0.1").build(),
-                bar.clusterNode(other_dev_2).version("2.0.2").build(),
-                baz.clusterNode(other_dev_2).version("2.1.3").error("error-hint").build());
+                foo.node(my_dev_1).version("1.2.5-SNAPSHOT").build(),
+                foo.node(my_qa_1).version("1.2.4").build(),
+                foo.node(my_prod_1).version("1.2.3").build(),
+                foo.node(my_prod_2).version("1.2.3").build(),
+                foo.node(my_prod_3).version("1.2.3").build(),
+                bar.node(other_dev_1).version("2.0.1").build(),
+                bar.node(other_dev_2).version("2.0.2").build(),
+                baz.node(other_dev_2).version("2.1.3").error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
         assertThat(out.toString()).isEqualTo(
-                contentOf(DeploymentListMessageBodyWriterTest.class.getResource("expected.html")).trim());
+                contentOf(DeploymentListHtmlMessageBodyWriterTest.class.getResource("expected.html")).trim());
     }
 }

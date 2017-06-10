@@ -42,7 +42,7 @@ public class Boundary {
                 .peek(deployable -> log.debug("  - {}", deployable.getName()))
                 .map(deployable ->
                         Deployment.builder()
-                                  .clusterNode(node)
+                                  .node(node)
                                   .name(deployable.getName())
                                   .groupId(orUnknown(deployable.getGroupId()))
                                   .artifactId(orUnknown(deployable.getArtifactId()))

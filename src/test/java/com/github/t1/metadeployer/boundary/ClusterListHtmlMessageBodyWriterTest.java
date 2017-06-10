@@ -11,8 +11,8 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class ClusterListMessageBodyWriterTest {
-    private ClusterListMessageBodyWriter writer = new ClusterListMessageBodyWriter();
+public class ClusterListHtmlMessageBodyWriterTest {
+    private ClusterListHtmlMessageBodyWriter writer = new ClusterListHtmlMessageBodyWriter();
 
     @Test
     public void shouldWriteHtml() throws Exception {
