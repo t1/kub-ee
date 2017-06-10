@@ -48,16 +48,25 @@ public class MetaDeployerIT {
                          .build();
         Files.write(Paths.get(CLUSTER_CONFIG), CLUSTER.toYaml().getBytes());
         master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
-        applications = new ApplicationsPage(driver, master.baseUri().resolve("/api"));
+        applications = new ApplicationsPage(driver, master.baseUri().resolve("/api/applications"));
     }
 
 
     private WebTarget metaDeployer() { return ClientBuilder.newClient().target(master.baseUri()).path("/api"); }
 
     @Test
-    public void shouldGetAsJson() throws Exception {
+    public void shouldGetIndexAsJson() throws Exception {
         String response = metaDeployer().request(APPLICATION_JSON_TYPE).get(String.class);
 
+        assertThat(response).isEqualTo("{"
+                + "\"clusters\":\"/clusters\","
+                + "\"applications\":\"/applications\""
+                + "}");
+    }
+
+    @Test
+    public void shouldGetApplicationsAsJson() throws Exception {
+        String response = metaDeployer().path("applications").request(APPLICATION_JSON_TYPE).get(String.class);
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
         Deployment expected = Deployment.builder()
@@ -72,8 +81,8 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetAsHtml() throws Exception {
-        Response response = metaDeployer().request(TEXT_HTML_TYPE).get();
+    public void shouldGetApplicationsAsHtml() throws Exception {
+        Response response = metaDeployer().path("applications").request(TEXT_HTML_TYPE).get();
 
         assertThat(response.getStatusInfo()).isEqualTo(OK);
         assertThat(response.readEntity(String.class))
@@ -82,7 +91,7 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetApplications() throws Exception {
+    public void shouldGetApplicationsPage() throws Exception {
         applications.navigateTo();
 
         applications.assertOpen();

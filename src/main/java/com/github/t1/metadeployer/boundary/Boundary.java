@@ -8,8 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.net.*;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -24,10 +25,18 @@ public class Boundary {
 
     DeployerGateway deployer = new DeployerGateway();
 
+    @GET public Map<String, URI> getLinks(@Context UriInfo uriInfo) {
+        Map<String, URI> map = new LinkedHashMap<>();
+        map.put("clusters", UriBuilder.fromMethod(Boundary.class, "getClusters").build());
+        map.put("applications", UriBuilder.fromMethod(Boundary.class, "getApplications").build());
+        return map;
+    }
+
     @Path("/clusters")
     @GET public List<Cluster> getClusters() { return clusters; }
 
-    @GET public List<Deployment> get() {
+    @Path("/applications")
+    @GET public List<Deployment> getApplications() {
         return clusters.stream().flatMap(this::fromCluster).collect(toList());
     }
 
