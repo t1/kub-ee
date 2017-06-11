@@ -60,7 +60,87 @@ public class MetaDeployerIT {
 
         assertThat(response).isEqualTo("{"
                 + "\"clusters\":\"http://localhost:8080/api/clusters\","
+                + "\"slots\":\"http://localhost:8080/api/slots\","
+                + "\"stages\":\"http://localhost:8080/api/stages\","
                 + "\"applications\":\"http://localhost:8080/api/applications\""
+                + "}");
+    }
+
+    @Test
+    public void shouldGetClustersAsJson() throws Exception {
+        String response = metaDeployer().path("clusters").request(APPLICATION_JSON_TYPE).get(String.class);
+
+        assertThat(response).isEqualTo(""
+                + "[{"
+                + /**/"\"host\":\"localhost\","
+                // + /**/"\"slot\":\"0\","
+                + /**/"\"slot\":{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443},"
+                // + /**/"\"stages\":[\"PROD\"]"
+                + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
+                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + "}]");
+    }
+
+    @Test
+    public void shouldGetOneClusterAsJson() throws Exception {
+        String response = metaDeployer().path("clusters").path("localhost")
+                                        .request(APPLICATION_JSON_TYPE)
+                                        .get(String.class);
+
+        assertThat(response).isEqualTo(""
+                + "{"
+                + "\"host\":\"localhost\","
+                // + "\"slot\":\"0\","
+                + "\"slot\":{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443},"
+                // + "\"stages\":[\"PROD\"]"
+                + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
+                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + "}");
+    }
+
+    @Test
+    public void shouldGetSlotsAsJson() throws Exception {
+        String response = metaDeployer().path("slots").request(APPLICATION_JSON_TYPE).get(String.class);
+
+        assertThat(response).isEqualTo("[{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443}]");
+    }
+
+    @Test
+    public void shouldGetOneSlotAsJson() throws Exception {
+        String response = metaDeployer().path("slots").path("0")
+                                        .request(APPLICATION_JSON_TYPE)
+                                        .get(String.class);
+
+        assertThat(response).isEqualTo("{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443}");
+    }
+
+    @Test
+    public void shouldGetStagesAsJson() throws Exception {
+        String response = metaDeployer().path("stages").request(APPLICATION_JSON_TYPE).get(String.class);
+
+        assertThat(response).isEqualTo("[{"
+                + "\"name\":\"PROD\","
+                + "\"prefix\":\"\","
+                + "\"suffix\":\"\","
+                + "\"path\":\"application/\","
+                + "\"count\":1,"
+                + "\"indexLength\":0"
+                + "}]");
+    }
+
+    @Test
+    public void shouldGetOneStageAsJson() throws Exception {
+        String response = metaDeployer().path("stages").path("PROD")
+                                        .request(APPLICATION_JSON_TYPE)
+                                        .get(String.class);
+
+        assertThat(response).isEqualTo("{"
+                + "\"name\":\"PROD\","
+                + "\"prefix\":\"\","
+                + "\"suffix\":\"\","
+                + "\"path\":\"application/\","
+                + "\"count\":1,"
+                + "\"indexLength\":0"
                 + "}");
     }
 

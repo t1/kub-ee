@@ -5,6 +5,7 @@ import com.github.t1.metadeployer.model.Deployment.DeploymentBuilder;
 import org.junit.*;
 
 import java.io.*;
+import java.net.URL;
 import java.util.List;
 
 import static java.util.Arrays.*;
@@ -52,7 +53,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
-        assertThat(out.toString()).isEqualTo(
-                contentOf(DeploymentListHtmlMessageBodyWriterTest.class.getResource("expected.html")).trim());
+        URL expected = DeploymentListHtmlMessageBodyWriterTest.class.getResource("deployment-list-expected.html");
+        assertThat(out.toString()).isEqualTo(contentOf(expected).trim());
     }
 }

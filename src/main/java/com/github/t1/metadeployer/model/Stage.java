@@ -4,13 +4,14 @@ import com.github.t1.metadeployer.model.Cluster.ClusterBuilder;
 import com.github.t1.metadeployer.tools.yaml.*;
 import lombok.*;
 
+import java.util.Comparator;
 import java.util.stream.*;
 
 import static java.lang.String.*;
 
 @Value
 @Builder
-public class Stage {
+public class Stage implements Comparable<Stage> {
     public static final String DEFAULT_PATH = "deployer";
 
     /** a logical name for the stage, such as 'DEV' or 'PROD' */
@@ -46,6 +47,17 @@ public class Stage {
     }
 
     public Stage largerCount(Stage other) { return (getCount() > other.getCount()) ? this : other; }
+
+    /** generally, the name should be sufficient, the other field comparison seems useful */
+    @Override public int compareTo(Stage that) {
+        return Comparator.comparing(Stage::getName)
+                         .thenComparing(Stage::getCount)
+                         .thenComparing(Stage::getIndexLength)
+                         .thenComparing(Stage::getPath)
+                         .thenComparing(Stage::getPrefix)
+                         .thenComparing(Stage::getSuffix)
+                         .compare(this, that);
+    }
 
 
     public static class StageBuilder {

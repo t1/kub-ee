@@ -42,6 +42,8 @@ public class LinksHtmlMessageBodyWriterTest {
                 + " <h1 class=\"page-header\">Links</h1> \n"
                 + " <ul class=\"list-group\"> \n"
                 + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/clusters\">clusters</a></li> \n"
+                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/slots\">slots</a></li> \n"
+                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/stages\">stages</a></li> \n"
                 + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/applications\">applications</a></li> \n"
                 + " </ul> \n"
                 + "</div>");
