@@ -3,12 +3,14 @@ package com.github.t1.metadeployer.model;
 import com.github.t1.metadeployer.tools.yaml.YamlMapping;
 import lombok.*;
 
+import java.util.Comparator;
+
 /**
  * Multiple JVMs on one machine can be differentiated by the ports they serve
  */
 @Value
 @Builder(builderMethodName = "internal_builder")
-public class Slot {
+public class Slot implements Comparable<Slot> {
     public static final int DEFAULT_HTTP_PORT = 80;
     public static final int DEFAULT_HTTPS_PORT = 443;
 
@@ -27,5 +29,12 @@ public class Slot {
         value.get("http").ifPresent(node -> builder.http(node.asInt()));
         value.get("https").ifPresent(node -> builder.https(node.asInt()));
         return builder.build();
+    }
+
+    @Override public int compareTo(Slot that) {
+        return Comparator.comparing(Slot::getName)
+                         .thenComparing(Slot::getHttp)
+                         .thenComparing(Slot::getHttps)
+                         .compare(this, that);
     }
 }

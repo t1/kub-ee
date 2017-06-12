@@ -51,7 +51,7 @@ public class Boundary {
 
     @Path("/slots")
     @GET public List<Slot> getSlots() {
-        return clusters.stream().map(Cluster::getSlot).distinct().collect(toList());
+        return clusters.stream().map(Cluster::getSlot).sorted().distinct().collect(toList());
     }
 
     @Path("/slots/{name}")

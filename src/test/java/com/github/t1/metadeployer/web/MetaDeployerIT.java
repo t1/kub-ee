@@ -2,6 +2,7 @@ package com.github.t1.metadeployer.web;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.t1.metadeployer.boundary.ClusterConfig;
 import com.github.t1.metadeployer.gateway.DeployerMock;
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.testtools.*;
@@ -15,8 +16,7 @@ import org.junit.runner.RunWith;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 import java.io.File;
-import java.net.URI;
-import java.nio.file.*;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static javax.ws.rs.core.MediaType.*;
@@ -27,12 +27,15 @@ import static org.assertj.core.api.Assertions.*;
 public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final WebDriverRule driver = new WebDriverRule();
+    private static final Stage PROD = Stage.builder().name("PROD").path("application/").count(1).build();
 
-    private static Cluster CLUSTER;
+    private static Cluster CLUSTER_1;
+    private static Cluster CLUSTER_2;
 
     private static final String CLUSTER_CONFIG = "target/meta-deployer-it-cluster-config.yaml";
 
-    @ClassRule public static DropwizardClientRule worker = new DropwizardClientRule(DeployerMock.class);
+    @ClassRule public static DropwizardClientRule worker1 = new DropwizardClientRule(DeployerMock.class);
+    @ClassRule public static DropwizardClientRule worker2 = new DropwizardClientRule(DeployerMock.class);
 
     @ClassRule public static WildflySwarmTestRule master = new WildflySwarmTestRule()
             .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG);
@@ -40,13 +43,21 @@ public class MetaDeployerIT {
     private static ApplicationsPage applications;
 
     @BeforeClass @SneakyThrows public static void setup() {
-        URI deployerBase = worker.baseUri();
-        CLUSTER = Cluster.builder()
-                         .host(deployerBase.getHost())
-                         .slot(Slot.builder().name("0").http(deployerBase.getPort()).build())
-                         .stage().name("PROD").prefix("").suffix("").count(1).path("application/").add()
-                         .build();
-        Files.write(Paths.get(CLUSTER_CONFIG), CLUSTER.toYaml().getBytes());
+        CLUSTER_1 = Cluster.builder()
+                           .host(worker1.baseUri().getHost())
+                           .slot(Slot.builder().name("1").http(worker1.baseUri().getPort()).build())
+                           .stage(PROD)
+                           .build();
+        CLUSTER_2 = Cluster.builder()
+                           .host(worker2.baseUri().getHost())
+                           .slot(Slot.builder().name("2").http(worker2.baseUri().getPort()).build())
+                           .stage(PROD)
+                           .build();
+        ClusterConfig clusters = new ClusterConfig();
+        clusters.clusters().add(CLUSTER_1);
+        clusters.clusters().add(CLUSTER_2);
+        clusters.write(Paths.get(CLUSTER_CONFIG));
+
         master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
         applications = new ApplicationsPage(driver, master.baseUri().resolve("/api/applications"));
     }
@@ -73,9 +84,12 @@ public class MetaDeployerIT {
         assertThat(response).isEqualTo(""
                 + "[{"
                 + /**/"\"host\":\"localhost\","
-                // + /**/"\"slot\":\"0\","
-                + /**/"\"slot\":{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443},"
-                // + /**/"\"stages\":[\"PROD\"]"
+                + /**/"\"slot\":{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
+                + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
+                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + "},{"
+                + /**/"\"host\":\"localhost\","
+                + /**/"\"slot\":{\"name\":\"2\",\"http\":" + worker2.baseUri().getPort() + ",\"https\":443},"
                 + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
                 + /**//**/"\"count\":1,\"indexLength\":0}]"
                 + "}]");
@@ -90,11 +104,9 @@ public class MetaDeployerIT {
         assertThat(response).isEqualTo(""
                 + "{"
                 + "\"host\":\"localhost\","
-                // + "\"slot\":\"0\","
-                + "\"slot\":{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443},"
-                // + "\"stages\":[\"PROD\"]"
-                + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
-                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + "\"slot\":{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
+                + "\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
+                + /**/"\"count\":1,\"indexLength\":0}]"
                 + "}");
     }
 
@@ -102,16 +114,19 @@ public class MetaDeployerIT {
     public void shouldGetSlotsAsJson() throws Exception {
         String response = metaDeployer().path("slots").request(APPLICATION_JSON_TYPE).get(String.class);
 
-        assertThat(response).isEqualTo("[{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443}]");
+        assertThat(response).isEqualTo("["
+                + "{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
+                + "{\"name\":\"2\",\"http\":" + worker2.baseUri().getPort() + ",\"https\":443}"
+                + "]");
     }
 
     @Test
     public void shouldGetOneSlotAsJson() throws Exception {
-        String response = metaDeployer().path("slots").path("0")
+        String response = metaDeployer().path("slots").path("1")
                                         .request(APPLICATION_JSON_TYPE)
                                         .get(String.class);
 
-        assertThat(response).isEqualTo("{\"name\":\"0\",\"http\":" + worker.baseUri().getPort() + ",\"https\":443}");
+        assertThat(response).isEqualTo("{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443}");
     }
 
     @Test
@@ -154,7 +169,7 @@ public class MetaDeployerIT {
                                         .artifactId("dummy")
                                         .type("war")
                                         .version("1.2.3")
-                                        .node(new ClusterNode(CLUSTER, CLUSTER.getStages().get(0), 1))
+                                        .node(new ClusterNode(CLUSTER_1, CLUSTER_1.getStages().get(0), 1))
                                         .name("dummy")
                                         .build();
         assertThat(list).contains(expected);

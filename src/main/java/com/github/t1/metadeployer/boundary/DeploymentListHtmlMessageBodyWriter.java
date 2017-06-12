@@ -177,7 +177,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private boolean on(Cluster cluster, Deployment deployment) {
             return deployment.getNode().getCluster().getHost().equals(cluster.getHost())
-                    && Objects.equals(deployment.getSlotName(), cluster.getSlotName());
+                    && Objects.equals(deployment.getSlotName(), cluster.getSlot().getName());
         }
     }
 }
