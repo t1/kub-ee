@@ -44,7 +44,7 @@ public class LinksHtmlMessageBodyWriterTest {
                 + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/clusters\">clusters</a></li> \n"
                 + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/slots\">slots</a></li> \n"
                 + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/stages\">stages</a></li> \n"
-                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/applications\">applications</a></li> \n"
+                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/deployments\">deployments</a></li> \n"
                 + " </ul> \n"
                 + "</div>");
     }

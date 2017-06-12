@@ -1,7 +1,8 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
 import com.github.t1.metadeployer.model.*;
+import com.github.t1.metadeployer.tools.html.*;
+import com.github.t1.metadeployer.tools.html.Table.TableRow;
 import org.jsoup.nodes.Element;
 
 import javax.inject.Inject;
@@ -12,6 +13,7 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.List;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
@@ -44,9 +46,9 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         out.flush();
     }
 
-    private class DeploymentsHtml extends AbstractHtml {
+    private class DeploymentsHtml extends Html {
         private final List<Deployment> deployments;
-        private HtmlTable table;
+        private Table table;
         private Collection<Stage> mergedStages;
         private List<ClusterNode> mergedNodes;
 
@@ -83,27 +85,27 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void tableHeader() {
-            this.table = table();
+            this.table = withoutContainer().table();
             stagesHeader();
             nodesHeader();
         }
 
         private void stagesHeader() {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th().text("Cluster");
             row.th().text("Application");
-            mergedStages.forEach(stage -> row.th()
-                                             .addClass("stage")
-                                             .attr("colspan", Integer.toString(stage.getCount()))
-                                             .text(stage.getName()));
+            mergedStages.forEach(stage -> row
+                    .th()
+                    .addClass("stage")
+                    .attr("colspan", Integer.toString(stage.getCount()))
+                    .text(stage.getName()));
         }
 
         private void nodesHeader() {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th();
             row.th();
-            mergedNodes.forEach(node -> row.th()
-                                           .addClass("node")
+            mergedNodes.forEach(node -> row.th().addClass("node")
                                            .text(node.getStage().formattedIndex(node.getIndex())));
         }
 
@@ -111,7 +113,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             clusters.forEach(cluster -> {
                 List<String> deploymentNames = deploymentNames(cluster);
                 deploymentNames.forEach(deploymentName -> {
-                    HtmlTableRow row = table.tr();
+                    TableRow row = table.tr();
                     if (deploymentName.equals(deploymentNames.get(0)))
                         row.th()
                            .attr("rowspan", Integer.toString(deploymentNames.size()))

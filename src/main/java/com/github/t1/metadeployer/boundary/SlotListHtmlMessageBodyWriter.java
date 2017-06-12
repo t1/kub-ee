@@ -1,6 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
+import com.github.t1.metadeployer.tools.html.*;
+import com.github.t1.metadeployer.tools.html.Table.TableRow;
 import com.github.t1.metadeployer.model.Slot;
 
 import javax.ws.rs.*;
@@ -38,28 +39,28 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
         out.flush();
     }
 
-    private class SlotsHtml extends AbstractHtml {
+    private class SlotsHtml extends Html {
         private final List<Slot> slots;
-        private HtmlTable table;
+        private Table table;
 
         private SlotsHtml(List<Slot> slots) {
             this.slots = slots;
 
             header("Slots");
-            table = table();
+            table = withoutContainer().table();
             tableHeader();
             this.slots.forEach(this::slotRow);
         }
 
         private void tableHeader() {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th().text("Slot");
             row.th().text("http");
             row.th().text("https");
         }
 
         private void slotRow(Slot slot) {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th().text(slot.getName());
             row.td().text(Integer.toString(slot.getHttp()));
             row.td().text(Integer.toString(slot.getHttps()));

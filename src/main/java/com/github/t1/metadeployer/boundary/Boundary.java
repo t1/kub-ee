@@ -30,7 +30,7 @@ public class Boundary {
         map.put("clusters", linkForMethod(uriInfo, "getClusters"));
         map.put("slots", linkForMethod(uriInfo, "getSlots"));
         map.put("stages", linkForMethod(uriInfo, "getStages"));
-        map.put("applications", linkForMethod(uriInfo, "getApplications"));
+        map.put("deployments", linkForMethod(uriInfo, "getDeployments"));
         return map;
     }
 
@@ -77,8 +77,8 @@ public class Boundary {
                        .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
 
-    @Path("/applications")
-    @GET public List<Deployment> getApplications() {
+    @Path("/deployments")
+    @GET public List<Deployment> getDeployments() {
         return clusters.stream().flatMap(this::fromCluster).collect(toList());
     }
 

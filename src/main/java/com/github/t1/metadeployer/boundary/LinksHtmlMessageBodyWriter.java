@@ -1,6 +1,6 @@
 package com.github.t1.metadeployer.boundary;
 
-import org.jsoup.nodes.Element;
+import com.github.t1.metadeployer.tools.html.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -39,23 +39,21 @@ public class LinksHtmlMessageBodyWriter implements MessageBodyWriter<Map<String,
         out.flush();
     }
 
-    private class LinksHtml extends AbstractHtml {
+    private class LinksHtml extends Html {
         private final Map<String, URI> links;
-        private Element list;
+        private List list;
 
         private LinksHtml(Map<String, URI> links) {
             this.links = links;
 
             header("Index");
-            Element container = body().appendElement("div").addClass("container");
-            container.appendElement("h1").addClass("page-header").text("Links");
-            this.list = container.appendElement("ul").addClass("list-group");
+            h1("Links");
+            this.list = ul();
             this.links.forEach(this::link);
         }
 
         private void link(String name, URI href) {
-            Element row = list.appendElement("li").addClass("list-group-item")
-                              .appendElement("a").attr("href", href.toString()).text(name);
+            list.li().appendElement("a").attr("href", href.toString()).text(name);
         }
     }
 }

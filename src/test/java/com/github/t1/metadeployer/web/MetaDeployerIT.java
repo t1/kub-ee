@@ -40,7 +40,7 @@ public class MetaDeployerIT {
     @ClassRule public static WildflySwarmTestRule master = new WildflySwarmTestRule()
             .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG);
 
-    private static ApplicationsPage applications;
+    private static DeploymentsPage deployments;
 
     @BeforeClass @SneakyThrows public static void setup() {
         CLUSTER_1 = Cluster.builder()
@@ -59,7 +59,7 @@ public class MetaDeployerIT {
         clusters.write(Paths.get(CLUSTER_CONFIG));
 
         master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
-        applications = new ApplicationsPage(driver, master.baseUri().resolve("/api/applications"));
+        deployments = new DeploymentsPage(driver, master.baseUri().resolve("/api/deployments"));
     }
 
 
@@ -73,7 +73,7 @@ public class MetaDeployerIT {
                 + "\"clusters\":\"http://localhost:8080/api/clusters\","
                 + "\"slots\":\"http://localhost:8080/api/slots\","
                 + "\"stages\":\"http://localhost:8080/api/stages\","
-                + "\"applications\":\"http://localhost:8080/api/applications\""
+                + "\"deployments\":\"http://localhost:8080/api/deployments\""
                 + "}");
     }
 
@@ -160,8 +160,8 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetApplicationsAsJson() throws Exception {
-        String response = metaDeployer().path("applications").request(APPLICATION_JSON_TYPE).get(String.class);
+    public void shouldGetDeploymentsAsJson() throws Exception {
+        String response = metaDeployer().path("deployments").request(APPLICATION_JSON_TYPE).get(String.class);
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
         Deployment expected = Deployment.builder()
@@ -176,8 +176,8 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetApplicationsAsHtml() throws Exception {
-        Response response = metaDeployer().path("applications").request(TEXT_HTML_TYPE).get();
+    public void shouldGetDeploymentsAsHtml() throws Exception {
+        Response response = metaDeployer().path("deployments").request(TEXT_HTML_TYPE).get();
 
         assertThat(response.getStatusInfo()).isEqualTo(OK);
         assertThat(response.readEntity(String.class))
@@ -186,9 +186,9 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetApplicationsPage() throws Exception {
-        applications.navigateTo();
+    public void shouldGetDeploymentsPage() throws Exception {
+        deployments.navigateTo();
 
-        applications.assertOpen();
+        deployments.assertOpen();
     }
 }

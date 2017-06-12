@@ -1,7 +1,9 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
+
 import com.github.t1.metadeployer.model.Stage;
+import com.github.t1.metadeployer.tools.html.*;
+import com.github.t1.metadeployer.tools.html.Table.TableRow;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -38,21 +40,21 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
         out.flush();
     }
 
-    private class StagesHtml extends AbstractHtml {
+    private class StagesHtml extends Html {
         private final List<Stage> stages;
-        private HtmlTable table;
+        private Table table;
 
         private StagesHtml(List<Stage> stages) {
             this.stages = stages;
 
             header("Stages");
-            table = table();
+            table = withoutContainer().table();
             tableHeader();
             this.stages.forEach(this::stageRow);
         }
 
         private void tableHeader() {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th().text("Stage");
             row.th().text("prefix");
             row.th().text("suffix");
@@ -62,7 +64,7 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
         }
 
         private void stageRow(Stage stage) {
-            HtmlTableRow row = table.tr();
+            TableRow row = table.tr();
             row.th().text(stage.getName());
             row.td().text(stage.getPrefix());
             row.td().text(stage.getSuffix());
