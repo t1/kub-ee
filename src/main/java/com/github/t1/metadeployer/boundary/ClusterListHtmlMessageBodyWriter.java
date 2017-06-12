@@ -1,7 +1,5 @@
 package com.github.t1.metadeployer.boundary;
-
 import com.github.t1.metadeployer.model.*;
-import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -12,6 +10,7 @@ import java.lang.reflect.*;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
 
@@ -43,7 +42,7 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
     private class ClustersHtml extends AbstractHtml {
         private final List<Cluster> clusters;
         private List<String> stageNames;
-        private Element table;
+        private HtmlTable table;
 
         private ClustersHtml(List<Cluster> clusters) {
             this.clusters = clusters;
@@ -62,15 +61,15 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
         }
 
         private void tableHeader() {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text("Cluster");
-            stageNames.forEach(s -> row.appendElement("th").text(s));
+            HtmlTableRow row = table.tr();
+            row.th().text("Cluster");
+            stageNames.forEach(text -> row.th().text(text));
         }
 
         private void clusterRow(Cluster cluster) {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text(cluster.id());
-            stage(cluster).forEach(s -> row.appendElement("td").append(s));
+            HtmlTableRow row = table.tr();
+            row.th().text(cluster.id());
+            stage(cluster).forEach(text -> row.td().append(text));
         }
 
         private Stream<String> stage(Cluster cluster) {

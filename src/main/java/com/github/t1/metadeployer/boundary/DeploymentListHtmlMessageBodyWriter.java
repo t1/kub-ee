@@ -1,5 +1,6 @@
 package com.github.t1.metadeployer.boundary;
 
+import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
 import com.github.t1.metadeployer.model.*;
 import org.jsoup.nodes.Element;
 
@@ -45,7 +46,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
     private class DeploymentsHtml extends AbstractHtml {
         private final List<Deployment> deployments;
-        private Element table;
+        private HtmlTable table;
         private Collection<Stage> mergedStages;
         private List<ClusterNode> mergedNodes;
 
@@ -88,20 +89,20 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void stagesHeader() {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text("Cluster");
-            row.appendElement("th").text("Application");
-            mergedStages.forEach(stage -> row.appendElement("th")
+            HtmlTableRow row = table.tr();
+            row.th().text("Cluster");
+            row.th().text("Application");
+            mergedStages.forEach(stage -> row.th()
                                              .addClass("stage")
                                              .attr("colspan", Integer.toString(stage.getCount()))
                                              .text(stage.getName()));
         }
 
         private void nodesHeader() {
-            Element row = table.appendElement("tr");
-            row.appendElement("th");
-            row.appendElement("th");
-            mergedNodes.forEach(node -> row.appendElement("th")
+            HtmlTableRow row = table.tr();
+            row.th();
+            row.th();
+            mergedNodes.forEach(node -> row.th()
                                            .addClass("node")
                                            .text(node.getStage().formattedIndex(node.getIndex())));
         }
@@ -110,12 +111,12 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             clusters.forEach(cluster -> {
                 List<String> deploymentNames = deploymentNames(cluster);
                 deploymentNames.forEach(deploymentName -> {
-                    Element row = table.appendElement("tr");
+                    HtmlTableRow row = table.tr();
                     if (deploymentName.equals(deploymentNames.get(0)))
-                        row.appendElement("th")
+                        row.th()
                            .attr("rowspan", Integer.toString(deploymentNames.size()))
                            .text(cluster.id());
-                    row.appendElement("th").addClass("app").text(deploymentName);
+                    row.th().addClass("app").text(deploymentName);
 
                     mergedNodes.stream()
                                .map(n -> deployments
@@ -125,7 +126,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                        .findAny()
                                        .map(this::cell)
                                        .orElse(new Element("div").addClass("no-deployment").html("-")))
-                               .forEach(cell -> row.appendElement("td").appendChild(cell));
+                               .forEach(cell -> row.td().appendChild(cell));
                 });
             });
         }

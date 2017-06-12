@@ -1,7 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
+import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
 import com.github.t1.metadeployer.model.Slot;
-import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -40,7 +40,7 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
 
     private class SlotsHtml extends AbstractHtml {
         private final List<Slot> slots;
-        private Element table;
+        private HtmlTable table;
 
         private SlotsHtml(List<Slot> slots) {
             this.slots = slots;
@@ -52,17 +52,17 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
         }
 
         private void tableHeader() {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text("Slot");
-            row.appendElement("th").text("http");
-            row.appendElement("th").text("https");
+            HtmlTableRow row = table.tr();
+            row.th().text("Slot");
+            row.th().text("http");
+            row.th().text("https");
         }
 
         private void slotRow(Slot slot) {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text(slot.getName());
-            row.appendElement("td").text(Integer.toString(slot.getHttp()));
-            row.appendElement("td").text(Integer.toString(slot.getHttps()));
+            HtmlTableRow row = table.tr();
+            row.th().text(slot.getName());
+            row.td().text(Integer.toString(slot.getHttp()));
+            row.td().text(Integer.toString(slot.getHttps()));
         }
     }
 }

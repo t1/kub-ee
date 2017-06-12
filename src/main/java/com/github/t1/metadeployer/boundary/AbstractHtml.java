@@ -1,5 +1,6 @@
 package com.github.t1.metadeployer.boundary;
 
+import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.*;
 
 import static java.nio.charset.StandardCharsets.*;
@@ -39,10 +40,27 @@ public class AbstractHtml {
 
     @Override public String toString() { return "<!DOCTYPE html>\n" + html.outerHtml(); }
 
-    protected Element table() {
-        return body()
-                .appendElement("div").addClass("table-responsive")
-                .appendElement("table").addClass("table table-striped")
-                .appendElement("tbody");
+    protected HtmlTable table() { return new HtmlTable(body()); }
+
+    public static class HtmlTable {
+        private final Element table;
+
+        public HtmlTable(Element body) {
+            this.table = body
+                    .appendElement("div").addClass("table-responsive")
+                    .appendElement("table").addClass("table table-striped")
+                    .appendElement("tbody");
+        }
+
+        public HtmlTableRow tr() { return new HtmlTableRow(table.appendElement("tr")); }
+
+        @RequiredArgsConstructor
+        public static class HtmlTableRow {
+            private final Element row;
+
+            protected Element th() { return row.appendElement("th"); }
+
+            protected Element td() { return row.appendElement("td"); }
+        }
     }
 }

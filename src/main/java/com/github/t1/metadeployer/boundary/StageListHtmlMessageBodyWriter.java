@@ -1,7 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
+import com.github.t1.metadeployer.boundary.AbstractHtml.HtmlTable.HtmlTableRow;
 import com.github.t1.metadeployer.model.Stage;
-import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -40,7 +40,7 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
 
     private class StagesHtml extends AbstractHtml {
         private final List<Stage> stages;
-        private Element table;
+        private HtmlTable table;
 
         private StagesHtml(List<Stage> stages) {
             this.stages = stages;
@@ -52,23 +52,23 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
         }
 
         private void tableHeader() {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text("Stage");
-            row.appendElement("th").text("prefix");
-            row.appendElement("th").text("suffix");
-            row.appendElement("th").text("path");
-            row.appendElement("th").text("count");
-            row.appendElement("th").text("indexLength");
+            HtmlTableRow row = table.tr();
+            row.th().text("Stage");
+            row.th().text("prefix");
+            row.th().text("suffix");
+            row.th().text("path");
+            row.th().text("count");
+            row.th().text("indexLength");
         }
 
         private void stageRow(Stage stage) {
-            Element row = table.appendElement("tr");
-            row.appendElement("th").text(stage.getName());
-            row.appendElement("td").text(stage.getPrefix());
-            row.appendElement("td").text(stage.getSuffix());
-            row.appendElement("td").text(stage.getPath());
-            row.appendElement("td").text(Integer.toString(stage.getCount()));
-            row.appendElement("td").text(Integer.toString(stage.getIndexLength()));
+            HtmlTableRow row = table.tr();
+            row.th().text(stage.getName());
+            row.td().text(stage.getPrefix());
+            row.td().text(stage.getSuffix());
+            row.td().text(stage.getPath());
+            row.td().text(Integer.toString(stage.getCount()));
+            row.td().text(Integer.toString(stage.getIndexLength()));
         }
     }
 }
