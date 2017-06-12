@@ -1,8 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.metadeployer.model.*;
-import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.*;
+import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -13,7 +12,6 @@ import java.lang.reflect.*;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
 
@@ -38,20 +36,18 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new ClustersWriter(out).write(clusters);
+        out.write(new ClustersHtml(clusters).toString());
         out.flush();
     }
 
-    @RequiredArgsConstructor
-    private class ClustersWriter {
-        private final Writer out;
-        private List<Cluster> clusters;
+    private class ClustersHtml extends AbstractHtml {
+        private final List<Cluster> clusters;
         private List<String> stageNames;
-        private Document html = Document.createShell("");
         private Element table;
 
-        public void write(List<Cluster> clusters) throws IOException {
+        private ClustersHtml(List<Cluster> clusters) {
             this.clusters = clusters;
+
             this.stageNames = clusters
                     .stream()
                     .flatMap(Cluster::stages)
@@ -59,23 +55,10 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
                     .distinct()
                     .collect(toList());
 
-            header();
-            table = html.body()
-                        .appendElement("div").addClass("table-responsive")
-                        .appendElement("table").addClass("table table-striped")
-                        .appendElement("tbody");
+            header("Meta-Deployer");
+            table = table();
             tableHeader();
             this.clusters.forEach(this::clusterRow);
-
-            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
-        }
-
-        private void header() {
-            html.title("Meta-Deployer");
-            html.charset(UTF_8);
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
         }
 
         private void tableHeader() {

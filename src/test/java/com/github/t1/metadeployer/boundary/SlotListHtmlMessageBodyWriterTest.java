@@ -28,7 +28,7 @@ public class SlotListHtmlMessageBodyWriterTest {
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
-                .containsOnly("http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
+                .containsOnly("http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css", "/style.css");
         assertThat(html.body().html()).isEqualTo(""
                 + "<div class=\"table-responsive\"> \n"
                 + " <table class=\"table table-striped\"> \n"

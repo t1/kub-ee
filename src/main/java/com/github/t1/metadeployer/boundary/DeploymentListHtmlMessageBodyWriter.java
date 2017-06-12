@@ -1,8 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.metadeployer.model.*;
-import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.*;
+import org.jsoup.nodes.Element;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -13,7 +12,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
@@ -41,29 +39,25 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new DeploymentsWriter(out).write(deployments);
+        out.write(new DeploymentsHtml(deployments).toString());
         out.flush();
     }
 
-    @RequiredArgsConstructor
-    private class DeploymentsWriter {
-        private final Writer out;
-        private Document html;
+    private class DeploymentsHtml extends AbstractHtml {
+        private final List<Deployment> deployments;
         private Element table;
-        private List<Deployment> deployments;
         private Collection<Stage> mergedStages;
         private List<ClusterNode> mergedNodes;
 
-        public void write(List<Deployment> deployments) throws IOException {
+        public DeploymentsHtml(List<Deployment> deployments) {
             this.deployments = deployments;
+
             this.mergedStages = mergedStages();
             this.mergedNodes = mergedStages.stream().flatMap(Stage::nodes).collect(toList());
 
             header();
             tableHeader();
             tableBody();
-
-            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
         }
 
         private Collection<Stage> mergedStages() {
@@ -83,25 +77,12 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void header() {
-            html = Document.createShell("");
-            html.title("Meta-Deployer");
-            html.charset(UTF_8);
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "style.css");
-            html.head().appendElement("script")
-                .attr("type", "text/javascript")
-                .attr("src", "script.js");
+            header("Meta-Deployer");
+            script("/script.js");
         }
 
         private void tableHeader() {
-            table = html.body()
-                        .appendElement("div").addClass("table-responsive")
-                        .appendElement("table").addClass("table table-striped")
-                        .appendElement("tbody");
+            this.table = table();
             stagesHeader();
             nodesHeader();
         }

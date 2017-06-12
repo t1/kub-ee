@@ -1,8 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
-import com.github.t1.metadeployer.model.*;
-import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.*;
+import com.github.t1.metadeployer.model.Stage;
+import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -12,7 +11,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -36,37 +34,21 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new StagesWriter(out).write(stages);
+        out.write(new StagesHtml(stages).toString());
         out.flush();
     }
 
-    @RequiredArgsConstructor
-    private class StagesWriter {
-        private final Writer out;
-        private List<Stage> stages;
-        private Document html = Document.createShell("");
+    private class StagesHtml extends AbstractHtml {
+        private final List<Stage> stages;
         private Element table;
 
-        public void write(List<Stage> stages) throws IOException {
+        private StagesHtml(List<Stage> stages) {
             this.stages = stages;
 
-            header();
-            table = html.body()
-                        .appendElement("div").addClass("table-responsive")
-                        .appendElement("table").addClass("table table-striped")
-                        .appendElement("tbody");
+            header("Stages");
+            table = table();
             tableHeader();
             this.stages.forEach(this::stageRow);
-
-            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
-        }
-
-        private void header() {
-            html.title("Stages");
-            html.charset(UTF_8);
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
         }
 
         private void tableHeader() {

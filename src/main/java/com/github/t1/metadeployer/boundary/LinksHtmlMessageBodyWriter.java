@@ -1,7 +1,6 @@
 package com.github.t1.metadeployer.boundary;
 
-import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.*;
+import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -12,7 +11,6 @@ import java.lang.reflect.*;
 import java.net.URI;
 import java.util.Map;
 
-import static java.nio.charset.StandardCharsets.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -37,35 +35,22 @@ public class LinksHtmlMessageBodyWriter implements MessageBodyWriter<Map<String,
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new ClustersWriter(out).write(links);
+        out.write(new LinksHtml(links).toString());
         out.flush();
     }
 
-    @RequiredArgsConstructor
-    private class ClustersWriter {
-        private final Writer out;
-        private Map<String, URI> links;
-        private Document html = Document.createShell("");
+    private class LinksHtml extends AbstractHtml {
+        private final Map<String, URI> links;
         private Element list;
 
-        public void write(Map<String, URI> links) throws IOException {
+        private LinksHtml(Map<String, URI> links) {
             this.links = links;
 
-            header();
-            Element container = html.body().appendElement("div").addClass("container");
+            header("Index");
+            Element container = body().appendElement("div").addClass("container");
             container.appendElement("h1").addClass("page-header").text("Links");
             this.list = container.appendElement("ul").addClass("list-group");
             this.links.forEach(this::link);
-
-            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
-        }
-
-        private void header() {
-            html.title("Index");
-            html.charset(UTF_8);
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
         }
 
         private void link(String name, URI href) {

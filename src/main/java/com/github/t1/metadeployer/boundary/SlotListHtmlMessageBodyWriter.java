@@ -1,8 +1,7 @@
 package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.metadeployer.model.Slot;
-import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.*;
+import org.jsoup.nodes.Element;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -12,7 +11,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -36,37 +34,21 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
-        new SlotsWriter(out).write(slots);
+        out.write(new SlotsHtml(slots).toString());
         out.flush();
     }
 
-    @RequiredArgsConstructor
-    private class SlotsWriter {
-        private final Writer out;
-        private List<Slot> slots;
-        private Document html = Document.createShell("");
+    private class SlotsHtml extends AbstractHtml {
+        private final List<Slot> slots;
         private Element table;
 
-        public void write(List<Slot> slots) throws IOException {
+        private SlotsHtml(List<Slot> slots) {
             this.slots = slots;
 
-            header();
-            table = html.body()
-                        .appendElement("div").addClass("table-responsive")
-                        .appendElement("table").addClass("table table-striped")
-                        .appendElement("tbody");
+            header("Slots");
+            table = table();
             tableHeader();
             this.slots.forEach(this::slotRow);
-
-            out.append("<!DOCTYPE html>\n").write(html.outerHtml());
-        }
-
-        private void header() {
-            html.title("Slots");
-            html.charset(UTF_8);
-            html.head().appendElement("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css");
         }
 
         private void tableHeader() {
