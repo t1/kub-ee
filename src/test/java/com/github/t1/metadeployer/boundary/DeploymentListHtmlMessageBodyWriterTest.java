@@ -44,58 +44,19 @@ public class DeploymentListHtmlMessageBodyWriterTest {
         ClusterNode prod1 = prod.index(one, 1);
         ClusterNode prod2 = prod.index(two, 1);
 
-        DeploymentBuilder dummy = createDeployment().artifactId("dummy").name("dummy").version("1.2.3");
-        List<Deployment> deployables = asList(dummy.node(prod1).build(), dummy.node(prod2).build());
+        DeploymentBuilder deployer = createDeployment().artifactId("deployer").name("deployer").version("unknown");
+        DeploymentBuilder jolokia = createDeployment().artifactId("jolokia").name("jolokia").version("1.3.4");
+        List<Deployment> deployables = asList(
+                deployer.node(prod1).build(),
+                jolokia.node(prod1).build(),
+                deployer.node(prod2).build(),
+                jolokia.node(prod2).build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
-        URL expected = DeploymentListHtmlMessageBodyWriterTest.class.getResource("deployment-list-expected.html");
-        assertThat(out.toString()).isEqualTo(""
-                + "<!DOCTYPE html>\n"
-                + "<html>\n"
-                + " <head>\n"
-                + "  <meta charset=\"UTF-8\">\n"
-                + "  <title>Meta-Deployer</title>\n"
-                + "  <link rel=\"stylesheet\" href=\"http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css\">\n"
-                + "  <link rel=\"stylesheet\" href=\"/style.css\">\n"
-                + "  <script type=\"text/javascript\" src=\"/script.js\"></script>\n"
-                + " </head>\n"
-                + " <body>\n"
-                + "  <div class=\"table-responsive\">\n"
-                + "   <table class=\"table table-striped\" id=\"deployables\">\n"
-                + "    <tbody>\n"
-                + "     <tr>\n"
-                + "      <th>Cluster</th>\n"
-                + "      <th>Application</th>\n"
-                + "      <th class=\"stage\" colspan=\"1\">PROD</th>\n"
-                + "     </tr>\n"
-                + "     <tr>\n"
-                + "      <th></th>\n"
-                + "      <th></th>\n"
-                + "      <th class=\"node\"></th>\n"
-                + "     </tr>\n"
-                + "     <tr>\n"
-                + "      <th rowspan=\"1\">localhost:1</th>\n"
-                + "      <th class=\"deployable-name\">dummy</th>\n"
-                + "      <td>\n"
-                + "       <div class=\"deployment\" id=\"localhost:1:PROD:1:dummy\"" + EVENTS + "\">\n"
-                + "        1.2.3\n"
-                + "       </div></td>\n"
-                + "     </tr>\n"
-                + "     <tr>\n"
-                + "      <th rowspan=\"1\">localhost:2</th>\n"
-                + "      <th class=\"deployable-name\">dummy</th>\n"
-                + "      <td>\n"
-                + "       <div class=\"deployment\" id=\"localhost:2:PROD:1:dummy\"" + EVENTS + "\">\n"
-                + "        1.2.3\n"
-                + "       </div></td>\n"
-                + "     </tr>\n"
-                + "    </tbody>\n"
-                + "   </table>\n"
-                + "  </div>\n"
-                + " </body>\n"
-                + "</html>");
+        URL expected = DeploymentListHtmlMessageBodyWriterTest.class.getResource("deployment-list-simple.html");
+        assertThat(out.toString()).isEqualTo(contentOf(expected).trim());
     }
 
     @Test
@@ -129,7 +90,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
 
         writer.writeTo(deployables, null, null, null, null, null, out);
 
-        URL expected = DeploymentListHtmlMessageBodyWriterTest.class.getResource("deployment-list-expected.html");
+        URL expected = DeploymentListHtmlMessageBodyWriterTest.class.getResource("deployment-list-full.html");
         assertThat(out.toString()).isEqualTo(contentOf(expected).trim());
     }
 }

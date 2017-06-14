@@ -92,8 +92,8 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void stagesHeader() {
             TableRow row = table.tr();
-            row.th().text("Cluster");
-            row.th().text("Application");
+            row.th().attr("rowspan", "2").text("Cluster");
+            row.th().attr("rowspan", "2").text("Application");
             mergedStages.forEach(stage -> row
                     .th()
                     .addClass("stage")
@@ -103,10 +103,14 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void nodesHeader() {
             TableRow row = table.tr();
-            row.th();
-            row.th();
-            mergedNodes.forEach(node -> row.th().addClass("node")
-                                           .text(node.getStage().formattedIndex(node.getIndex())));
+            mergedNodes.forEach(node -> row.th().addClass("node").html(htmlFor(node)));
+        }
+
+        private String htmlFor(ClusterNode node) {
+            String text = node.getStage().formattedIndex(node.getIndex());
+            if (text.isEmpty())
+                text = "&nbsp;";
+            return text;
         }
 
         private void tableBody() {
