@@ -64,6 +64,7 @@ public class Stage implements Comparable<Stage> {
         private String path = DEFAULT_PATH;
         private String prefix = "";
         private String suffix = "";
+        private int count = 1;
         private ClusterBuilder clusterBuilder;
 
         StageBuilder read(YamlEntry entry) {
@@ -74,7 +75,7 @@ public class Stage implements Comparable<Stage> {
         private StageBuilder read(YamlMapping value) {
             value.get("suffix").ifPresent(node -> suffix(node.asString()));
             value.get("prefix").ifPresent(node -> prefix(node.asString()));
-            count(value.get("count").asIntOr(1));
+            value.get("count").ifPresent(node -> count(node.asInt()));
             value.get("indexLength").ifPresent(node -> indexLength(node.asInt()));
             value.get("path").ifPresent(node -> path(node.asString()));
             return this;

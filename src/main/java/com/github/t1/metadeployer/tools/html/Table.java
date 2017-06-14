@@ -5,15 +5,21 @@ import org.jsoup.nodes.Element;
 
 public class Table {
     private final Element table;
+    private final Element tableBody;
 
     public Table(Element body) {
         this.table = body
                 .appendElement("div").addClass("table-responsive")
-                .appendElement("table").addClass("table table-striped")
-                .appendElement("tbody");
+                .appendElement("table").addClass("table table-striped");
+        this.tableBody = table.appendElement("t" + "body");
     }
 
-    public TableRow tr() { return new TableRow(table.appendElement("tr")); }
+    public Table id(String id) {
+        table.attr("id", id);
+        return this;
+    }
+
+    public TableRow tr() { return new TableRow(tableBody.appendElement("tr")); }
 
     @RequiredArgsConstructor
     public static class TableRow {

@@ -12,6 +12,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.junit.runner.RunWith;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static com.github.t1.testtools.AbstractPage.*;
 import static javax.ws.rs.core.MediaType.*;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
@@ -34,8 +36,8 @@ public class MetaDeployerIT {
 
     private static final String CLUSTER_CONFIG = "target/meta-deployer-it-cluster-config.yaml";
 
-    @ClassRule public static DropwizardClientRule worker1 = new DropwizardClientRule(DeployerMock.class);
-    @ClassRule public static DropwizardClientRule worker2 = new DropwizardClientRule(DeployerMock.class);
+    @ClassRule public static DropwizardClientRule worker1 = new DropwizardClientRule(new DeployerMock("1.2.3"));
+    @ClassRule public static DropwizardClientRule worker2 = new DropwizardClientRule(new DeployerMock("1.2.4"));
 
     @ClassRule public static WildflySwarmTestRule master = new WildflySwarmTestRule()
             .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG);
@@ -164,15 +166,18 @@ public class MetaDeployerIT {
         String response = metaDeployer().path("deployments").request(APPLICATION_JSON_TYPE).get(String.class);
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
-        Deployment expected = Deployment.builder()
-                                        .groupId("com.github.t1")
-                                        .artifactId("dummy")
-                                        .type("war")
-                                        .version("1.2.3")
-                                        .node(new ClusterNode(CLUSTER_1, CLUSTER_1.getStages().get(0), 1))
-                                        .name("dummy")
-                                        .build();
-        assertThat(list).contains(expected);
+        assertThat(list).contains(dummyDeployment(CLUSTER_1, "1.2.3"), dummyDeployment(CLUSTER_2, "1.2.4"));
+    }
+
+    private Deployment dummyDeployment(Cluster cluster, String version) {
+        return Deployment.builder()
+                         .groupId("com.github.t1")
+                         .artifactId("dummy")
+                         .type("war")
+                         .version(version)
+                         .node(new ClusterNode(cluster, cluster.getStages().get(0), 1))
+                         .name("dummy")
+                         .build();
     }
 
     @Test
@@ -182,7 +187,7 @@ public class MetaDeployerIT {
         assertThat(response.getStatusInfo()).isEqualTo(OK);
         assertThat(response.readEntity(String.class))
                 .contains("<th class=\"stage\" colspan=\"1\">PROD</th>")
-                .contains("<th class=\"app\">dummy</th>");
+                .contains("<th class=\"deployable-name\">dummy</th>");
     }
 
     @Test
@@ -190,5 +195,9 @@ public class MetaDeployerIT {
         deployments.navigateTo();
 
         deployments.assertOpen();
+        assertThat(deployments.findDeployment(By.id("localhost:1:PROD:1:dummy")))
+                .has(tagName("div"))
+                .has(attr("draggable", "true"))
+                .has(text("1.2.3"));
     }
 }

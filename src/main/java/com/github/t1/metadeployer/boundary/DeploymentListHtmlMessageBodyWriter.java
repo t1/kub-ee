@@ -85,7 +85,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void tableHeader() {
-            this.table = withoutContainer().table();
+            this.table = withoutContainer().table().id("deployables");
             stagesHeader();
             nodesHeader();
         }
@@ -111,20 +111,23 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void tableBody() {
             clusters.forEach(cluster -> {
-                List<String> deploymentNames = deploymentNames(cluster);
-                deploymentNames.forEach(deploymentName -> {
+                List<String> deployableNames = deployableNames(cluster);
+                deployableNames.forEach(deployableName -> {
                     TableRow row = table.tr();
-                    if (deploymentName.equals(deploymentNames.get(0)))
+                    if (deployableName.equals(deployableNames.get(0)))
                         row.th()
-                           .attr("rowspan", Integer.toString(deploymentNames.size()))
+                           .attr("rowspan", Integer.toString(deployableNames.size()))
                            .text(cluster.id());
-                    row.th().addClass("app").text(deploymentName);
+                    row.th().addClass("deployable-name").text(deployableName);
 
                     mergedNodes.stream()
-                               .map(n -> deployments
+                               .map(node -> deployments
                                        .stream()
-                                       .filter(deployment -> deployment.getName().equals(deploymentName))
-                                       .filter(deployment -> deployment.getNode().matchStageNameAndIndex(n))
+                                       .filter(deployment -> deployment.getName().equals(deployableName))
+                                       .filter(deployment -> deployment.getNode().matchStageNameAndIndex(node))
+                                       .filter(deployment -> Objects.equals(
+                                               deployment.getNode().getCluster().getSlot().getName(),
+                                               cluster.getSlot().getName()))
                                        .findAny()
                                        .map(this::cell)
                                        .orElse(new Element("div").addClass("no-deployment").html("-")))
@@ -133,16 +136,16 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             });
         }
 
-        private List<String> deploymentNames(Cluster cluster) {
-            List<String> deploymentNames = deployments
+        private List<String> deployableNames(Cluster cluster) {
+            List<String> deployableNames = deployments
                     .stream()
                     .filter(deployment -> on(cluster, deployment))
                     .map(Deployment::getName)
                     .distinct()
                     .collect(toList());
-            if (deploymentNames.isEmpty())
-                deploymentNames = singletonList("?");
-            return deploymentNames;
+            if (deployableNames.isEmpty())
+                deployableNames = singletonList("?");
+            return deployableNames;
         }
 
         private Element cell(Deployment deployment) {

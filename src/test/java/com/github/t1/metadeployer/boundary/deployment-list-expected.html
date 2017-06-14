@@ -9,7 +9,7 @@
  </head>
  <body>
   <div class="table-responsive">
-   <table class="table table-striped">
+   <table class="table table-striped" id="deployables">
     <tbody>
      <tr>
       <th>Cluster</th>
@@ -32,7 +32,7 @@
      </tr>
      <tr>
       <th rowspan="1">my:0</th>
-      <th class="app">foo</th>
+      <th class="deployable-name">foo</th>
       <td>
        <div class="deployment" id="my:0:DEV:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
         1.2.5-SNAPSHOT
@@ -64,7 +64,7 @@
      </tr>
      <tr>
       <th rowspan="2">other</th>
-      <th class="app">bar</th>
+      <th class="deployable-name">bar</th>
       <td>
        <div class="deployment" id="other:DEV:1:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
         2.0.1
@@ -95,7 +95,7 @@
        </div></td>
      </tr>
      <tr>
-      <th class="app">baz</th>
+      <th class="deployable-name">baz</th>
       <td>
        <div class="no-deployment">
         -
@@ -127,7 +127,7 @@
      </tr>
      <tr>
       <th rowspan="1">other:1</th>
-      <th class="app">?</th>
+      <th class="deployable-name">?</th>
       <td>
        <div class="no-deployment">
         -
@@ -159,7 +159,7 @@
      </tr>
      <tr>
       <th rowspan="1">third</th>
-      <th class="app">?</th>
+      <th class="deployable-name">?</th>
       <td>
        <div class="no-deployment">
         -
