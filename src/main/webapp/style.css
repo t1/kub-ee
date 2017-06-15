@@ -4,6 +4,16 @@ body {
     font-size: 16px;
 }
 
+div.container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+form.dropdown-menu {
+    padding-left: 20px;
+    padding-bottom: 15px;
+}
+
 .table > thead > tr > th,
 .table > tbody > tr > th,
 .table > tfoot > tr > th,

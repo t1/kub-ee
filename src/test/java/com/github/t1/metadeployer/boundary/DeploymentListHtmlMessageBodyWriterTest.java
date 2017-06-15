@@ -25,9 +25,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
                          .name(name);
     }
 
-    private DeploymentBuilder createDeployment() {
-        return Deployment.builder().groupId("com.github.t1").type("war");
-    }
+    private DeploymentBuilder createDeployment() { return Deployment.builder().groupId("com.github.t1").type("war"); }
 
     @Test
     public void shouldWriteSimple() throws Exception {
@@ -45,12 +43,12 @@ public class DeploymentListHtmlMessageBodyWriterTest {
         ClusterNode prod2 = prod.index(two, 1);
 
         DeploymentBuilder deployer = createDeployment().artifactId("deployer").name("deployer").version("unknown");
-        DeploymentBuilder jolokia = createDeployment().artifactId("jolokia").name("jolokia").version("1.3.4");
+        DeploymentBuilder jolokia = createDeployment().artifactId("jolokia").name("jolokia");
         List<Deployment> deployables = asList(
                 deployer.node(prod1).build(),
-                jolokia.node(prod1).build(),
+                jolokia.version("1.3.4").node(prod1).build(),
                 deployer.node(prod2).build(),
-                jolokia.node(prod2).build());
+                jolokia.version("1.3.3").node(prod2).build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);

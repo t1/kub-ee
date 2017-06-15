@@ -57,7 +57,7 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
                     .collect(toList());
 
             header("Meta-Deployer");
-            this.table = withoutContainer().table();
+            this.table = fullWidthContainer().table();
             tableHeader();
             this.clusters.forEach(this::clusterRow);
         }

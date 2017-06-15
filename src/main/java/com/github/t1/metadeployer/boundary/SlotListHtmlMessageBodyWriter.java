@@ -47,7 +47,7 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
             this.slots = slots;
 
             header("Slots");
-            table = withoutContainer().table();
+            table = fullWidthContainer().table();
             tableHeader();
             this.slots.forEach(this::slotRow);
         }

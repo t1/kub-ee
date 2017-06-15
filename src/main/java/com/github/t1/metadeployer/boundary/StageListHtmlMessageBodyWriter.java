@@ -48,7 +48,7 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
             this.stages = stages;
 
             header("Stages");
-            table = withoutContainer().table();
+            table = fullWidthContainer().table();
             tableHeader();
             this.stages.forEach(this::stageRow);
         }

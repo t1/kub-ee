@@ -61,6 +61,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             header();
             tableHeader();
             tableBody();
+            footer();
         }
 
         private Collection<Stage> mergedStages() {
@@ -81,11 +82,15 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void header() {
             header("Meta-Deployer");
+        }
+
+        @Override public void footer() {
+            super.footer();
             script("/script.js");
         }
 
         private void tableHeader() {
-            this.table = withoutContainer().table().id("deployables");
+            this.table = fullWidthContainer().table().id("deployables");
             stagesHeader();
             nodesHeader();
         }
