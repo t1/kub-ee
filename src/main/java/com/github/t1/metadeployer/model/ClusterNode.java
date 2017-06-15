@@ -24,9 +24,10 @@ public class ClusterNode {
     public URI deployerUri() { return UriBuilder.fromUri(uri()).path("/" + stage.getPath()).build(); }
 
     public URI uri() {
-        return URI.create(format("http://%s%s%s%s.%s:%d",
+        return URI.create(format("http://%s%s%s%s%s:%d",
                 stage.getPrefix(), cluster.getSimpleName(), stage.getSuffix(), stage.formattedIndex(index),
-                cluster.getDomainName(), cluster.getSlot().getHttp()));
+                (cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName(),
+                cluster.getSlot().getHttp()));
     }
 
     public boolean matchStageNameAndIndex(ClusterNode that) {
