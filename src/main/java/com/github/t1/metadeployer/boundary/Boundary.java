@@ -1,8 +1,10 @@
 package com.github.t1.metadeployer.boundary;
 
+import com.github.t1.log.Logged;
 import com.github.t1.metadeployer.gateway.DeployerGateway;
 import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import com.github.t1.metadeployer.model.*;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
@@ -14,9 +16,11 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static com.github.t1.log.LogLevel.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
+@Logged(level = INFO)
 @Slf4j
 @Path("/")
 @Stateless
@@ -142,4 +146,23 @@ public class Boundary {
     }
 
     private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
+
+    @Path("/deployments/{id}")
+    @GET public String getDeployment(@PathParam("id") String id) {
+        log.info("#### getDeployments: {}", id);
+        return "hi:" + id;
+    }
+
+    @Path("/deployments/{id}")
+    @POST
+    public PostDeploymentResponse postDeployments(@PathParam("id") String id, @FormParam("version") String version) {
+        return new PostDeploymentResponse(id, version);
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class PostDeploymentResponse {
+        String id;
+        String version;
+    }
 }

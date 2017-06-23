@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Meta-Deployer</title>
-  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../style.css">
  </head>
  <body>
   <div class="container-fluid">
@@ -33,28 +33,58 @@
        <th rowspan="1">my:0</th>
        <th class="deployable-name">foo</th>
        <td>
-        <div class="deployment" id="my:0:DEV:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         1.2.5-SNAPSHOT
+        <div class="deployment" id="my:0:DEV:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.5-SNAPSHOT
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
         <div class="no-deployment">
          -
         </div></td>
        <td>
-        <div class="deployment" id="my:0:QA:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         1.2.4
+        <div class="deployment" id="my:0:QA:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.4
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         1.2.3
+        <div class="deployment" id="my:0:PROD:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.3
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         1.2.3
+        <div class="deployment" id="my:0:PROD:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.3
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:3:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         1.2.3
+        <div class="deployment" id="my:0:PROD:3:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.3
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
         <div class="no-deployment">
@@ -65,12 +95,24 @@
        <th rowspan="2">other</th>
        <th class="deployable-name">bar</th>
        <td>
-        <div class="deployment" id="other:DEV:1:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         2.0.1
+        <div class="deployment" id="other:DEV:1:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           2.0.1
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
-        <div class="deployment" id="other:DEV:2:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         2.0.2
+        <div class="deployment" id="other:DEV:2:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           2.0.2
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
         <div class="no-deployment">
@@ -100,8 +142,14 @@
          -
         </div></td>
        <td>
-        <div class="deployment" id="other:DEV:2:baz" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-         error-hint
+        <div class="deployment" id="other:DEV:2:baz" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           error-hint
+           <span class="caret"></span>
+          </div>
+          <form class="dropdown-menu form-horizontal"></form>
+         </div>
         </div></td>
        <td>
         <div class="no-deployment">
@@ -192,8 +240,8 @@
     </table>
    </div>
   </div>
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="/script.js"></script>
+  <script type="text/javascript" src="jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../script.js"></script>
  </body>
 </html>

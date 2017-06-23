@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.URI;
 import java.util.Map;
 
+import static com.github.t1.metadeployer.tools.html.Html.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -36,7 +37,7 @@ public class LinksHtmlMessageBodyWriterTest {
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
-                .containsOnly("http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css", "/style.css");
+                .containsOnly(BOOTSTRAP_BASE + "/css/bootstrap.min.css", "../style.css");
         assertThat(html.body().html()).isEqualTo(""
                 + "<div class=\"container\"> \n"
                 + " <h1 class=\"page-header\">Links</h1> \n"

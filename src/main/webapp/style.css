@@ -1,12 +1,22 @@
 @CHARSET "UTF-8";
 
+html {
+    height: 100%;
+}
+
 body {
     font-size: 16px;
+    height: 100%;
 }
 
 div.container-fluid {
     padding-left: 0;
     padding-right: 0;
+    height: 100%;
+}
+
+div.table-responsive {
+    height: 100%;
 }
 
 form.dropdown-menu {

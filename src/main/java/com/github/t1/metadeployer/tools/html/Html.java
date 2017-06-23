@@ -5,11 +5,16 @@ import org.jsoup.nodes.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class Html {
-    private static final String BOOTSTRAP_VERSION = "3.2.0";
-    private static final String BOOTSTRAP_CDN = "http://maxcdn.bootstrapcdn.com/bootstrap/";
-    public static final String BOOTSTRAP_CSS_URI = BOOTSTRAP_CDN + BOOTSTRAP_VERSION + "/css/bootstrap.min.css";
-    public static final String BOOTSTRAP_JS_URI = BOOTSTRAP_CDN + BOOTSTRAP_VERSION + "/js/bootstrap.min.js";
-    private static final String JQUERY_JS_URI = "https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js";
+    // private static final String BOOTSTRAP_VERSION = "3.3.7";
+    // private static final String BOOTSTRAP_BASE = "http://maxcdn.bootstrapcdn.com/bootstrap/" + BOOTSTRAP_VERSION;
+    public static final String BOOTSTRAP_BASE = "bootstrap";
+    public static final String BOOTSTRAP_CSS_URI = BOOTSTRAP_BASE + "/css/bootstrap.min.css";
+    public static final String BOOTSTRAP_JS_URI = BOOTSTRAP_BASE + "/js/bootstrap.min.js";
+
+    // private static final String JQUERY_VERSION = "1.12.4";
+    // private static final String JQUERY_BASE = "https://ajax.googleapis.com/ajax/libs/jquery/" + JQUERY_VERSION;
+    private static final String JQUERY_BASE = "jquery";
+    private static final String JQUERY_JS_URI = JQUERY_BASE + "/jquery.min.js";
 
     private final Document html;
     private Element body;
@@ -32,7 +37,7 @@ public class Html {
 
     public void title(String title) { html.title(title); }
 
-    public void stylesheets() { stylesheet(BOOTSTRAP_CSS_URI).stylesheet("/style.css"); }
+    public void stylesheets() { stylesheet(BOOTSTRAP_CSS_URI).stylesheet("../style.css"); }
 
     public Html stylesheet(String href) {
         head().appendElement("link")
@@ -42,23 +47,25 @@ public class Html {
     }
 
     public void script(String src) {
-        html.body().appendElement("script")
-              .attr("type", "text/javascript")
-              .attr("src", src);
+        rawBody().appendElement("script")
+                 .attr("type", "text/javascript")
+                 .attr("src", src);
     }
 
     public Element head() { return html.head(); }
 
     public Html fullWidthContainer() {
-        this.body = html.body().appendElement("div").addClass("container-fluid");
+        this.body = rawBody().appendElement("div").addClass("container-fluid");
         return this;
     }
 
     public Element body() {
         if (this.body == null)
-            this.body = html.body().appendElement("div").addClass("container");
+            this.body = rawBody().appendElement("div").addClass("container");
         return this.body;
     }
+
+    public Element rawBody() { return html.body(); }
 
     public void h1(String title) {
         body().appendElement("h1").addClass("page-header").text(title);

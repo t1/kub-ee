@@ -12,7 +12,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.By;
+import org.openqa.selenium.*;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
@@ -195,9 +195,22 @@ public class MetaDeployerIT {
         deployments.navigateTo();
 
         deployments.assertOpen();
-        assertThat(deployments.findDeployment(By.id("localhost:1:PROD:1:dummy")))
-                .has(tagName("div"))
-                .has(attr("draggable", "true"))
-                .has(text("1.2.3"));
+        WebElement deployment = deployments.findDeployment(By.id("localhost:1:PROD:1:dummy"));
+        WebElement dropdown = deployment.findElement(By.className("dropdown"));
+        WebElement toggle = dropdown.findElement(By.className("dropdown-toggle"));
+        WebElement form = dropdown.findElement(By.tagName("form"));
+        assertThat(dropdown).has(not(cssClass("open")));
+        assertThat(form).is(not(displayed()));
+
+        toggle.click();
+        // List<WebElement> radios = form.findElements(By.tagName("input"));
+        // assertThat(radios).hasSize(0);
+        // assertThat(radios.get(0)).has(value("1.3.2")).is(not(selected()));
+        // assertThat(radios.get(1)).has(value("1.3.3")).is(not(selected()));
+        // assertThat(radios.get(2)).has(value("1.3.4"));//.is(selected());
+        // assertThat(dropdown).has(cssClass("open"));
+        // assertThat(form).is(displayed());
+        //
+        // radios.get(2).click();
     }
 }

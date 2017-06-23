@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.List;
 
 import static com.github.t1.metadeployer.model.ClusterTest.*;
+import static com.github.t1.metadeployer.tools.html.Html.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
@@ -28,7 +29,7 @@ public class SlotListHtmlMessageBodyWriterTest {
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
-                .containsOnly("http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css", "/style.css");
+                .containsOnly(BOOTSTRAP_BASE + "/css/bootstrap.min.css", "../style.css");
         assertThat(html.body().html()).isEqualTo(""
                 + "<div class=\"container-fluid\"> \n"
                 + " <div class=\"table-responsive\"> \n"

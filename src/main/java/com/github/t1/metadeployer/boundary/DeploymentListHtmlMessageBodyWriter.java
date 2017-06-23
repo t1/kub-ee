@@ -86,7 +86,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         @Override public void footer() {
             super.footer();
-            script("/script.js");
+            script("../script.js");
         }
 
         private void tableHeader() {
@@ -158,7 +158,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private Element cell(Deployment deployment) {
-            return new Element("div")
+            Element cell = new Element("div")
                     .addClass("deployment")
                     .attr("id", deployment.id())
                     .attr("draggable", "true")
@@ -168,7 +168,16 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                     .attr("ondragover", "drag_over(event);")
                     .attr("ondragleave", "drag_leave(event);")
                     .attr("ondrop", "drop_handler(event);")
-                    .text(deployment.hasError() ? deployment.getError() : deployment.getVersion());
+                    .attr("onclick", "click_handler(event);");
+            Element dropdown = cell.appendElement("div").addClass("dropdown");
+            dropdown.appendElement("div")
+                    .addClass("dropdown-toggle")
+                    .attr("data-toggle", "dropdown")
+                    .text(deployment.hasError() ? deployment.getError() : deployment.getVersion())
+                    .appendElement("span")
+                    .addClass("caret");
+            dropdown.appendElement("form").addClass("dropdown-menu form-horizontal");
+            return cell;
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {

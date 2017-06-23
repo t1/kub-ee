@@ -2,4 +2,4 @@
 meta-deployer.iml
 target/
 cluster-config.yaml
-
+node_modules/
