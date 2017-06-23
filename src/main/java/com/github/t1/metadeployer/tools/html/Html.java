@@ -47,8 +47,12 @@ public class Html {
     }
 
     public void script(String src) {
+        script(src, "text/javascript");
+    }
+
+    public void script(String src, String type) {
         rawBody().appendElement("script")
-                 .attr("type", "text/javascript")
+                 .attr("type", type)
                  .attr("src", src);
     }
 

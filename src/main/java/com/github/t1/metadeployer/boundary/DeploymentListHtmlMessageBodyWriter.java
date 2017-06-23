@@ -86,7 +86,10 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         @Override public void footer() {
             super.footer();
-            script("../script.js");
+            script("react/react.js");
+            script("react/react-dom.js");
+            script("babel-standalone/babel.js");
+            script("../script.js", "text/babel");
         }
 
         private void tableHeader() {

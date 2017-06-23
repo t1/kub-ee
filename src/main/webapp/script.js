@@ -1,5 +1,28 @@
 'use strict';
 
+function Version(props) {
+    return (
+        <div className="radio">
+            <label><input type="radio" name={props.group} value={props.value}
+                          onClick={props.onClick}/>{props.value}</label>
+        </div>
+    );
+}
+
+class DeploymentMenu extends React.Component {
+    render() {
+        const group = this.props.group;
+        const versions = this.props.versions.map(version => {
+            return (
+                <div key={version}>
+                    <Version value={version} group={group} onClick={() => selectVersion(group, version)}/>
+                </div>
+            );
+        });
+        return <div>{versions}</div>
+    }
+}
+
 function click_handler(event) {
     const form = event.target.parentNode.getElementsByTagName('form')[0];
 
@@ -8,24 +31,9 @@ function click_handler(event) {
     const cellId = event.target.parentNode.parentNode.id;
     console.debug("form", form, cellId);
 
-    const versions = ['1.2.3', '1.2.4', '1.2.5'];
+    const versions = ['1.2.3', '1.2.4', '1.2.5', '1.2.6'];
 
-    versions.forEach(version => {
-        let div = document.createElement('div');
-        $(div).addClass("radio");
-        form.appendChild(div);
-
-        const input = document.createElement('input');
-        $(input).attr('type', 'radio')
-            .attr('name', cellId)
-            .val(version)
-            .attr('onclick', 'selectVersion(event.target.name, event.target.value);');
-
-        const label = document.createElement('label');
-        label.appendChild(input);
-        label.appendChild(document.createTextNode(version));
-        div.appendChild(label);
-    });
+    ReactDOM.render(<DeploymentMenu group='localhost:1:PROD:1:jolokia' versions={versions}/>, form);
 }
 
 function fetchVersions(where) {
