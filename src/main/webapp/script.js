@@ -31,31 +31,30 @@ function click_handler(event) {
     const cellId = event.target.parentNode.parentNode.id;
     console.debug("form", form, cellId);
 
-    const versions = ['1.2.3', '1.2.4', '1.2.5', '1.2.6'];
-
-    ReactDOM.render(<DeploymentMenu group='localhost:1:PROD:1:jolokia' versions={versions}/>, form);
+    fetchVersions(cellId).then(versions => {
+        ReactDOM.render(<DeploymentMenu group={cellId} versions={versions}/>, form);
+    });
 }
 
 function fetchVersions(where) {
-    console.debug("selectVersion", where);
+    console.debug("fetchVersion", where);
 
-    fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
+    return fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
         method: 'get',
         headers: {
-            "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Accept": "application/json"
-        },
-        body: 'where=' + where
+        }
     })
         .then(response => {
             if (response.ok) return response.json();
             else return new Error(response);
         })
         .then(data => {
-            console.log('success', data);
+            console.debug('success', data);
+            return data;
         })
         .catch(error => {
-            console.log('failed', error);
+            console.debug('failed', error);
         });
 }
 
@@ -75,10 +74,10 @@ function selectVersion(where, version) {
             else return new Error(response);
         })
         .then(data => {
-            console.log('success', data);
+            console.debug('success', data);
         })
         .catch(error => {
-            console.log('failed', error);
+            console.debug('failed', error);
         });
 }
 
@@ -114,12 +113,12 @@ function drop_handler(ev) {
     ev.preventDefault();
     const id = ev.dataTransfer.getData("text");
     if (ev.dataTransfer.effectAllowed === "copy") {
-        console.log("copy " + id + "->" + ev.target.id);
+        console.debug("copy " + id + "->" + ev.target.id);
         const nodeCopy = document.getElementById(id).cloneNode(true);
         nodeCopy.id = "newId";
         ev.target.appendChild(nodeCopy);
     } else {
-        console.log("move " + id + "->" + ev.target.id);
+        console.debug("move " + id + "->" + ev.target.id);
         ev.target.appendChild(document.getElementById(id));
     }
 }

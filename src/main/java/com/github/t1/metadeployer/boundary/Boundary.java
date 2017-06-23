@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
+import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
@@ -148,9 +149,8 @@ public class Boundary {
     private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
 
     @Path("/deployments/{id}")
-    @GET public String getDeployment(@PathParam("id") String id) {
-        log.info("#### getDeployments: {}", id);
-        return "hi:" + id;
+    @GET public List<String> getDeployment(@PathParam("id") String id) {
+        return asList("1.2.3", "1.2.4", "1.2.5");
     }
 
     @Path("/deployments/{id}")
