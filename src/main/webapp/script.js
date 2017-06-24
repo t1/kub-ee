@@ -6,7 +6,7 @@ class DeploymentMenu extends React.Component {
         const versions = this.props.versions.map(version => {
             return (
                 <li key={version.name}
-                    onClick={() => selectVersion(group, version.name)}
+                    onClick={() => selectVersion(group, version)}
                     onMouseEnter={() => this.hover(version)}
                     onMouseLeave={() => this.hover(undefined)}
                 >
@@ -127,7 +127,7 @@ function selectVersion(where, version) {
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept': 'application/json'
         },
-        body: 'version=' + version
+        body: 'version=' + version.name
     })
         .then(response => {
             if (response.ok) return response.json();

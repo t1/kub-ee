@@ -198,18 +198,18 @@ public class MetaDeployerIT {
         WebElement deployment = deployments.findDeployment(By.id("localhost:1:PROD:1:dummy"));
         WebElement dropdown = deployment.findElement(By.className("dropdown"));
         WebElement toggle = dropdown.findElement(By.className("dropdown-toggle"));
-        WebElement form = dropdown.findElement(By.tagName("form"));
+        WebElement menu = dropdown.findElement(By.className("versions-menu"));
         assertThat(dropdown).has(not(cssClass("open")));
-        assertThat(form).is(not(displayed()));
+        assertThat(menu).is(not(displayed()));
 
         toggle.click();
-        // List<WebElement> radios = form.findElements(By.tagName("input"));
+        // List<WebElement> radios = menu.findElements(By.tagName("input"));
         // assertThat(radios).hasSize(0);
         // assertThat(radios.get(0)).has(value("1.3.2")).is(not(selected()));
         // assertThat(radios.get(1)).has(value("1.3.3")).is(not(selected()));
         // assertThat(radios.get(2)).has(value("1.3.4"));//.is(selected());
         // assertThat(dropdown).has(cssClass("open"));
-        // assertThat(form).is(displayed());
+        // assertThat(menu).is(displayed());
         //
         // radios.get(2).click();
     }
