@@ -159,7 +159,7 @@ public class Boundary {
                     .available(asList(
                             new Version("2.9.1", undeployed),
                             new Version("2.9.2", deployed),
-                            new Version("2.9.3", undeployed)))
+                            new Version("2.9.3", undeploying)))
                     .build();
         else
             return GetDeploymentResponse

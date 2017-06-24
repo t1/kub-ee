@@ -17,7 +17,7 @@ class DeploymentMenu extends React.Component {
 
     versionIconClasses(version) {
         return 'glyphicon glyphicon-' + this.icon(version.status)
-            + ' versions-icon versions-icon-' + version.status;
+            + ' version-icon version-icon-' + version.status;
     }
 
     icon(state) {
@@ -40,18 +40,50 @@ function click_handler(event) {
     const cellId = event.target.parentNode.parentNode.id;
     if (!cellId)
         return;
-    const menu = $('#' + cellId.split(':').join('\\:') + ' .versions-menu')[0];
+    const idSelector = (className) => '#' + cellId.split(':').join('\\:') + ' .' + className;
+    const menu = $(idSelector('versions-menu'))[0];
 
     if (!menu || menu.hasChildNodes())
         return;
     console.debug('menu', menu, cellId);
 
-    fetchVersions(cellId).then(versions => {
-        ReactDOM.render(<DeploymentMenu
-            group={cellId}
-            versions={versions.available}
-            current={versions.current}/>, menu);
-    });
+    let rot = 0;
+
+    function animate() {
+        rot += 360;
+        if (rot > 36000)
+            rot = 0;
+        function transform(now, undeploying) {
+            let transform = '';
+            if (undeploying)
+                transform += 'scale(-1, 1) translatex(calc(100% - 20px)) ';
+            transform += 'rotate(' + now + 'deg)';
+            return transform;
+        }
+
+        $(idSelector('version-icon-undeploying') + ', ' + idSelector('version-icon-deploying'))
+            .animate(
+                {rotation: rot},
+                {
+                    duration: 2000,
+                    easing: 'linear',
+                    step: function (now) {
+                        const undeploying = this.attributes['class'].value.indexOf('version-icon-undeploying') >= 0;
+                        $(this).css({transform: transform(now, undeploying)});
+                    },
+                    complete: animate
+                }
+            );
+    }
+
+    fetchVersions(cellId)
+        .then(versions => {
+            ReactDOM.render(<DeploymentMenu
+                group={cellId}
+                versions={versions.available}
+                current={versions.current}/>, menu);
+        })
+        .then(animate);
 }
 
 function fetchVersions(where) {
@@ -68,7 +100,7 @@ function fetchVersions(where) {
             else return new Error(response);
         })
         .then(data => {
-            console.debug('success', data);
+            console.debug('got versions', data);
             return data;
         })
         .catch(error => {
@@ -92,7 +124,7 @@ function selectVersion(where, version) {
             else return new Error(response);
         })
         .then(data => {
-            console.debug('success', data);
+            console.debug('posted select', data);
         })
         .catch(error => {
             console.debug('failed', error);
