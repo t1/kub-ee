@@ -179,7 +179,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                     .text(deployment.hasError() ? deployment.getError() : deployment.getVersion())
                     .appendElement("span")
                     .addClass("caret");
-            dropdown.appendElement("form").addClass("dropdown-menu form-horizontal");
+            dropdown.appendElement("div").addClass("dropdown-menu versions-menu");
             return cell;
         }
 

@@ -38,12 +38,8 @@ Manage the applications on multiple Java EE clusters.
 ## Deployment Status
 
 * Mouse-Off
-  * Not-Deployed: empty
+  * Not-Deployed: minus
   * Deployed: ok-circle
   * Deploying: refresh (rotating)
   * Undeploying: remove-circle (rotating)
-
-* Mouse-Over
-  * Deploy: ok-sign
-  * Redeploy: ok-sign
-  * ? Stop (Un)Deploy: remove-sign
+  * Mouse-Over: ok-sign

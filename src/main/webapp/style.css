@@ -19,8 +19,18 @@ div.table-responsive {
     height: 100%;
 }
 
-form.dropdown-menu {
-    padding-left: 20px;
+.versions-menu ul {
+    padding-top: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.versions-icon {
+    padding-right: 5px;
+}
+
+.versions-icon-undeploying, .versions-icon-undeployee {
+    transform: scale(-1, 1) translatex(calc(100% - 14px));
 }
 
 .table > thead > tr > th,

@@ -1,52 +1,66 @@
 'use strict';
 
-function Version(props) {
-    return (
-        <div className="radio">
-            <label><input type="radio" name={props.group} value={props.value} checked={props.checked}
-                          onClick={props.onClick}/>{props.value}</label>
-        </div>
-    );
-}
-
 class DeploymentMenu extends React.Component {
     render() {
         const group = this.props.group;
         const versions = this.props.versions.map(version => {
             return (
-                <li key={version}>
-                    <Version value={version} group={group} checked={this.props.current === version}
-                             onClick={() => selectVersion(group, version)}/>
+                <li key={version.name}
+                    onClick={() => selectVersion(group, version.name)}>
+                    <span className={this.versionIconClasses(version)}/>
+                    <span className="version">{version.name}</span>
                 </li>
             );
         });
         return <ul className="list-unstyled">{versions}</ul>
     }
+
+    versionIconClasses(version) {
+        return 'glyphicon glyphicon-' + this.icon(version.status)
+            + ' versions-icon versions-icon-' + version.status;
+    }
+
+    icon(state) {
+        switch (state) {
+            case 'undeployed':
+                return 'minus';
+            case 'deployed':
+                return 'ok-circle';
+            case 'deploying':
+                return 'refresh';
+            case 'undeployee':
+                return 'refresh';
+            case 'undeploying':
+                return 'refresh';
+        }
+    }
 }
 
 function click_handler(event) {
-    const form = event.target.parentNode.getElementsByTagName('form')[0];
-
-    if (!form || form.hasChildNodes())
-        return;
     const cellId = event.target.parentNode.parentNode.id;
-    console.debug("form", form, cellId);
+    if (!cellId)
+        return;
+    const menu = $('#' + cellId.split(':').join('\\:') + ' .versions-menu')[0];
+
+    if (!menu || menu.hasChildNodes())
+        return;
+    console.debug('menu', menu, cellId);
 
     fetchVersions(cellId).then(versions => {
         ReactDOM.render(<DeploymentMenu
             group={cellId}
             versions={versions.available}
-            current={versions.current}/>, form);
+            current={versions.current}/>, menu);
     });
 }
 
 function fetchVersions(where) {
-    console.debug("fetchVersion", where);
+    console.debug('fetchVersion', where);
 
     return fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
         method: 'get',
         headers: {
-            "Accept": "application/json"
+            'Accept': 'application/json'
         }
     })
         .then(response => {
@@ -63,13 +77,13 @@ function fetchVersions(where) {
 }
 
 function selectVersion(where, version) {
-    console.debug("selectVersion", where, version);
+    console.debug('selectVersion', where, version);
 
     fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
         method: 'post',
         headers: {
-            "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Accept": "application/json"
+            'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': 'application/json'
         },
         body: 'version=' + version
     })
@@ -89,13 +103,13 @@ function selectVersion(where, version) {
 // see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
 
 function drag_start(ev) {
-    ev.currentTarget.style.border = "dashed";
-    ev.dataTransfer.setData("text", ev.target.id);
+    ev.currentTarget.style.border = 'dashed';
+    ev.dataTransfer.setData('text', ev.target.id);
 }
 
 function drag_enter(ev) {
     ev.preventDefault();
-    ev.currentTarget.style.background = "lightblue";
+    ev.currentTarget.style.background = 'lightblue';
 }
 
 function drag_over(ev) {
@@ -115,14 +129,14 @@ function drag_end(ev) {
 
 function drop_handler(ev) {
     ev.preventDefault();
-    const id = ev.dataTransfer.getData("text");
-    if (ev.dataTransfer.effectAllowed === "copy") {
-        console.debug("copy " + id + "->" + ev.target.id);
+    const id = ev.dataTransfer.getData('text');
+    if (ev.dataTransfer.effectAllowed === 'copy') {
+        console.debug('copy ' + id + '->' + ev.target.id);
         const nodeCopy = document.getElementById(id).cloneNode(true);
-        nodeCopy.id = "newId";
+        nodeCopy.id = 'newId';
         ev.target.appendChild(nodeCopy);
     } else {
-        console.debug("move " + id + "->" + ev.target.id);
+        console.debug('move ' + id + '->' + ev.target.id);
         ev.target.appendChild(document.getElementById(id));
     }
 }

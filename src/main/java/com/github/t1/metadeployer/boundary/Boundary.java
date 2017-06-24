@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
+import static com.github.t1.metadeployer.boundary.Boundary.Status.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
@@ -150,22 +151,45 @@ public class Boundary {
 
     @Path("/deployments/{id}")
     @GET public GetDeploymentResponse getDeployment(@PathParam("id") String id) {
-        return GetDeploymentResponse
-                .builder()
-                .id(id)
-                .current("1.3.4")
-                .available(id.endsWith("deployer")
-                        ? asList("1.2.3", "1.2.4", "1.2.5")
-                        : asList("1.3.3", "1.3.4", "1.3.5"))
-                .build();
+        if (id.endsWith("deployer"))
+            return GetDeploymentResponse
+                    .builder()
+                    .id(id)
+                    .current("2.9.2")
+                    .available(asList(
+                            new Version("2.9.1", undeployed),
+                            new Version("2.9.2", deployed),
+                            new Version("2.9.3", undeployed)))
+                    .build();
+        else
+            return GetDeploymentResponse
+                    .builder()
+                    .id(id)
+                    .current("1.3.4")
+                    .available(asList(
+                            new Version("1.3.3", undeployee),
+                            new Version("1.3.4", undeploying),
+                            new Version("1.3.5", deploying)))
+                    .build();
+    }
+
+    public enum Status {
+        undeployed, deploying, deployed, undeployee, undeploying
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class Version {
+        private String name;
+        private Status status;
     }
 
     @Data
     @Builder
     public static class GetDeploymentResponse {
-        String id;
-        String current;
-        List<String> available;
+        private String id;
+        private String current;
+        private List<Version> available;
     }
 
     @Path("/deployments/{id}")
