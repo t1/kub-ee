@@ -3,7 +3,7 @@
 function Version(props) {
     return (
         <div className="radio">
-            <label><input type="radio" name={props.group} value={props.value}
+            <label><input type="radio" name={props.group} value={props.value} checked={props.checked}
                           onClick={props.onClick}/>{props.value}</label>
         </div>
     );
@@ -14,12 +14,13 @@ class DeploymentMenu extends React.Component {
         const group = this.props.group;
         const versions = this.props.versions.map(version => {
             return (
-                <div key={version}>
-                    <Version value={version} group={group} onClick={() => selectVersion(group, version)}/>
-                </div>
+                <li key={version}>
+                    <Version value={version} group={group} checked={this.props.current === version}
+                             onClick={() => selectVersion(group, version)}/>
+                </li>
             );
         });
-        return <div>{versions}</div>
+        return <ul className="list-unstyled">{versions}</ul>
     }
 }
 
@@ -32,7 +33,10 @@ function click_handler(event) {
     console.debug("form", form, cellId);
 
     fetchVersions(cellId).then(versions => {
-        ReactDOM.render(<DeploymentMenu group={cellId} versions={versions}/>, form);
+        ReactDOM.render(<DeploymentMenu
+            group={cellId}
+            versions={versions.available}
+            current={versions.current}/>, form);
     });
 }
 
@@ -67,7 +71,7 @@ function selectVersion(where, version) {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Accept": "application/json"
         },
-        body: 'where=' + where + '&version=' + version
+        body: 'version=' + version
     })
         .then(response => {
             if (response.ok) return response.json();

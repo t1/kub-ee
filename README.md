@@ -33,3 +33,17 @@ Manage the applications on multiple Java EE clusters.
   * Load Metrics; by app & total
   * Put root bundle
 * Deployables _containing_ config bundle, or matching config bundle GAV with classifier `bundle`.
+
+
+## Deployment Status
+
+* Mouse-Off
+  * Not-Deployed: empty
+  * Deployed: ok-circle
+  * Deploying: refresh (rotating)
+  * Undeploying: remove-circle (rotating)
+
+* Mouse-Over
+  * Deploy: ok-sign
+  * Redeploy: ok-sign
+  * ? Stop (Un)Deploy: remove-sign
