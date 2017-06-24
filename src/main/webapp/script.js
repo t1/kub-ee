@@ -6,7 +6,10 @@ class DeploymentMenu extends React.Component {
         const versions = this.props.versions.map(version => {
             return (
                 <li key={version.name}
-                    onClick={() => selectVersion(group, version.name)}>
+                    onClick={() => selectVersion(group, version.name)}
+                    onMouseEnter={() => this.hover(version)}
+                    onMouseLeave={() => this.hover(undefined)}
+                >
                     <span className={this.versionIconClasses(version)}/>
                     <span className="version">{version.name}</span>
                 </li>
@@ -15,9 +18,16 @@ class DeploymentMenu extends React.Component {
         return <ul className="list-unstyled">{versions}</ul>
     }
 
+    hover(version) {
+        const hover = (version && ['deployed', 'undeployed'].indexOf(version.status) >= 0) ? version.name : undefined;
+        this.setState({
+            hover: hover
+        });
+    };
+
     versionIconClasses(version) {
-        return 'glyphicon glyphicon-' + this.icon(version.status)
-            + ' version-icon version-icon-' + version.status;
+        const icon = ((this.state && this.state.hover === version.name) ? 'ok-sign' : this.icon(version.status));
+        return 'glyphicon glyphicon-' + icon + ' version-icon version-icon-' + version.status;
     }
 
     icon(state) {
