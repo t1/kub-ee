@@ -43,8 +43,11 @@ public class ClusterConfig {
         clusters.addAll(Cluster.readAllFrom(document));
     }
 
-    public void write(Path path) {
-        new ClusterWriter(path).write();
+    public void write(Path path) { new ClusterWriter(path).write(); }
+
+    public ClusterConfig add(Cluster cluster) {
+        clusters.add(cluster);
+        return this;
     }
 
     private class ClusterWriter {

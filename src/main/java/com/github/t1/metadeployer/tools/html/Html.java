@@ -56,6 +56,10 @@ public class Html {
                  .attr("src", src);
     }
 
+    public void inlineScript(String text) {
+        rawBody().appendElement("script").text(text);
+    }
+
     public Element head() { return html.head(); }
 
     public Html fullWidthContainer() {

@@ -7,17 +7,17 @@ import com.github.t1.metadeployer.gateway.DeployerMock;
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.testtools.*;
 import io.dropwizard.testing.junit.DropwizardClientRule;
-import lombok.SneakyThrows;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.*;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.List;
 
 import static com.github.t1.testtools.AbstractPage.*;
@@ -28,44 +28,44 @@ import static org.assertj.core.api.Assertions.*;
 @RunWith(OrderedJUnitRunner.class)
 public class MetaDeployerIT {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final WebDriverRule driver = new WebDriverRule();
     private static final Stage PROD = Stage.builder().name("PROD").path("application/").count(1).build();
+
+    private static final Path CLUSTER_CONFIG_PATH = Paths.get("target/meta-deployer-it-cluster-config.yaml");
+
+    @ClassRule public static final DropwizardClientRule WORKER_1
+            = new DropwizardClientRule(new DeployerMock("1.2.3"));
+    @ClassRule public static final DropwizardClientRule WORKER_2
+            = new DropwizardClientRule(new DeployerMock("1.2.4"));
 
     private static Cluster CLUSTER_1;
     private static Cluster CLUSTER_2;
 
-    private static final String CLUSTER_CONFIG = "target/meta-deployer-it-cluster-config.yaml";
+    @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
+            .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG_PATH);
 
-    @ClassRule public static DropwizardClientRule worker1 = new DropwizardClientRule(new DeployerMock("1.2.3"));
-    @ClassRule public static DropwizardClientRule worker2 = new DropwizardClientRule(new DeployerMock("1.2.4"));
-
-    @ClassRule public static WildflySwarmTestRule master = new WildflySwarmTestRule()
-            .withProperty("meta-deployer.cluster-config", CLUSTER_CONFIG);
+    @ClassRule public static final WebDriverRule DRIVER = new WebDriverRule(new FirefoxDriver());
 
     private static DeploymentsPage deployments;
 
-    @BeforeClass @SneakyThrows public static void setup() {
+    @BeforeClass public static void setup() {
         CLUSTER_1 = Cluster.builder()
-                           .host(worker1.baseUri().getHost())
-                           .slot(Slot.builder().name("1").http(worker1.baseUri().getPort()).build())
+                           .host(WORKER_1.baseUri().getHost())
+                           .slot(Slot.builder().name("1").http(WORKER_1.baseUri().getPort()).build())
                            .stage(PROD)
                            .build();
         CLUSTER_2 = Cluster.builder()
-                           .host(worker2.baseUri().getHost())
-                           .slot(Slot.builder().name("2").http(worker2.baseUri().getPort()).build())
+                           .host(WORKER_2.baseUri().getHost())
+                           .slot(Slot.builder().name("2").http(WORKER_2.baseUri().getPort()).build())
                            .stage(PROD)
                            .build();
-        ClusterConfig clusters = new ClusterConfig();
-        clusters.clusters().add(CLUSTER_1);
-        clusters.clusters().add(CLUSTER_2);
-        clusters.write(Paths.get(CLUSTER_CONFIG));
+        new ClusterConfig().add(CLUSTER_1).add(CLUSTER_2).write(CLUSTER_CONFIG_PATH);
 
-        master.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
-        deployments = new DeploymentsPage(driver, master.baseUri().resolve("/api/deployments"));
+        MASTER.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/meta-deployer.war")));
+        deployments = new DeploymentsPage(DRIVER, MASTER.baseUri().resolve("/api/deployments"));
     }
 
 
-    private WebTarget metaDeployer() { return ClientBuilder.newClient().target(master.baseUri()).path("/api"); }
+    private WebTarget metaDeployer() { return ClientBuilder.newClient().target(MASTER.baseUri()).path("/api"); }
 
     @Test
     public void shouldGetIndexAsJson() throws Exception {
@@ -86,12 +86,12 @@ public class MetaDeployerIT {
         assertThat(response).isEqualTo(""
                 + "[{"
                 + /**/"\"host\":\"localhost\","
-                + /**/"\"slot\":{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
+                + /**/"\"slot\":{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443},"
                 + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
                 + /**//**/"\"count\":1,\"indexLength\":0}]"
                 + "},{"
                 + /**/"\"host\":\"localhost\","
-                + /**/"\"slot\":{\"name\":\"2\",\"http\":" + worker2.baseUri().getPort() + ",\"https\":443},"
+                + /**/"\"slot\":{\"name\":\"2\",\"http\":" + WORKER_2.baseUri().getPort() + ",\"https\":443},"
                 + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
                 + /**//**/"\"count\":1,\"indexLength\":0}]"
                 + "}]");
@@ -106,7 +106,7 @@ public class MetaDeployerIT {
         assertThat(response).isEqualTo(""
                 + "{"
                 + "\"host\":\"localhost\","
-                + "\"slot\":{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
+                + "\"slot\":{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443},"
                 + "\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
                 + /**/"\"count\":1,\"indexLength\":0}]"
                 + "}");
@@ -117,8 +117,8 @@ public class MetaDeployerIT {
         String response = metaDeployer().path("slots").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("["
-                + "{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443},"
-                + "{\"name\":\"2\",\"http\":" + worker2.baseUri().getPort() + ",\"https\":443}"
+                + "{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443},"
+                + "{\"name\":\"2\",\"http\":" + WORKER_2.baseUri().getPort() + ",\"https\":443}"
                 + "]");
     }
 
@@ -128,7 +128,7 @@ public class MetaDeployerIT {
                                         .request(APPLICATION_JSON_TYPE)
                                         .get(String.class);
 
-        assertThat(response).isEqualTo("{\"name\":\"1\",\"http\":" + worker1.baseUri().getPort() + ",\"https\":443}");
+        assertThat(response).isEqualTo("{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443}");
     }
 
     @Test
@@ -199,18 +199,31 @@ public class MetaDeployerIT {
         WebElement dropdown = deployment.findElement(By.className("dropdown"));
         WebElement toggle = dropdown.findElement(By.className("dropdown-toggle"));
         WebElement menu = dropdown.findElement(By.className("versions-menu"));
+
         assertThat(dropdown).has(not(cssClass("open")));
         assertThat(menu).is(not(displayed()));
 
         toggle.click();
-        // List<WebElement> radios = menu.findElements(By.tagName("input"));
-        // assertThat(radios).hasSize(0);
-        // assertThat(radios.get(0)).has(value("1.3.2")).is(not(selected()));
-        // assertThat(radios.get(1)).has(value("1.3.3")).is(not(selected()));
-        // assertThat(radios.get(2)).has(value("1.3.4"));//.is(selected());
-        // assertThat(dropdown).has(cssClass("open"));
-        // assertThat(menu).is(displayed());
-        //
-        // radios.get(2).click();
+
+        assertThat(dropdown).has(cssClass("open"));
+        assertThat(dropdown).is(displayed());
+
+        WebElement versionsUL = menu.findElement(By.tagName("ul"));
+        assertThat(versionsUL).has(cssClass("list-unstyled"));
+
+        List<WebElement> versionLis = versionsUL.findElements(By.tagName("li"));
+        assertThat(versionLis).hasSize(3);
+        assertVersionLi(versionLis.get(0), "refresh", "1.3.3", "undeployee");
+        assertVersionLi(versionLis.get(1), "refresh", "1.3.4", "undeploying");
+        assertVersionLi(versionLis.get(2), "refresh", "1.3.5", "deploying");
+    }
+
+    private void assertVersionLi(WebElement versionLi, String iconName, String versionName, String status) {
+        WebElement iconSpan = versionLi.findElement(By.cssSelector("span.version-icon"));
+        assertThat(iconSpan).has(cssClass("glyphicon", "glyphicon-" + iconName));
+        assertThat(iconSpan).has(cssClass("version-icon-" + status));
+
+        WebElement labelSpan = versionLi.findElement(By.cssSelector("span.version"));
+        assertThat(labelSpan).has(text(versionName));
     }
 }

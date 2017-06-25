@@ -2,20 +2,28 @@ package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.metadeployer.model.Deployment.DeploymentBuilder;
-import org.junit.Test;
+import org.junit.*;
 
+import javax.ws.rs.core.UriInfo;
 import java.io.*;
-import java.net.URL;
+import java.net.*;
 import java.util.List;
 
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class DeploymentListHtmlMessageBodyWriterTest {
     private static final String EVENTS = " draggable=\"true\" ondragstart=\"drag_start(event);\" "
             + "ondragend=\"drag_end(event);\" ondragenter=\"drag_enter(event);\" ondragover=\"drag_over(event);\" "
             + "ondragleave=\"drag_leave(event);\" ondrop=\"drop_handler(event);";
     private DeploymentListHtmlMessageBodyWriter writer = new DeploymentListHtmlMessageBodyWriter();
+
+    @Before
+    public void setUp() throws Exception {
+        writer.uriInfo = mock(UriInfo.class);
+        when(writer.uriInfo.getBaseUri()).thenReturn(URI.create("http://localhost:8080/meta-deployer/api/"));
+    }
 
     private DeploymentBuilder createDeployment(String name) {
         return Deployment.builder()

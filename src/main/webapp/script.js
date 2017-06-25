@@ -1,12 +1,13 @@
 'use strict';
 
+const deploymentsResource = baseUri + 'deployments/';
+
 class DeploymentMenu extends React.Component {
     render() {
-        const group = this.props.group;
         const versions = this.props.versions.map(version => {
             return (
                 <li key={version.name}
-                    onClick={() => selectVersion(group, version)}
+                    onClick={() => selectVersion(this.props.group, version)}
                     onMouseEnter={() => this.hover(version)}
                     onMouseLeave={() => this.hover(undefined)}
                 >
@@ -19,7 +20,7 @@ class DeploymentMenu extends React.Component {
     }
 
     hover(version) {
-        const hover = (version && ['deployed', 'undeployed'].indexOf(version.status) >= 0) ? version.name : undefined;
+        const hover = (version && 'undeployed' === version.status) ? version.name : undefined;
         this.setState({
             hover: hover
         });
@@ -61,8 +62,8 @@ function click_handler(event) {
 
     function animate() {
         rot += 360;
-        if (rot > 36000)
-            rot = 0;
+        if (rot > 360000)
+            rot -= 360000;
         function transform(now, undeploying) {
             let transform = '';
             if (undeploying)
@@ -99,7 +100,7 @@ function click_handler(event) {
 function fetchVersions(where) {
     console.debug('fetchVersion', where);
 
-    return fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
+    return fetch(deploymentsResource + where, {
         method: 'get',
         headers: {
             'Accept': 'application/json'
@@ -121,7 +122,7 @@ function fetchVersions(where) {
 function selectVersion(where, version) {
     console.debug('selectVersion', where, version);
 
-    fetch('http://localhost:8080/meta-deployer/api/deployments/' + where, {
+    fetch(deploymentsResource + where, {
         method: 'post',
         headers: {
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',

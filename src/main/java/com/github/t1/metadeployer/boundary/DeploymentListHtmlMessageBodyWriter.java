@@ -23,6 +23,7 @@ import static javax.ws.rs.core.MediaType.*;
 @Produces(TEXT_HTML)
 public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<List<Deployment>> {
     @Inject List<Cluster> clusters;
+    @Context UriInfo uriInfo;
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
@@ -89,6 +90,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             script("react/react.js");
             script("react/react-dom.js");
             script("babel-standalone/babel.js");
+            inlineScript("const baseUri = '" + uriInfo.getBaseUri() + "';");
             script("../script.js", "text/babel");
         }
 

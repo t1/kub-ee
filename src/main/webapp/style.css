@@ -34,7 +34,7 @@ div.table-responsive {
 }
 
 .version-icon-deploying, .version-icon-undeploying {
-    transform-origin-x: 7px;
+    transform-origin: 7px center;
 }
 
 /* the transform of ...-deploying is set in the animation code */
