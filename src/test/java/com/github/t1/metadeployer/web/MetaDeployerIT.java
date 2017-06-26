@@ -11,7 +11,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import javax.ws.rs.client.*;
@@ -20,7 +19,8 @@ import java.io.File;
 import java.nio.file.*;
 import java.util.List;
 
-import static com.github.t1.testtools.AbstractPage.*;
+import static com.github.t1.metadeployer.web.VersionCell.*;
+import static com.github.t1.metadeployer.web.VersionItem.*;
 import static javax.ws.rs.core.MediaType.*;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
@@ -195,35 +195,32 @@ public class MetaDeployerIT {
         deployments.navigateTo();
 
         deployments.assertOpen();
-        WebElement deployment = deployments.findDeployment(By.id("localhost:1:PROD:1:dummy"));
-        WebElement dropdown = deployment.findElement(By.className("dropdown"));
-        WebElement toggle = dropdown.findElement(By.className("dropdown-toggle"));
-        WebElement menu = dropdown.findElement(By.className("versions-menu"));
+        VersionCell deployer = new VersionCell(deployments.findDeployment(CLUSTER_1.node(PROD, 1), "deployer"));
+        VersionCell dummy = new VersionCell(deployments.findDeployment(CLUSTER_1.node(PROD, 1), "dummy"));
+        assertThat(deployer).is(closed);
+        assertThat(dummy).is(closed);
 
-        assertThat(dropdown).has(not(cssClass("open")));
-        assertThat(menu).is(not(displayed()));
+        dummy.clickToggle();
 
-        toggle.click();
+        assertThat(deployer).is(closed);
+        assertThat(dummy).is(open);
 
-        assertThat(dropdown).has(cssClass("open"));
-        assertThat(dropdown).is(displayed());
+        assertThat(dummy.menu())
+                .hasSize(3)
+                .has(versionItem("refresh", "1.3.3", "undeployee"), atIndex(0))
+                .has(versionItem("refresh", "1.3.4", "undeploying"), atIndex(1))
+                .has(versionItem("refresh", "1.3.5", "deploying"), atIndex(2));
 
-        WebElement versionsUL = menu.findElement(By.tagName("ul"));
-        assertThat(versionsUL).has(cssClass("list-unstyled"));
+        deployer.clickToggle();
 
-        List<WebElement> versionLis = versionsUL.findElements(By.tagName("li"));
-        assertThat(versionLis).hasSize(3);
-        assertVersionLi(versionLis.get(0), "refresh", "1.3.3", "undeployee");
-        assertVersionLi(versionLis.get(1), "refresh", "1.3.4", "undeploying");
-        assertVersionLi(versionLis.get(2), "refresh", "1.3.5", "deploying");
-    }
+        assertThat(deployer).is(open);
+        assertThat(dummy).is(closed);
 
-    private void assertVersionLi(WebElement versionLi, String iconName, String versionName, String status) {
-        WebElement iconSpan = versionLi.findElement(By.cssSelector("span.version-icon"));
-        assertThat(iconSpan).has(cssClass("glyphicon", "glyphicon-" + iconName));
-        assertThat(iconSpan).has(cssClass("version-icon-" + status));
-
-        WebElement labelSpan = versionLi.findElement(By.cssSelector("span.version"));
-        assertThat(labelSpan).has(text(versionName));
+        assertThat(deployer.menu())
+                .hasSize(3)
+                .has(versionItem("minus", "2.9.1", "undeployed"), atIndex(0))
+                .has(versionItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
+                .has(versionItem("refresh", "2.9.3", "undeploying"), atIndex(2));
+        assertThat(dummy.menu()).hasSize(3);
     }
 }

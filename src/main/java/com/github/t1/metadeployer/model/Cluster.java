@@ -28,6 +28,13 @@ public class Cluster {
 
     public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
 
+    public ClusterNode node(Stage stage, int index) {
+        return stage.nodes(this)
+                    .filter(node -> node.getIndex() == index)
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
+    }
+
 
     public static List<Cluster> readAllFrom(YamlDocument document) {
         ClusterBuilderContext context = new ClusterBuilderContext();

@@ -1,5 +1,6 @@
 package com.github.t1.metadeployer.web;
 
+import com.github.t1.metadeployer.model.ClusterNode;
 import com.github.t1.testtools.*;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
@@ -9,7 +10,7 @@ import org.openqa.selenium.support.pagefactory.ByAll;
 import java.net.URI;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
 public class DeploymentsPage extends AbstractPage<DeploymentsPage> {
@@ -19,6 +20,10 @@ public class DeploymentsPage extends AbstractPage<DeploymentsPage> {
 
     @FindBy(id = "deployables")
     WebElement deployablesTable;
+
+    public WebElement findDeployment(ClusterNode node, String name) {
+        return findDeployment(By.id(node.id() + ":" + name));
+    }
 
     public WebElement findDeployment(By by) {
         by = new ByAll(By.className("deployable"), by);

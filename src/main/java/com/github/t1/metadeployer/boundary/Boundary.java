@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
-import static com.github.t1.metadeployer.boundary.Boundary.Status.*;
+import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
@@ -173,7 +173,7 @@ public class Boundary {
                     .build();
     }
 
-    public enum Status {
+    public enum VersionStatus {
         undeployed, deploying, deployed, undeployee, undeploying
     }
 
@@ -181,7 +181,7 @@ public class Boundary {
     @AllArgsConstructor
     public static class Version {
         private String name;
-        private Status status;
+        private VersionStatus status;
     }
 
     @Data
