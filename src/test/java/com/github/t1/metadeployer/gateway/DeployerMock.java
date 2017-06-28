@@ -15,8 +15,8 @@ public class DeployerMock {
     public DeployerMock(String dummyVersion) { this.dummyVersion = dummyVersion; }
 
     @GET public Response get(@Context UriInfo uriInfo) {
-        log.info("serve dummy deployable version {} for {}", dummyVersion, uriInfo.getRequestUri());
-        return Response.ok(""
+        log.info("serve dummy deployable version {} on {}", dummyVersion, uriInfo.getRequestUri());
+        return yaml(""
                 + "deployables:\n"
                 + "  deployer:\n"
                 + "    group-id: com.github.t1\n"
@@ -29,6 +29,24 @@ public class DeployerMock {
                 + "    artifact-id: dummy\n"
                 + "    version: " + dummyVersion + "\n"
                 + "    type: war\n"
-                + "").type(MediaType.valueOf("application/yaml")).build();
+                + "");
+    }
+
+    private Response yaml(String entity) {
+        return Response.ok(entity).type(MediaType.valueOf("application/yaml")).build();
+    }
+
+    @GET
+    @Path("/repository/versions")
+    public Response getVersions(@QueryParam("groupId") String groupId, @QueryParam("artifactId") String artifactId) {
+        if ("dummy".equals(artifactId))
+            return yaml(""
+                    + "- 1.2.1\n"
+                    + "- 1.2.2\n"
+                    + "- " + dummyVersion + "\n");
+        return yaml(""
+                + "- 2.9.1\n"
+                + "- 2.9.2\n"
+                + "- 2.9.3\n");
     }
 }

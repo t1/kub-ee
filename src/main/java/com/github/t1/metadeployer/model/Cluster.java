@@ -26,6 +26,10 @@ public class Cluster {
 
     public Stream<Stage> stages() { return (stages == null) ? Stream.empty() : stages.stream(); }
 
+    public Optional<Stage> stage(String name) {
+        return stages().filter(stage -> stage.getName().equals(name)).findFirst();
+    }
+
     public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
 
     public ClusterNode node(Stage stage, int index) {

@@ -25,6 +25,11 @@ div.table-responsive {
     padding-right: 15px;
 }
 
+span.loading-indicator {
+    color: lightgray;
+    font-style: italic;
+}
+
 .version-icon {
     padding-right: 5px;
 }

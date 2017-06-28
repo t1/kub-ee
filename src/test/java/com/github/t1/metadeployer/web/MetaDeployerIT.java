@@ -207,9 +207,9 @@ public class MetaDeployerIT {
 
         assertThat(dummy.menu())
                 .hasSize(3)
-                .has(versionItem("refresh", "1.3.3", "undeployee"), atIndex(0))
-                .has(versionItem("refresh", "1.3.4", "undeploying"), atIndex(1))
-                .has(versionItem("refresh", "1.3.5", "deploying"), atIndex(2));
+                .has(versionItem("minus", "1.2.1", "undeployed"), atIndex(0))
+                .has(versionItem("minus", "1.2.2", "undeployed"), atIndex(1))
+                .has(versionItem("ok-circle", "1.2.3", "deployed"), atIndex(2));
 
         deployer.clickToggle();
 
@@ -220,7 +220,7 @@ public class MetaDeployerIT {
                 .hasSize(3)
                 .has(versionItem("minus", "2.9.1", "undeployed"), atIndex(0))
                 .has(versionItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
-                .has(versionItem("refresh", "2.9.3", "undeploying"), atIndex(2));
+                .has(versionItem("minus", "2.9.3", "undeployed"), atIndex(2));
         assertThat(dummy.menu()).hasSize(3);
     }
 }

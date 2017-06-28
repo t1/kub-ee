@@ -4,19 +4,23 @@ const deploymentsResource = baseUri + 'deployments/';
 
 class DeploymentMenu extends React.Component {
     render() {
-        const versions = this.props.versions.map(version => {
-            return (
-                <li key={version.name}
-                    onClick={() => selectVersion(this.props.group, version)}
-                    onMouseEnter={() => this.hover(version)}
-                    onMouseLeave={() => this.hover(undefined)}
-                >
-                    <span className={this.versionIconClasses(version)}/>
-                    <span className="version">{version.name}</span>
-                </li>
-            );
-        });
+        const versions = (this.props.versions)
+            ? this.props.versions.map(version => this.renderVersion(version))
+            : <span className="loading-indicator">Loading...</span>;
         return <ul className="list-unstyled">{versions}</ul>
+    }
+
+    renderVersion(version) {
+        return (
+            <li key={version.name}
+                onClick={() => selectVersion(this.props.group, version)}
+                onMouseEnter={() => this.hover(version)}
+                onMouseLeave={() => this.hover(undefined)}
+            >
+                <span className={this.versionIconClasses(version)}/>
+                <span className="version">{version.name}</span>
+            </li>
+        );
     }
 
     hover(version) {
@@ -35,6 +39,8 @@ class DeploymentMenu extends React.Component {
         switch (state) {
             case 'undeployed':
                 return 'minus';
+            case 'deployee':
+                return 'ok-circle';
             case 'deployed':
                 return 'ok-circle';
             case 'deploying':
@@ -87,12 +93,11 @@ function click_handler(event) {
             );
     }
 
+    ReactDOM.render(<DeploymentMenu group={cellId}/>, menu);
+
     fetchVersions(cellId)
         .then(versions => {
-            ReactDOM.render(<DeploymentMenu
-                group={cellId}
-                versions={versions.available}
-                current={versions.current}/>, menu);
+            ReactDOM.render(<DeploymentMenu group={cellId} versions={versions.available}/>, menu);
         })
         .then(animate);
 }
@@ -108,7 +113,7 @@ function fetchVersions(where) {
     })
         .then(response => {
             if (response.ok) return response.json();
-            else return new Error(response);
+            else throw new Error(response);
         })
         .then(data => {
             console.debug('got versions', data);

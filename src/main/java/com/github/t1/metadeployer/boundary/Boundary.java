@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
 import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
-import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
@@ -151,30 +150,51 @@ public class Boundary {
 
     @Path("/deployments/{id}")
     @GET public GetDeploymentResponse getDeployment(@PathParam("id") String id) {
-        if (id.endsWith("deployer"))
-            return GetDeploymentResponse
-                    .builder()
-                    .id(id)
-                    .current("2.9.2")
-                    .available(asList(
-                            new Version("2.9.1", undeployed),
-                            new Version("2.9.2", deployed),
-                            new Version("2.9.3", undeploying)))
-                    .build();
-        else
-            return GetDeploymentResponse
-                    .builder()
-                    .id(id)
-                    .current("1.3.4")
-                    .available(asList(
-                            new Version("1.3.3", undeployee),
-                            new Version("1.3.4", undeploying),
-                            new Version("1.3.5", deploying)))
-                    .build();
+        ClusterNode node = ClusterNode.fromId(id, clusters);
+        String deployableName = id.split(":")[4];
+        Deployable deployable = fetchDeployablesFrom(node)
+                .stream()
+                .filter(d -> d.getName().equals(deployableName))
+                .findFirst()
+                .orElseThrow(() -> new DeployableNotFoundException(deployableName, node));
+        List<Version> available = fetchVersions(node, deployable)
+                .stream()
+                .map(s -> toVersion(deployable, s))
+                .collect(toList());
+        return GetDeploymentResponse
+                .builder()
+                .id(id)
+                .available(available)
+                .build();
     }
 
-    public enum VersionStatus {
-        undeployed, deploying, deployed, undeployee, undeploying
+    private List<String> fetchVersions(ClusterNode node, Deployable deployable) {
+        String groupId = deployable.getGroupId();
+        String artifactId = deployable.getArtifactId();
+        try {
+            return deployer.fetchVersions(node.deployerUri(), groupId, artifactId);
+        } catch (NotFoundException e) {
+            log.info("no versions found for {}:{} on {}", groupId, artifactId, node);
+            return singletonList(deployable.getVersion());
+        }
+    }
+
+    private Version toVersion(Deployable deployable, String version) {
+        return new Version(version, version.equals(deployable.getVersion()) ? deployed : undeployed);
+    }
+
+
+    public static class DeployableNotFoundException extends BadRequestException {
+        public DeployableNotFoundException(String deployableName, ClusterNode node) {
+            super("deployable '" + deployableName + "' not found on '" + node.id() + "'");
+        }
+    }
+
+    @Data
+    @Builder
+    public static class GetDeploymentResponse {
+        private String id;
+        private List<Version> available;
     }
 
     @Data
@@ -184,13 +204,10 @@ public class Boundary {
         private VersionStatus status;
     }
 
-    @Data
-    @Builder
-    public static class GetDeploymentResponse {
-        private String id;
-        private String current;
-        private List<Version> available;
+    public enum VersionStatus {
+        undeployed, deployee, deploying, deployed, undeployee, undeploying
     }
+
 
     @Path("/deployments/{id}")
     @POST

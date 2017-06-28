@@ -1,11 +1,13 @@
 package com.github.t1.metadeployer.gateway;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
 import java.io.IOException;
@@ -29,10 +31,21 @@ public class DeployerGateway {
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .findAndRegisterModules();
 
-    // private static final int CONNECT_TIMEOUT = 10_000;
-    // private static final int CONNECTION_REQUEST_TIMEOUT = CONNECT_TIMEOUT;
-    // private static final int SOCKET_TIMEOUT = CONNECT_TIMEOUT;
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
+
+    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
+        URI uri = UriBuilder.fromUri(deployerUri)
+                            .path("/repository/versions")
+                            .queryParam("artifactId", artifactId)
+                            .queryParam("groupId", groupId)
+                            .build();
+        return convertToVersionList(fetchYaml(uri));
+    }
+
+    @SneakyThrows(IOException.class)
+    private List<String> convertToVersionList(String string) {
+        return YAML.readValue(string, new TypeReference<List<String>>() {});
+    }
 
     @Data
     public static class Deployables {
@@ -61,37 +74,40 @@ public class DeployerGateway {
 
     private final Client httpClient = ClientBuilder.newClient();
 
-    public List<Deployable> fetchDeployablesOn(URI uri) { return convert(uri, from(uri)); }
+    public List<Deployable> fetchDeployablesOn(URI uri) { return convertToDeployableList(fetchYaml(uri)); }
 
-    private Response from(URI uri) {
-        return httpClient
+    private String fetchYaml(URI uri) {
+        Response response = httpClient
                 .target(uri)
                 .request()
                 .accept(APPLICATION_YAML_TYPE)
                 .get();
-    }
-
-    @SneakyThrows(IOException.class)
-    private List<Deployable> convert(URI uri, Response response) {
         try {
             String contentType = response.getHeaderString("Content-Type");
             String string = response.readEntity(String.class);
-            if (NOT_FOUND.getStatusCode() == response.getStatus())
-                throw new DeployerNotFoundException();
+            if (NOT_FOUND.getStatusCode() == response.getStatus()) {
+                log.info("{} returns 404 Not Found: {}", uri, string);
+                throw new NotFoundException();
+            }
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
                 throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
                 throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
                         + " but got " + contentType + ": " + string);
-            return YAML.readValue(string, Deployables.class)
-                       .getDeployables()
-                       .entrySet()
-                       .stream()
-                       .map(this::flatten)
-                       .collect(toList());
+            return string;
         } finally {
             response.close();
         }
+    }
+
+    @SneakyThrows(IOException.class)
+    private List<Deployable> convertToDeployableList(String string) {
+        return YAML.readValue(string, Deployables.class)
+                   .getDeployables()
+                   .entrySet()
+                   .stream()
+                   .map(this::flatten)
+                   .collect(toList());
     }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
@@ -101,6 +117,4 @@ public class DeployerGateway {
         deployable.name = entry.getKey();
         return deployable;
     }
-
-    public static class DeployerNotFoundException extends RuntimeException {}
 }
