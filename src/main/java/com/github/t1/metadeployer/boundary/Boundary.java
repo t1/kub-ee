@@ -140,7 +140,7 @@ public class Boundary {
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
         if (out.startsWith(UnknownHostException.class.getName() + ": "))
-            out = "unknown host: " + out.substring(out.indexOf(": ") + 2);
+            out = "unknown host";
         if (out.equals("Connection refused (Connection refused)"))
             out = "connection refused";
         return out;
@@ -176,6 +176,12 @@ public class Boundary {
         } catch (NotFoundException e) {
             log.info("no versions found for {}:{} on {}", groupId, artifactId, node);
             return singletonList(deployable.getVersion());
+        } catch (ProcessingException e) {
+            if (e.getCause() instanceof UnknownHostException) {
+                log.info("host not found: {} ({}:{})", node, groupId, artifactId);
+                return singletonList(deployable.getVersion());
+            }
+            throw e;
         }
     }
 
