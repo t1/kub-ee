@@ -69,29 +69,43 @@ public class DeploymentListHtmlMessageBodyWriterTest {
     public void shouldWriteFull() throws Exception {
         writer.clusters = ClusterTest.readClusterConfig().clusters();
 
-        Cluster my = writer.clusters.get(0);
-        ClusterNode my_dev_1 = my.getStages().get(0).index(my, 1);
-        ClusterNode my_qa_1 = my.getStages().get(1).index(my, 1);
-        ClusterNode my_prod_1 = my.getStages().get(2).index(my, 1);
-        ClusterNode my_prod_2 = my.getStages().get(2).index(my, 2);
-        ClusterNode my_prod_3 = my.getStages().get(2).index(my, 3);
+        assertThat(writer.clusters).hasSize(4);
+        Cluster a1 = writer.clusters.get(0);
+        assertThat(a1.id()).isEqualTo("server-a:1");
+        ClusterNode a1_dev_1 = a1.getStages().get(0).index(a1, 1);
+        ClusterNode a1_dev_2 = a1.getStages().get(0).index(a1, 2);
+        ClusterNode a1_qa_1 = a1.getStages().get(1).index(a1, 1);
+        ClusterNode a1_qa_2 = a1.getStages().get(1).index(a1, 2);
+        ClusterNode a1_prod_1 = a1.getStages().get(2).index(a1, 1);
+        ClusterNode a1_prod_2 = a1.getStages().get(2).index(a1, 2);
+        ClusterNode a1_prod_3 = a1.getStages().get(2).index(a1, 3);
 
-        Cluster other = writer.clusters.get(1);
-        ClusterNode other_dev_1 = other.getStages().get(0).index(other, 1);
-        ClusterNode other_dev_2 = other.getStages().get(0).index(other, 2);
+        Cluster a2 = writer.clusters.get(1);
+        assertThat(a2.id()).isEqualTo("server-a:2");
+
+        Cluster b2 = writer.clusters.get(2);
+        assertThat(b2.id()).isEqualTo("server-b:2");
+        ClusterNode b2_dev_1 = b2.getStages().get(0).index(b2, 1);
+        ClusterNode b2_dev_2 = b2.getStages().get(0).index(b2, 2);
+
+        Cluster l = writer.clusters.get(3);
+        assertThat(l.id()).isEqualTo("localhost:1");
 
         DeploymentBuilder foo = createDeployment("foo");
         DeploymentBuilder bar = createDeployment("bar");
         DeploymentBuilder baz = createDeployment("baz");
+
         List<Deployment> deployables = asList(
-                foo.node(my_dev_1).version("1.2.5-SNAPSHOT").build(),
-                foo.node(my_qa_1).version("1.2.4").build(),
-                foo.node(my_prod_1).version("1.2.3").build(),
-                foo.node(my_prod_2).version("1.2.3").build(),
-                foo.node(my_prod_3).version("1.2.3").build(),
-                bar.node(other_dev_1).version("2.0.1").build(),
-                bar.node(other_dev_2).version("2.0.2").build(),
-                baz.node(other_dev_2).version("2.1.3").error("error-hint").build());
+                foo.node(a1_dev_1).version("1.2.5-SNAPSHOT").build(),
+                foo.node(a1_dev_2).version("1.2.5-SNAPSHOT").build(),
+                foo.node(a1_qa_1).version("1.2.4").build(),
+                foo.node(a1_qa_2).version("1.2.4").build(),
+                foo.node(a1_prod_1).version("1.2.3").build(),
+                foo.node(a1_prod_2).version("1.2.3").build(),
+                foo.node(a1_prod_3).version("1.2.3").build(),
+                bar.node(b2_dev_1).version("2.0.1").build(),
+                bar.node(b2_dev_2).version("2.0.2").build(),
+                baz.node(b2_dev_2).version("2.1.3").error("error-hint").build());
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(deployables, null, null, null, null, null, out);

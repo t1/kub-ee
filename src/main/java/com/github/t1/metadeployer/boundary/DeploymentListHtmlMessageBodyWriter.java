@@ -138,16 +138,23 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                .map(node -> deployments
                                        .stream()
                                        .filter(deployment -> deployment.getName().equals(deployableName))
+                                       .filter(deployment -> deployment.getNode().getCluster().getHost()
+                                                                       .equals(cluster.getHost()))
                                        .filter(deployment -> deployment.getNode().matchStageNameAndIndex(node))
                                        .filter(deployment -> Objects.equals(
                                                deployment.getNode().getCluster().getSlot().getName(),
                                                cluster.getSlot().getName()))
                                        .findAny()
                                        .map(this::cell)
-                                       .orElse(new Element("div").addClass("no-deployment").html("-")))
+                                       .orElse(notDeployed(cluster, node, deployableName)))
                                .forEach(cell -> row.td().appendChild(cell));
                 });
             });
+        }
+
+        private Element notDeployed(Cluster cluster, ClusterNode node, String deployableName) {
+            String id = cluster.id() + ":" + node.getStage().getName() + ":" + node.getIndex() + ":" + deployableName;
+            return new Element("div").addClass("not-deployed").attr("id", id).html("-");
         }
 
         private List<String> deployableNames(Cluster cluster) {

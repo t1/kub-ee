@@ -13,7 +13,7 @@ public class Deployment {
     String name;
 
     /** maven coordinates */
-    String groupId, artifactId,version;
+    String groupId, artifactId, version;
 
     /** the bundle type of the artifact, e.g. `war` */
     String type;

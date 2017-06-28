@@ -53,7 +53,7 @@ public class Cluster {
 
     private String[] hostSplit() { return host.split("\\.", 2); }
 
-    public String id() { return getSimpleName() + ((slot.getName() == null) ? "" : ":" + slot.getName()); }
+    public String id() { return getSimpleName() + ":" + ((slot.getName() == null) ? "" : slot.getName()); }
 
     private static class ClusterBuilderContext {
         private Map<String, Slot> slots = new HashMap<>();

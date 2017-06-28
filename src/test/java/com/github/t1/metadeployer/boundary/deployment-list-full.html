@@ -16,24 +16,23 @@
        <th rowspan="2">Cluster</th>
        <th rowspan="2">Application</th>
        <th class="stage" colspan="2">DEV</th>
-       <th class="stage" colspan="1">QA</th>
+       <th class="stage" colspan="2">QA</th>
        <th class="stage" colspan="3">PROD</th>
-       <th class="stage" colspan="1"></th>
       </tr>
       <tr>
        <th class="node">01</th>
        <th class="node">02</th>
-       <th class="node">&nbsp;</th>
+       <th class="node">01</th>
+       <th class="node">02</th>
        <th class="node">01</th>
        <th class="node">02</th>
        <th class="node">03</th>
-       <th class="node">01</th>
       </tr>
       <tr>
-       <th rowspan="1">my:0</th>
+       <th rowspan="1">server-a:1</th>
        <th class="deployable-name">foo</th>
        <td>
-        <div class="deployment" id="my:0:DEV:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-a:1:DEV:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            1.2.5-SNAPSHOT
@@ -43,11 +42,17 @@
          </div>
         </div></td>
        <td>
-        <div class="no-deployment">
-         -
+        <div class="deployment" id="server-a:1:DEV:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.5-SNAPSHOT
+           <span class="caret"></span>
+          </div>
+          <div class="dropdown-menu versions-menu"></div>
+         </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:QA:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-a:1:QA:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            1.2.4
@@ -57,7 +62,17 @@
          </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-a:1:QA:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+         <div class="dropdown">
+          <div class="dropdown-toggle" data-toggle="dropdown">
+           1.2.4
+           <span class="caret"></span>
+          </div>
+          <div class="dropdown-menu versions-menu"></div>
+         </div>
+        </div></td>
+       <td>
+        <div class="deployment" id="server-a:1:PROD:1:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            1.2.3
@@ -67,7 +82,7 @@
          </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-a:1:PROD:2:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            1.2.3
@@ -77,7 +92,7 @@
          </div>
         </div></td>
        <td>
-        <div class="deployment" id="my:0:PROD:3:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-a:1:PROD:3:foo" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            1.2.3
@@ -86,16 +101,44 @@
           <div class="dropdown-menu versions-menu"></div>
          </div>
         </div></td>
+      </tr>
+      <tr>
+       <th rowspan="1">server-a:2</th>
+       <th class="deployable-name">?</th>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-a:2:DEV:1:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:DEV:2:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:QA:1:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:QA:2:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:PROD:1:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:PROD:2:?">
+         -
+        </div></td>
+       <td>
+        <div class="not-deployed" id="server-a:2:PROD:3:?">
          -
         </div></td>
       </tr>
       <tr>
-       <th rowspan="2">other</th>
+       <th rowspan="2">server-b:2</th>
        <th class="deployable-name">bar</th>
        <td>
-        <div class="deployment" id="other:DEV:1:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-b:2:DEV:1:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            2.0.1
@@ -105,7 +148,7 @@
          </div>
         </div></td>
        <td>
-        <div class="deployment" id="other:DEV:2:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-b:2:DEV:2:bar" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            2.0.2
@@ -115,34 +158,34 @@
          </div>
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:QA:1:bar">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:QA:2:bar">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:1:bar">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:2:bar">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:3:bar">
          -
         </div></td>
       </tr>
       <tr>
        <th class="deployable-name">baz</th>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:DEV:1:baz">
          -
         </div></td>
        <td>
-        <div class="deployment" id="other:DEV:2:baz" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
+        <div class="deployment" id="server-b:2:DEV:2:baz" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" ondragenter="drag_enter(event);" ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);" onclick="click_handler(event);">
          <div class="dropdown">
           <div class="dropdown-toggle" data-toggle="dropdown">
            error-hint
@@ -152,87 +195,55 @@
          </div>
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:QA:1:baz">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:QA:2:baz">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:1:baz">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:2:baz">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-      </tr>
-      <tr>
-       <th rowspan="1">other:1</th>
-       <th class="deployable-name">?</th>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
-         -
-        </div></td>
-       <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="server-b:2:PROD:3:baz">
          -
         </div></td>
       </tr>
       <tr>
-       <th rowspan="1">third</th>
+       <th rowspan="1">localhost:1</th>
        <th class="deployable-name">?</th>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:DEV:1:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:DEV:2:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:QA:1:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:QA:2:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:PROD:1:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:PROD:2:?">
          -
         </div></td>
        <td>
-        <div class="no-deployment">
+        <div class="not-deployed" id="localhost:1:PROD:3:?">
          -
         </div></td>
       </tr>
