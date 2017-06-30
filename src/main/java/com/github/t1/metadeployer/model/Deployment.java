@@ -37,4 +37,6 @@ public class Deployment {
     @JsonIgnore public String getSlotName() { return node.getCluster().getSlot().getName(); }
 
     public String id() { return node.id() + ":" + name; }
+
+    public String gav() { return groupId + ":" + artifactId + ":" + version; }
 }

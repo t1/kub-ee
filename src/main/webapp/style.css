@@ -9,6 +9,18 @@ body {
     height: 100%;
 }
 
+.drag-source {
+    background-color: lightgray !important;
+}
+
+.drop-ok {
+    background-color: lightblue !important;
+}
+
+.drop-not {
+    background-color: antiquewhite !important;
+}
+
 div.container-fluid {
     padding-left: 0;
     padding-right: 0;

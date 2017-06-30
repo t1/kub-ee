@@ -113,7 +113,11 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void nodesHeader() {
             TableRow row = table.tr();
-            mergedNodes.forEach(node -> row.th().addClass("node").html(htmlFor(node)));
+            mergedNodes.forEach(node -> row
+                    .th()
+                    .addClass("node")
+                    .attr("id", "node:" + node.getStage().getName() + ":" + node.getIndex())
+                    .html(htmlFor(node)));
         }
 
         private String htmlFor(ClusterNode node) {
@@ -130,6 +134,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                     TableRow row = table.tr();
                     if (deployableName.equals(deployableNames.get(0)))
                         row.th()
+                           .attr("id", "cluster:" + cluster.id())
                            .attr("rowspan", Integer.toString(deployableNames.size()))
                            .text(cluster.id());
                     row.th().addClass("deployable-name").text(deployableName);
@@ -147,7 +152,12 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                        .findAny()
                                        .map(this::cell)
                                        .orElse(notDeployed(cluster, node, deployableName)))
-                               .forEach(cell -> row.td().appendChild(cell));
+                               .forEach(cell -> row.td()
+                                                   .attr("ondragenter", "drag_enter(event);")
+                                                   .attr("ondragover", "drag_over(event);")
+                                                   .attr("ondragleave", "drag_leave(event);")
+                                                   .attr("ondrop", "drop_handler(event);")
+                                                   .appendChild(cell));
                 });
             });
         }
@@ -173,13 +183,10 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             Element cell = new Element("div")
                     .addClass("deployment")
                     .attr("id", deployment.id())
+                    .attr("title", deployment.gav())
                     .attr("draggable", "true")
                     .attr("ondragstart", "drag_start(event);")
                     .attr("ondragend", "drag_end(event);")
-                    .attr("ondragenter", "drag_enter(event);")
-                    .attr("ondragover", "drag_over(event);")
-                    .attr("ondragleave", "drag_leave(event);")
-                    .attr("ondrop", "drop_handler(event);")
                     .attr("onclick", "click_handler(event);");
             Element dropdown = cell.appendElement("div").addClass("dropdown");
             dropdown.appendElement("div")

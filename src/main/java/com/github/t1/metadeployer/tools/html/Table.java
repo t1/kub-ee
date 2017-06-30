@@ -28,5 +28,10 @@ public class Table {
         public Element th() { return row.appendElement("th"); }
 
         public Element td() { return row.appendElement("td"); }
+
+        public TableRow attr(String name, String value) {
+            row.attr(name, value);
+            return this;
+        }
     }
 }
