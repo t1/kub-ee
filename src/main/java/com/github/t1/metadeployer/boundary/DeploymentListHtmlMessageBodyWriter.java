@@ -48,6 +48,8 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
     }
 
     private class DeploymentsHtml extends Html {
+        private static final String DEPLOYMENT = "deployment";
+
         private final List<Deployment> deployments;
         private Table table;
         private Collection<Stage> mergedStages;
@@ -153,7 +155,6 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                        .map(this::cell)
                                        .orElse(notDeployed(cluster, node, deployableName)))
                                .forEach(cell -> row.td()
-                                                   .attr("ondragenter", "drag_enter(event);")
                                                    .attr("ondragover", "drag_over(event);")
                                                    .attr("ondragleave", "drag_leave(event);")
                                                    .attr("ondrop", "drop_handler(event);")
@@ -164,7 +165,11 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private Element notDeployed(Cluster cluster, ClusterNode node, String deployableName) {
             String id = cluster.id() + ":" + node.getStage().getName() + ":" + node.getIndex() + ":" + deployableName;
-            return new Element("div").addClass("not-deployed").attr("id", id).html("-");
+            return new Element("div")
+                    .addClass(DEPLOYMENT)
+                    .addClass("not-deployed")
+                    .attr("id", id)
+                    .html("-");
         }
 
         private List<String> deployableNames(Cluster cluster) {
@@ -181,7 +186,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private Element cell(Deployment deployment) {
             Element cell = new Element("div")
-                    .addClass("deployment")
+                    .addClass(DEPLOYMENT)
                     .attr("id", deployment.id())
                     .attr("title", deployment.gav())
                     .attr("draggable", "true")

@@ -196,42 +196,24 @@ function dragTargetId(event) {
 }
 
 function clusterHeader(clusterId) {
-    const selector = escapeColons('#cluster:' + clusterId);
-    const selected = $(selector);
-    return (clusterId) ? selected : undefined;
+    return $(escapeColons('#cluster:' + clusterId));
 }
 
 function nodeHeader(nodeId) {
-    return (nodeId) ? $(escapeColons('#node:' + nodeId)) : undefined;
-}
-
-function isSourceCluster(clusterId) {
-    return sourceId.startsWith(clusterId + ":");
-}
-
-function isSourceNode(nodeId) {
-    const split = sourceId.split(':');
-    return (split[2] + ':' + split[3]) === nodeId;
-}
-
-function drag_enter(event) {
-    if (!isSourceCluster(targetClusterId(event)) || !isSourceNode(targetNodeId(event))) {
-        event.preventDefault();
-    }
+    return $(escapeColons('#node:' + nodeId));
 }
 
 function drag_over(event) {
-    const dropCluster = targetClusterId(event);
-    const sameCluster = isSourceCluster(dropCluster);
-    clusterHeader(dropCluster).addClass(sameCluster ? 'drop-not' : 'drop-ok');
+    const dropClusterId = targetClusterId(event);
+    const dropNodeId = targetNodeId(event);
+    const appName = sourceId.split(':')[4];
+    const dropElement = $(escapeColons('#' + dropClusterId + ':' + dropNodeId + ':' + appName));
+    const droppable = dropElement.size() === 0 || dropElement.hasClass('not-deployed');
 
-    const dropNode = targetNodeId(event);
-    const sameNode = isSourceNode(dropNode);
-    nodeHeader(dropNode).addClass(sameNode ? 'drop-not' : 'drop-ok');
+    clusterHeader(dropClusterId).addClass(droppable ? 'drop-ok' : 'drop-not');
+    nodeHeader(dropNodeId).addClass(droppable ? 'drop-ok' : 'drop-not');
 
-    if (sameCluster && sameNode) {
-        // default -> don't drop
-    } else {
+    if (droppable) {
         event.preventDefault();
     }
 }
@@ -249,7 +231,7 @@ function drag_leave(event) {
     clearDropZones(event);
 }
 
-function drag_end(event) {
+function drag_end() {
     sourceParent().removeClass('drag-source');
     sourceId = undefined;
     sourceGav = undefined;
@@ -266,19 +248,40 @@ function drop_handler(event) {
     switch (operation) {
         case 'copy':
             const nodeCopy = node.cloneNode(true);
-            nodeCopy.id = 'newId';
-            event.target.appendChild(nodeCopy);
+            nodeCopy.id = targetId;
+            replaceChildren(event.target.parentNode, nodeCopy);
             break;
         case 'move':
-            event.target.appendChild(node);
+            const sourceParentElement = sourceParent();
+            node.id = targetId;
+            replaceChildren(event.target.parentNode, node);
+            sourceParentElement.append(undeployedNode());
             break;
         default:
             throw new Error('undefined drop operation: ' + operation);
     }
 }
 
+function undeployedNode() {
+    const element = document.createElement('div');
+    element.className = 'deployment not-deployed';
+    element.textContent = ' - ';
+    element.id = sourceId;
+    return element;
+}
+
 function op(event) {
     return (event.dataTransfer.dropEffect === 'none')
         ? (event.dataTransfer.effectAllowed === 'all') ? 'move' : event.dataTransfer.effectAllowed
         : event.dataTransfer.dropEffect;
+}
+
+function replaceChildren(target, child) {
+    clearChildren(target);
+    target.appendChild(child);
+}
+
+function clearChildren(target) {
+    while (target.childNodes.length > 0)
+        target.removeChild(target.firstChild);
 }
