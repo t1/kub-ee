@@ -31,25 +31,25 @@ class DeploymentMenu extends React.Component {
     };
 
     versionIconClasses(version) {
-        const icon = ((this.state && this.state.hover === version.name) ? 'ok-sign' : this.icon(version.status));
+        const icon = ((this.state && this.state.hover === version.name) ? 'ok-sign' : statusIcon(version.status));
         return 'glyphicon glyphicon-' + icon + ' version-icon version-icon-' + version.status;
     }
+}
 
-    icon(state) {
-        switch (state) {
-            case 'undeployed':
-                return 'minus';
-            case 'deployee':
-                return 'ok-circle';
-            case 'deployed':
-                return 'ok-circle';
-            case 'deploying':
-                return 'refresh';
-            case 'undeployee':
-                return 'refresh';
-            case 'undeploying':
-                return 'refresh';
-        }
+function statusIcon(state) {
+    switch (state) {
+        case 'undeployed':
+            return 'minus';
+        case 'deployee':
+            return 'ok-circle';
+        case 'deployed':
+            return 'ok-circle';
+        case 'deploying':
+            return 'refresh';
+        case 'undeployee':
+            return 'refresh';
+        case 'undeploying':
+            return 'refresh';
     }
 }
 
@@ -204,21 +204,30 @@ function nodeHeader(nodeId) {
 }
 
 function drag_over(event) {
-    const dropClusterId = targetClusterId(event);
-    const dropNodeId = targetNodeId(event);
-    const appName = sourceId.split(':')[4];
-    const dropElement = $(escapeColons('#' + dropClusterId + ':' + dropNodeId + ':' + appName));
-    const droppable = dropElement.size() === 0 || dropElement.hasClass('not-deployed');
+    const e = dropElement(event);
+    const ok = e.size() > 0 && e.hasClass('not-deployed');
 
-    clusterHeader(dropClusterId).addClass(droppable ? 'drop-ok' : 'drop-not');
-    nodeHeader(dropNodeId).addClass(droppable ? 'drop-ok' : 'drop-not');
+    clusterHeader(targetClusterId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
+    nodeHeader(targetNodeId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
 
-    if (droppable) {
+    if (ok) {
         event.preventDefault();
     }
 }
 
-function clearDropZones(event) {
+function dropElement(event) {
+    const dropClusterId = targetClusterId(event);
+    const dropNodeId = targetNodeId(event);
+    const appName = sourceId.split(':')[4];
+    return $(escapeColons('#' + dropClusterId + ':' + dropNodeId + ':' + appName));
+}
+
+function drag_leave(event) {
+    event.preventDefault();
+    removeDropZoneStyles(event);
+}
+
+function removeDropZoneStyles(event) {
     const id = dragTargetId(event);
     if (id) {
         clusterHeader(cluster(id)).removeClass('drop-not').removeClass('drop-ok');
@@ -226,35 +235,38 @@ function clearDropZones(event) {
     }
 }
 
-function drag_leave(event) {
-    event.preventDefault();
-    clearDropZones(event);
-}
-
 function drag_end() {
-    sourceParent().removeClass('drag-source');
+    removeDragSourceStyle();
     sourceId = undefined;
     sourceGav = undefined;
 }
 
-function drop_handler(event) {
+function removeDragSourceStyle() {
     sourceParent().removeClass('drag-source');
-    clearDropZones(event);
+}
+
+function drop_handler(event) {
+    removeDragSourceStyle();
+    removeDropZoneStyles(event);
     event.preventDefault();
-    const targetId = dragTargetId(event);
+
+    const targetElement = dropElement(event);
+    const targetId = targetElement.attr('id');
+    const targetCell = targetElement.parent();
     const operation = op(event);
-    const node = document.getElementById(sourceId);
+    const sourceElement = document.getElementById(sourceId);
     console.debug(operation + ' ' + sourceGav + ' ' + sourceId + ' -> ' + targetId);
+
     switch (operation) {
         case 'copy':
-            const nodeCopy = node.cloneNode(true);
+            const nodeCopy = sourceElement.cloneNode(true);
             nodeCopy.id = targetId;
-            replaceChildren(event.target.parentNode, nodeCopy);
+            replaceChildren(targetCell, nodeCopy);
             break;
         case 'move':
             const sourceParentElement = sourceParent();
-            node.id = targetId;
-            replaceChildren(event.target.parentNode, node);
+            sourceElement.id = targetId;
+            replaceChildren(targetCell, sourceElement);
             sourceParentElement.append(undeployedNode());
             break;
         default:
@@ -276,12 +288,11 @@ function op(event) {
         : event.dataTransfer.dropEffect;
 }
 
-function replaceChildren(target, child) {
-    clearChildren(target);
-    target.appendChild(child);
+function replaceChildren(parent, child) {
+    clearChildren(parent);
+    parent.append(child);
 }
 
-function clearChildren(target) {
-    while (target.childNodes.length > 0)
-        target.removeChild(target.firstChild);
+function clearChildren(parent) {
+    parent.children().remove();
 }
