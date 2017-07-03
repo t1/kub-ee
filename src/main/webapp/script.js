@@ -17,23 +17,22 @@ class DeploymentMenu extends React.Component {
                 onMouseEnter={() => this.hover(version)}
                 onMouseLeave={() => this.hover(undefined)}
             >
-                <span className={this.versionIconClasses(version)}/>
+                <span className={versionIconClasses(version, this.state)}/>
                 <span className="version">{version.name}</span>
             </li>
         );
     }
 
     hover(version) {
-        const hover = (version && 'undeployed' === version.status) ? version.name : undefined;
         this.setState({
-            hover: hover
+            hover: (version && 'undeployed' === version.status) ? version.name : undefined
         });
     };
+}
 
-    versionIconClasses(version) {
-        const icon = ((this.state && this.state.hover === version.name) ? 'ok-sign' : statusIcon(version.status));
-        return 'glyphicon glyphicon-' + icon + ' version-icon version-icon-' + version.status;
-    }
+function versionIconClasses(version, state) {
+    const icon = ((state && state.hover === version.name) ? 'ok-sign' : statusIcon(version.status));
+    return 'glyphicon glyphicon-' + icon + ' version-icon version-icon-' + version.status;
 }
 
 function statusIcon(state) {
@@ -41,7 +40,7 @@ function statusIcon(state) {
         case 'undeployed':
             return 'minus';
         case 'deployee':
-            return 'ok-circle';
+            return 'refresh';
         case 'deployed':
             return 'ok-circle';
         case 'deploying':
@@ -54,7 +53,7 @@ function statusIcon(state) {
 }
 
 function click_handler(event) {
-    const cellId = event.target.parentNode.parentNode.id;
+    const cellId = $(event.target).parents('.deployment').attr('id');
     if (!cellId)
         return;
     const idSelector = (className) => '#' + cellId.split(':').join('\\:') + ' .' + className;
@@ -127,6 +126,10 @@ function fetchVersions(where) {
 function selectVersion(where, version) {
     console.debug('selectVersion', where, version);
 
+    const refreshIcon = document.createElement('span');
+    refreshIcon.className = versionIconClasses({status: 'deployee'});
+    $id(where).find('.dropdown-toggle span.version-name').prepend(refreshIcon);
+
     fetch(deploymentsResource + where, {
         method: 'post',
         headers: {
@@ -151,22 +154,16 @@ function selectVersion(where, version) {
 // see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
 
 let sourceId;
-let sourceGav;
 
-function escapeColons(text) {
-    return text.split(':').join('\\:');
-}
-
-function sourceParent() {
-    return $(escapeColons('#' + sourceId)).parent();
+function $id(selector) {
+    return $('#' + selector.split(':').join('\\:'));
 }
 
 function drag_start(event) {
     sourceId = event.currentTarget.id;
-    sourceGav = event.currentTarget.title;
     event.dataTransfer.effectAllowed = "copyMove";
-    event.dataTransfer.setData('text', event.currentTarget.className + ':' + sourceId + '@' + sourceGav);
-    sourceParent().addClass('drag-source');
+    event.dataTransfer.setData('text', event.currentTarget.className + ':' + sourceId);
+    $id(sourceId).parent().addClass('drag-source');
 }
 
 function targetClusterId(event) {
@@ -175,15 +172,15 @@ function targetClusterId(event) {
     return cluster(id);
 }
 
-function cluster(targetId) {
-    const split = targetId.split(':');
-    return split[0] + ':' + split[1];
-}
-
 function targetNodeId(event) {
     const id = dragTargetId(event);
     if (!id) return id;
     return node(id);
+}
+
+function cluster(targetId) {
+    const split = targetId.split(':');
+    return split[0] + ':' + split[1];
 }
 
 function node(id) {
@@ -195,21 +192,12 @@ function dragTargetId(event) {
     return $(event.currentTarget).find('div.deployment').attr('id');
 }
 
-function clusterHeader(clusterId) {
-    return $(escapeColons('#cluster:' + clusterId));
-}
-
-function nodeHeader(nodeId) {
-    return $(escapeColons('#node:' + nodeId));
-}
-
 function drag_over(event) {
     const e = dropElement(event);
     const ok = e.size() > 0 && e.hasClass('not-deployed');
 
-    clusterHeader(targetClusterId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
-    nodeHeader(targetNodeId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
-
+    $id('cluster:' + targetClusterId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
+    $id('node:' + targetNodeId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
     if (ok) {
         event.preventDefault();
     }
@@ -219,7 +207,7 @@ function dropElement(event) {
     const dropClusterId = targetClusterId(event);
     const dropNodeId = targetNodeId(event);
     const appName = sourceId.split(':')[4];
-    return $(escapeColons('#' + dropClusterId + ':' + dropNodeId + ':' + appName));
+    return $id(dropClusterId + ':' + dropNodeId + ':' + appName);
 }
 
 function drag_leave(event) {
@@ -230,19 +218,18 @@ function drag_leave(event) {
 function removeDropZoneStyles(event) {
     const id = dragTargetId(event);
     if (id) {
-        clusterHeader(cluster(id)).removeClass('drop-not').removeClass('drop-ok');
-        nodeHeader(node(id)).removeClass('drop-not').removeClass('drop-ok');
+        $id('cluster:' + cluster(id)).removeClass('drop-not').removeClass('drop-ok');
+        $id('node:' + node(id)).removeClass('drop-not').removeClass('drop-ok');
     }
 }
 
 function drag_end() {
     removeDragSourceStyle();
     sourceId = undefined;
-    sourceGav = undefined;
 }
 
 function removeDragSourceStyle() {
-    sourceParent().removeClass('drag-source');
+    $id(sourceId).parent().removeClass('drag-source');
 }
 
 function drop_handler(event) {
@@ -255,7 +242,7 @@ function drop_handler(event) {
     const targetCell = targetElement.parent();
     const operation = op(event);
     const sourceElement = document.getElementById(sourceId);
-    console.debug(operation + ' ' + sourceGav + ' ' + sourceId + ' -> ' + targetId);
+    console.debug(operation + ' ' + sourceId + ' -> ' + targetId);
 
     switch (operation) {
         case 'copy':
@@ -264,7 +251,7 @@ function drop_handler(event) {
             replaceChildren(targetCell, nodeCopy);
             break;
         case 'move':
-            const sourceParentElement = sourceParent();
+            const sourceParentElement = $id(sourceId).parent();
             sourceElement.id = targetId;
             replaceChildren(targetCell, sourceElement);
             sourceParentElement.append(undeployedNode());
@@ -289,10 +276,7 @@ function op(event) {
 }
 
 function replaceChildren(parent, child) {
-    clearChildren(parent);
+    parent.children().remove();
     parent.append(child);
 }
 
-function clearChildren(parent) {
-    parent.children().remove();
-}

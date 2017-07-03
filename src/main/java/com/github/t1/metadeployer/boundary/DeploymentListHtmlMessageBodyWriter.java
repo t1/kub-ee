@@ -55,7 +55,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         private Collection<Stage> mergedStages;
         private List<ClusterNode> mergedNodes;
 
-        public DeploymentsHtml(List<Deployment> deployments) {
+        private DeploymentsHtml(List<Deployment> deployments) {
             this.deployments = deployments;
 
             this.mergedStages = mergedStages();
@@ -193,13 +193,15 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                     .attr("ondragstart", "drag_start(event);")
                     .attr("ondragend", "drag_end(event);")
                     .attr("onclick", "click_handler(event);");
-            Element dropdown = cell.appendElement("div").addClass("dropdown");
-            dropdown.appendElement("div")
-                    .addClass("dropdown-toggle")
-                    .attr("data-toggle", "dropdown")
-                    .text(deployment.hasError() ? deployment.getError() : deployment.getVersion())
-                    .appendElement("span")
-                    .addClass("caret");
+            Element dropdown = cell.appendElement("span").addClass("dropdown");
+            Element toggle = dropdown.appendElement("span")
+                                     .addClass("dropdown-toggle")
+                                     .attr("data-toggle", "dropdown");
+            toggle.appendElement("span")
+                  .addClass("version-name")
+                  .text(deployment.hasError() ? deployment.getError() : deployment.getVersion());
+            toggle.appendElement("span")
+                  .addClass("caret");
             dropdown.appendElement("div").addClass("dropdown-menu versions-menu");
             return cell;
         }
