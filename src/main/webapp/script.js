@@ -1,6 +1,7 @@
 'use strict';
 
 const deploymentsResource = baseUri + 'deployments/';
+const ACCEPTED = 202;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -139,11 +140,9 @@ function selectVersion(where, version) {
         body: 'version=' + version.name
     })
         .then(response => {
-            if (response.ok) return response.json();
-            else return new Error(response);
-        })
-        .then(data => {
-            console.debug('posted select', data);
+            console.debug('got response', response);
+            if (response.status !== ACCEPTED)
+                throw new Error('unexpected response: ' + response.status);
         })
         .catch(error => {
             console.debug('failed', error);

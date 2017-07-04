@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
 import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
+import static com.github.t1.metadeployer.model.ClusterNode.fromId;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
@@ -150,8 +151,8 @@ public class Boundary {
 
     @Path("/deployments/{id}")
     @GET public GetDeploymentResponse getDeployment(@PathParam("id") String id) {
-        ClusterNode node = ClusterNode.fromId(id, clusters);
-        String deployableName = id.split(":")[4];
+        ClusterNode node = fromId(id, clusters);
+        String deployableName = deployableName(id);
         Deployable deployable = fetchDeployablesFrom(node)
                 .stream()
                 .filter(d -> d.getName().equals(deployableName))
@@ -167,6 +168,8 @@ public class Boundary {
                 .available(available)
                 .build();
     }
+
+    private static String deployableName(String id) { return id.split(":")[4];    }
 
     private List<String> fetchVersions(ClusterNode node, Deployable deployable) {
         String groupId = deployable.getGroupId();
@@ -216,15 +219,9 @@ public class Boundary {
 
 
     @Path("/deployments/{id}")
-    @POST
-    public PostDeploymentResponse postDeployments(@PathParam("id") String id, @FormParam("version") String version) {
-        return new PostDeploymentResponse(id, version);
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class PostDeploymentResponse {
-        String id;
-        String version;
+    @POST public Response postDeployments(@PathParam("id") String id, @FormParam("version") String version) {
+        ClusterNode node = fromId(id, clusters);
+        deployer.startVersionDeploy(node.deployerUri(), deployableName(id), version);
+        return Response.accepted().build();
     }
 }

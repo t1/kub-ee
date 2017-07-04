@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.github.t1.log.Logged;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ejb.Asynchronous;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
@@ -17,10 +19,12 @@ import java.util.*;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
+import static com.github.t1.log.LogLevel.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.Response.Status.Family.*;
 import static javax.ws.rs.core.Response.Status.*;
 
+@Logged(level = INFO)
 @Slf4j
 public class DeployerGateway {
     public static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory()
@@ -116,5 +120,31 @@ public class DeployerGateway {
         Deployable deployable = entry.getValue();
         deployable.name = entry.getKey();
         return deployable;
+    }
+
+
+    @Asynchronous
+    public void startVersionDeploy(URI uri, String application, String version) {
+        log.info("deploy {} {} on {}", application, version, uri);
+        Response response = httpClient
+                .target(uri)
+                .request()
+                .accept(APPLICATION_YAML_TYPE)
+                .post(Entity.form(new Form(application + ".version", version)));
+        try {
+            String contentType = response.getHeaderString("Content-Type");
+            String string = response.readEntity(String.class);
+            if (NOT_FOUND.getStatusCode() == response.getStatus()) {
+                log.info("{} returns 404 Not Found: {}", uri, string);
+                throw new NotFoundException();
+            }
+            if (response.getStatusInfo().getFamily() != SUCCESSFUL)
+                throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
+            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
+                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
+                        + " but got " + contentType + ": " + string);
+        } finally {
+            response.close();
+        }
     }
 }
