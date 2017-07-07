@@ -4,6 +4,8 @@ Manage the applications on multiple Java EE clusters.
 
 Status: Experimental
 
+When we gain more speed, we might reach something that would justify a rename to `kubern-ee`.
+
 ## User Journey
 
 * Tom is responsible for a pool of JBoss machines and the applications running there.
