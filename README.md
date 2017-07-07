@@ -2,6 +2,8 @@
 
 Manage the applications on multiple Java EE clusters.
 
+Status: Experimental
+
 ## User Journey
 
 * Tom is responsible for a pool of JBoss machines and the applications running there.
@@ -30,16 +32,8 @@ Manage the applications on multiple Java EE clusters.
 
 * Report to meta-deployer:
   * Web-Sockets to push audits
+  * Watch others deploy/undeploy
   * Load Metrics; by app & total
-  * Put root bundle
-* Deployables _containing_ config bundle, or matching config bundle GAV with classifier `bundle`.
+  * Pre-undeploy & post-deploy -> Load Balancers
+* PUT root bundle
 
-
-## Deployment Status
-
-* Mouse-Off
-  * Not-Deployed: minus
-  * Deployed: ok-circle
-  * Deploying: refresh (rotating)
-  * Undeploying: remove-circle (rotating)
-  * Mouse-Over: ok-sign
