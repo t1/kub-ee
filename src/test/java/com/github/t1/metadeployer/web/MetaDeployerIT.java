@@ -11,6 +11,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.junit.runner.RunWith;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import javax.ws.rs.client.*;
@@ -166,7 +167,10 @@ public class MetaDeployerIT {
         String response = metaDeployer().path("deployments").request(APPLICATION_JSON_TYPE).get(String.class);
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
-        assertThat(list).contains(dummyDeployment(CLUSTER_1, "1.2.3"), dummyDeployment(CLUSTER_2, "1.2.4"));
+        assertThat(list).contains(
+                dummyDeployment(CLUSTER_1, "1.2.3"),
+                dummyDeployment(CLUSTER_2, "1.2.4")
+        );
     }
 
     private Deployment dummyDeployment(Cluster cluster, String version) {
@@ -191,36 +195,63 @@ public class MetaDeployerIT {
     }
 
     @Test
-    public void shouldGetDeploymentsPage() throws Exception {
+    public void shouldGoToDeploymentsPage() throws Exception {
         deployments.navigateTo();
 
         deployments.assertOpen();
-        VersionCell deployer = new VersionCell(deployments.findDeployment(CLUSTER_1.node(PROD, 1), "deployer"));
-        VersionCell dummy = new VersionCell(deployments.findDeployment(CLUSTER_1.node(PROD, 1), "dummy"));
-        assertThat(deployer).is(closed);
-        assertThat(dummy).is(closed);
+        assertThat(deployer()).is(closed);
+        assertThat(dummy()).is(closed);
+    }
 
-        dummy.clickToggle();
+    @Test
+    public void shouldOpenDummyMenu() {
+        dummy().clickToggle();
 
-        assertThat(deployer).is(closed);
-        assertThat(dummy).is(open);
+        assertThat(deployer()).is(closed);
+        assertThat(dummy()).is(open);
 
-        assertThat(dummy.menu())
+        assertThat(dummy().menu())
                 .hasSize(3)
                 .has(versionItem("minus", "1.2.1", "undeployed"), atIndex(0))
                 .has(versionItem("minus", "1.2.2", "undeployed"), atIndex(1))
                 .has(versionItem("ok-circle", "1.2.3", "deployed"), atIndex(2));
+    }
 
-        deployer.clickToggle();
+    @Test
+    public void shouldOpenDeployerMenu() {
+        deployer().clickToggle();
 
-        assertThat(deployer).is(open);
-        assertThat(dummy).is(closed);
+        assertThat(deployer()).is(open);
+        assertThat(dummy()).is(closed);
 
-        assertThat(deployer.menu())
+        assertThat(deployer().menu())
                 .hasSize(3)
                 .has(versionItem("minus", "2.9.1", "undeployed"), atIndex(0))
                 .has(versionItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
                 .has(versionItem("minus", "2.9.3", "undeployed"), atIndex(2));
-        assertThat(dummy.menu()).hasSize(3);
+        assertThat(dummy().menu()).hasSize(3);
     }
+
+    @Test
+    public void shouldCloseMenus() {
+        deployments.findCluster(CLUSTER_1).click();
+        assertThat(deployer()).is(closed);
+        assertThat(dummy()).is(closed);
+    }
+
+    @Test
+    public void shouldDragDeployment() throws Exception {
+        WebElement to = deployments.findDeployment(CLUSTER_2.node(PROD, 1), "dummy");
+        DRIVER.buildAction()
+              .clickAndHold(deployments.findDeployment(node11(), "dummy"))
+              .moveToElement(to)
+              .release(to)
+              .build().perform();
+    }
+
+    private VersionCell dummy() { return deployments.findDeploymentCell(node11(), "dummy"); }
+
+    private VersionCell deployer() { return deployments.findDeploymentCell(node11(), "deployer"); }
+
+    private ClusterNode node11() { return CLUSTER_1.node(PROD, 1); }
 }

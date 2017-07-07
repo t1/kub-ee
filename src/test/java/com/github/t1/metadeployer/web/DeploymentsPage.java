@@ -1,11 +1,10 @@
 package com.github.t1.metadeployer.web;
 
-import com.github.t1.metadeployer.model.ClusterNode;
+import com.github.t1.metadeployer.model.*;
 import com.github.t1.testtools.*;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.pagefactory.ByAll;
 
 import java.net.URI;
 import java.util.List;
@@ -21,16 +20,24 @@ public class DeploymentsPage extends AbstractPage<DeploymentsPage> {
     @FindBy(id = "deployables")
     WebElement deployablesTable;
 
+    public VersionCell findDeploymentCell(ClusterNode node, String name) {
+        return new VersionCell(findDeployment(node, name));
+    }
+
     public WebElement findDeployment(ClusterNode node, String name) {
         return findDeployment(By.id(node.id() + ":" + name));
     }
 
     public WebElement findDeployment(By by) {
-        by = new ByAll(By.className("deployable"), by);
         List<WebElement> elements = deployablesTable.findElements(by);
         assertThat(elements).describedAs(description("find " + by)).hasSize(1);
         return elements.get(0);
     }
+
+    public WebElement findCluster(Cluster cluster) {
+        return deployablesTable.findElement(By.id("cluster:" + cluster.id()));
+    }
+
 
     public class DeploymentsPageAsserts extends AbstractPageAsserts<DeploymentsPageAsserts> {
         @Override protected DeploymentsPageAsserts hasTitle() { return super.hasTitle("Meta-Deployer"); }
