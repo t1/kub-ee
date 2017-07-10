@@ -22,7 +22,9 @@ public class LinksHtmlMessageBodyWriterTest {
     private Map<String, URI> getLinks() {
         UriInfo uriInfo = mock(UriInfo.class);
         when(uriInfo.getBaseUriBuilder()).then(i -> new JerseyUriBuilder().uri(BASE_URI));
-        return new Boundary().getLinks(uriInfo);
+        Boundary boundary = new Boundary();
+        boundary.uriInfo = uriInfo;
+        return boundary.getLinks();
     }
 
     @Test

@@ -28,19 +28,20 @@ import static java.util.stream.Collectors.*;
 @Stateless
 public class Boundary {
     @Inject List<Cluster> clusters;
+    @Context UriInfo uriInfo;
 
     DeployerGateway deployer = new DeployerGateway();
 
-    @GET public Map<String, URI> getLinks(@Context UriInfo uriInfo) {
+    @GET public Map<String, URI> getLinks() {
         Map<String, URI> map = new LinkedHashMap<>();
-        map.put("clusters", linkForMethod(uriInfo, "getClusters"));
-        map.put("slots", linkForMethod(uriInfo, "getSlots"));
-        map.put("stages", linkForMethod(uriInfo, "getStages"));
-        map.put("deployments", linkForMethod(uriInfo, "getDeployments"));
+        map.put("clusters", linkForMethod("getClusters"));
+        map.put("slots", linkForMethod("getSlots"));
+        map.put("stages", linkForMethod("getStages"));
+        map.put("deployments", linkForMethod("getDeployments"));
         return map;
     }
 
-    private URI linkForMethod(@Context UriInfo uriInfo, String method) {
+    private URI linkForMethod(String method) {
         return uriInfo.getBaseUriBuilder().path(Boundary.class, method).build();
     }
 
