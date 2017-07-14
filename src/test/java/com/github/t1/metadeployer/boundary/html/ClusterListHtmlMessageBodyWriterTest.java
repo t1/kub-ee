@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
 import com.github.t1.metadeployer.model.*;
 import org.jsoup.Jsoup;

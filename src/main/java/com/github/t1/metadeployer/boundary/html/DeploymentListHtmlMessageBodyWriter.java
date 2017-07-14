@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.metadeployer.tools.html.*;
@@ -97,7 +97,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void tableHeader() {
-            this.table = fullWidthContainer().table().id("deployables");
+            container().fluid().with(table = new Table().id("deployables"));
             stagesHeader();
             nodesHeader();
         }

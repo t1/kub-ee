@@ -2,9 +2,8 @@
         com.github.t1.metadeployer.gateway.DeployerGateway.class,
         com.github.t1.metadeployer.model.Cluster.class,
         com.github.t1.metadeployer.tools.yaml.YamlDocument.class,
-        com.github.t1.metadeployer.tools.html.Html.class,
 
-        org.jsoup.nodes.Document.class,
+        com.github.t1.nginx.NginxConfig.class,
 })
 package com.github.t1.metadeployer.boundary;
 

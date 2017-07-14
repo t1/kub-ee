@@ -17,7 +17,6 @@ public class Html {
     private static final String JQUERY_JS_URI = JQUERY_BASE + "/jquery.min.js";
 
     private final Document html;
-    private Element body;
 
     public Html() {
         html = Document.createShell("");
@@ -40,9 +39,9 @@ public class Html {
     public void stylesheets() { stylesheet(BOOTSTRAP_CSS_URI).stylesheet("../style.css"); }
 
     public Html stylesheet(String href) {
-        head().appendElement("link")
-              .attr("rel", "stylesheet")
-              .attr("href", href);
+        html.head().appendElement("link")
+            .attr("rel", "stylesheet")
+            .attr("href", href);
         return this;
     }
 
@@ -51,39 +50,16 @@ public class Html {
     }
 
     public void script(String src, String type) {
-        rawBody().appendElement("script")
-                 .attr("type", type)
-                 .attr("src", src);
+        html.body().appendElement("script")
+            .attr("type", type)
+            .attr("src", src);
     }
 
     public void inlineScript(String text) {
-        rawBody().appendElement("script").text(text);
+        html.body().appendElement("script").text(text);
     }
 
-    public Element head() { return html.head(); }
-
-    public Html fullWidthContainer() {
-        this.body = rawBody().appendElement("div").addClass("container-fluid");
-        return this;
-    }
-
-    public Element body() {
-        if (this.body == null)
-            this.body = rawBody().appendElement("div").addClass("container");
-        return this.body;
-    }
-
-    public Element rawBody() { return html.body(); }
-
-    public void h1(String title) {
-        body().appendElement("h1").addClass("page-header").text(title);
-    }
-
-    public List ul() {
-        return new List(body());
-    }
-
-    public Table table() { return new Table(body()); }
+    public Container container() { return new Container(html.body()); }
 
     public void footer() {
         script(JQUERY_JS_URI);

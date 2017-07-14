@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
 import com.github.t1.metadeployer.tools.html.*;
 
@@ -8,30 +8,28 @@ import javax.ws.rs.ext.*;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.net.URI;
-import java.util.Map;
+import java.util.List;
 
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
 @Produces(TEXT_HTML)
-public class LinksHtmlMessageBodyWriter implements MessageBodyWriter<Map<String, URI>> {
+public class LinkListHtmlMessageBodyWriter implements MessageBodyWriter<List<Link>> {
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return genericType instanceof ParameterizedType
-                && ((ParameterizedType) genericType).getRawType().equals(Map.class)
-                && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(String.class)
-                && ((ParameterizedType) genericType).getActualTypeArguments()[1].equals(URI.class);
+                && ((ParameterizedType) genericType).getRawType().equals(List.class)
+                && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(Link.class);
     }
 
     @Override
-    public long getSize(Map<String, URI> links, Class<?> type, Type genericType, Annotation[] annotations,
+    public long getSize(List<Link> links, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType) {
         return -1;
     }
 
     @Override
-    public void writeTo(Map<String, URI> links, Class<?> type, Type genericType,
+    public void writeTo(List<Link> links, Class<?> type, Type genericType,
             Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
@@ -40,20 +38,24 @@ public class LinksHtmlMessageBodyWriter implements MessageBodyWriter<Map<String,
     }
 
     private class LinksHtml extends Html {
-        private final Map<String, URI> links;
-        private List list;
+        private final List<Link> links;
+        private HtmlList list;
 
-        private LinksHtml(Map<String, URI> links) {
+        private LinksHtml(List<Link> links) {
             this.links = links;
 
             header("Index");
-            h1("Links");
-            this.list = ul();
+            container()
+                    .with(new PageHeader("Links"))
+                    .with(this.list = new HtmlList());
             this.links.forEach(this::link);
         }
 
-        private void link(String name, URI href) {
-            list.li().appendElement("a").attr("href", href.toString()).text(name);
+        private void link(Link link) {
+            list.li().appendElement("a")
+                .attr("rel", link.getRel())
+                .attr("href", link.getUri().toString())
+                .text(link.getTitle());
         }
     }
 }

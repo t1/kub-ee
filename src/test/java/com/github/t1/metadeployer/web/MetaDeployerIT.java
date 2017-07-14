@@ -72,11 +72,22 @@ public class MetaDeployerIT {
     public void shouldGetIndexAsJson() throws Exception {
         String response = metaDeployer().request(APPLICATION_JSON_TYPE).get(String.class);
 
-        assertThat(response).isEqualTo("{"
-                + "\"clusters\":\"http://localhost:8080/api/clusters\","
-                + "\"slots\":\"http://localhost:8080/api/slots\","
-                + "\"stages\":\"http://localhost:8080/api/stages\","
-                + "\"deployments\":\"http://localhost:8080/api/deployments\""
+        assertThat(response).isEqualTo(""
+                + "{\"load-balancers\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/load-balancers\","
+                + /**/"\"title\":\"Load Balancers\"},"
+                + "\"clusters\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/clusters\","
+                + /**/"\"title\":\"Clusters\"},"
+                + "\"slots\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/slots\","
+                + /**/"\"title\":\"Slots\"},"
+                + "\"stages\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/stages\","
+                + /**/"\"title\":\"Stages\"},"
+                + "\"deployments\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/deployments\","
+                + /**/"\"title\":\"Deployments\"}"
                 + "}");
     }
 

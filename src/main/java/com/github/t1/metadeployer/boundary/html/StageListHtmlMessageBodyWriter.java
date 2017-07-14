@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
 
 import com.github.t1.metadeployer.model.Stage;
@@ -48,7 +48,7 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
             this.stages = stages;
 
             header("Stages");
-            table = fullWidthContainer().table();
+            container().fluid().with(table = new Table());
             tableHeader();
             this.stages.forEach(this::stageRow);
         }

@@ -4,7 +4,9 @@ import com.github.t1.log.Logged;
 import com.github.t1.metadeployer.gateway.DeployerGateway;
 import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
 import com.github.t1.metadeployer.model.*;
+import com.github.t1.nginx.NginxConfig;
 import lombok.*;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
@@ -12,14 +14,17 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.*;
-import java.util.*;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
 import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
-import static com.github.t1.metadeployer.model.ClusterNode.fromId;
+import static com.github.t1.metadeployer.model.ClusterNode.*;
+import static java.util.Arrays.*;
 import static java.util.Collections.*;
+import static java.util.Locale.*;
 import static java.util.stream.Collectors.*;
 
 @Logged(level = INFO)
@@ -32,17 +37,35 @@ public class Boundary {
 
     DeployerGateway deployer = new DeployerGateway();
 
-    @GET public Map<String, URI> getLinks() {
-        Map<String, URI> map = new LinkedHashMap<>();
-        map.put("clusters", linkForMethod("getClusters"));
-        map.put("slots", linkForMethod("getSlots"));
-        map.put("stages", linkForMethod("getStages"));
-        map.put("deployments", linkForMethod("getDeployments"));
-        return map;
+    @GET public List<Link> getLinks() {
+        return asList(
+                link("Load Balancers"),
+                link("Clusters"),
+                link("Slots"),
+                link("Stages"),
+                link("Deployments")
+        );
     }
 
-    private URI linkForMethod(String method) {
-        return uriInfo.getBaseUriBuilder().path(Boundary.class, method).build();
+    private Link link(String title) {
+        String method = "get" + title.replace(" ", "");
+        UriBuilder href = uriInfo.getBaseUriBuilder().path(Boundary.class, method);
+        String rel = title.toLowerCase(US).replaceAll(" ", "-");
+        return Link.fromUriBuilder(href).rel(rel).title(title).build();
+    }
+
+    @Path("/load-balancers")
+    @GET public List<LoadBalancer> getLoadBalancers() {
+        NginxConfig nginxConfig = NginxConfig.readFrom(
+                Paths.get("/Users/rdohna/workspace/meta-deployer/nginx.conf").toUri());
+        return nginxConfig.getServers()
+                          .stream()
+                          .map(server -> LoadBalancer
+                                  .builder()
+                                  .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
+                                  .to(URI.create(server.getLocation().getPass()))
+                                  .build())
+                          .collect(toList());
     }
 
     @Path("/clusters")
@@ -170,7 +193,7 @@ public class Boundary {
                 .build();
     }
 
-    private static String deployableName(String id) { return id.split(":")[4];    }
+    private static String deployableName(String id) { return id.split(":")[4]; }
 
     private List<String> fetchVersions(ClusterNode node, Deployable deployable) {
         String groupId = deployable.getGroupId();

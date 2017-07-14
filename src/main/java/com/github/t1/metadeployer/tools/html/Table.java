@@ -3,23 +3,24 @@ package com.github.t1.metadeployer.tools.html;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.Element;
 
-public class Table {
-    private final Element table;
-    private final Element tableBody;
-
-    public Table(Element body) {
-        this.table = body
-                .appendElement("div").addClass("table-responsive")
-                .appendElement("table").addClass("table table-striped");
-        this.tableBody = table.appendElement("t" + "body");
-    }
+public class Table extends Component {
+    private String id;
 
     public Table id(String id) {
-        table.attr("id", id);
+        this.id = id;
         return this;
     }
 
-    public TableRow tr() { return new TableRow(tableBody.appendElement("tr")); }
+    @Override protected void addTo(Component parent) {
+        Element table = parent.element
+                .appendElement("div").addClass("table-responsive")
+                .appendElement("table").addClass("table table-striped");
+        this.element = table.appendElement("t" + "body");
+        if (id != null)
+            table.attr("id", id);
+    }
+
+    public TableRow tr() { return new TableRow(this.element.appendElement("tr")); }
 
     @RequiredArgsConstructor
     public static class TableRow {

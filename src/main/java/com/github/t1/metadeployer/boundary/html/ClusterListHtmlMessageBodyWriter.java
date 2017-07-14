@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.metadeployer.tools.html.*;
@@ -57,7 +57,7 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
                     .collect(toList());
 
             header("Meta-Deployer");
-            this.table = fullWidthContainer().table();
+            container().fluid().with(table = new Table());
             tableHeader();
             this.clusters.forEach(this::clusterRow);
         }

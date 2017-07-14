@@ -1,6 +1,7 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
-import com.github.t1.metadeployer.model.*;
+import com.github.t1.metadeployer.boundary.*;
+import com.github.t1.metadeployer.model.Stage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
@@ -17,8 +18,7 @@ public class StageListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        Boundary boundary = new Boundary();
-        boundary.clusters = ClusterTest.readClusterConfig().clusters();
+        Boundary boundary = BoundaryFactory.createWithClusters();
         List<Stage> stages = boundary.getStages();
         OutputStream out = new ByteArrayOutputStream();
 

@@ -1,35 +1,26 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
-import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
+import com.github.t1.metadeployer.boundary.BoundaryFactory;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
 
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Link;
 import java.io.*;
 import java.net.URI;
-import java.util.Map;
+import java.util.List;
 
 import static com.github.t1.metadeployer.tools.html.Html.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-public class LinksHtmlMessageBodyWriterTest {
+public class LinkListHtmlMessageBodyWriterTest {
     private static final URI BASE_URI = URI.create("http://localhost:8080/meta-deployer/api");
-    private LinksHtmlMessageBodyWriter writer = new LinksHtmlMessageBodyWriter();
-
-    private Map<String, URI> getLinks() {
-        UriInfo uriInfo = mock(UriInfo.class);
-        when(uriInfo.getBaseUriBuilder()).then(i -> new JerseyUriBuilder().uri(BASE_URI));
-        Boundary boundary = new Boundary();
-        boundary.uriInfo = uriInfo;
-        return boundary.getLinks();
-    }
+    private LinkListHtmlMessageBodyWriter writer = new LinkListHtmlMessageBodyWriter();
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        Map<String, URI> links = getLinks();
+        List<Link> links = BoundaryFactory.createWithBaseUri(BASE_URI).getLinks();
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(links, null, null, null, null, null, out);
@@ -44,10 +35,21 @@ public class LinksHtmlMessageBodyWriterTest {
                 + "<div class=\"container\"> \n"
                 + " <h1 class=\"page-header\">Links</h1> \n"
                 + " <ul class=\"list-group\"> \n"
-                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/clusters\">clusters</a></li> \n"
-                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/slots\">slots</a></li> \n"
-                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/stages\">stages</a></li> \n"
-                + "  <li class=\"list-group-item\"><a href=\"" + BASE_URI + "/deployments\">deployments</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"load-balancers\" href=\""
+                + BASE_URI
+                + "/load-balancers\">Load Balancers</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"clusters\" href=\""
+                + BASE_URI
+                + "/clusters\">Clusters</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"slots\" href=\""
+                + BASE_URI
+                + "/slots\">Slots</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"stages\" href=\""
+                + BASE_URI
+                + "/stages\">Stages</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"deployments\" href=\""
+                + BASE_URI
+                + "/deployments\">Deployments</a></li> \n"
                 + " </ul> \n"
                 + "</div>");
     }

@@ -1,8 +1,8 @@
-package com.github.t1.metadeployer.boundary;
+package com.github.t1.metadeployer.boundary.html;
 
+import com.github.t1.metadeployer.model.Slot;
 import com.github.t1.metadeployer.tools.html.*;
 import com.github.t1.metadeployer.tools.html.Table.TableRow;
-import com.github.t1.metadeployer.model.Slot;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -47,7 +47,7 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
             this.slots = slots;
 
             header("Slots");
-            table = fullWidthContainer().table();
+            container().fluid().with(table = new Table());
             tableHeader();
             this.slots.forEach(this::slotRow);
         }
