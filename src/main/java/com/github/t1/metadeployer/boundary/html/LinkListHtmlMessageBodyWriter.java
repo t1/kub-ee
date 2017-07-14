@@ -42,6 +42,7 @@ public class LinkListHtmlMessageBodyWriter implements MessageBodyWriter<List<Lin
         private HtmlList list;
 
         private LinksHtml(List<Link> links) {
+            baseUri("api/");
             this.links = links;
 
             header("Index");
@@ -52,6 +53,7 @@ public class LinkListHtmlMessageBodyWriter implements MessageBodyWriter<List<Lin
         }
 
         private void link(Link link) {
+            // list-group-items with an `a` look nicer (clickable) than a list of `a`s.
             list.li().appendElement("a")
                 .attr("rel", link.getRel())
                 .attr("href", link.getUri().toString())

@@ -30,7 +30,7 @@ public class LinkListHtmlMessageBodyWriterTest {
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
-                .containsOnly(BOOTSTRAP_BASE + "/css/bootstrap.min.css", "../style.css");
+                .containsOnly("api/" + BOOTSTRAP_BASE + "/css/bootstrap.min.css", "style.css");
         assertThat(html.body().html()).isEqualTo(""
                 + "<div class=\"container\"> \n"
                 + " <h1 class=\"page-header\">Links</h1> \n"

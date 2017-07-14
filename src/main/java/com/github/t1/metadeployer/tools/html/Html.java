@@ -1,6 +1,8 @@
 package com.github.t1.metadeployer.tools.html;
 
-import org.jsoup.nodes.*;
+import org.jsoup.nodes.Document;
+
+import java.nio.file.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
@@ -17,6 +19,7 @@ public class Html {
     private static final String JQUERY_JS_URI = JQUERY_BASE + "/jquery.min.js";
 
     private final Document html;
+    private Path baseUri;
 
     public Html() {
         html = Document.createShell("");
@@ -29,6 +32,8 @@ public class Html {
     @Override public String toString() { return "<!DOCTYPE html>\n" + html.outerHtml(); }
 
 
+    public void baseUri(String baseUri) { this.baseUri = Paths.get(baseUri); }
+
     public void header(String title) {
         title(title);
         stylesheets();
@@ -39,6 +44,8 @@ public class Html {
     public void stylesheets() { stylesheet(BOOTSTRAP_CSS_URI).stylesheet("../style.css"); }
 
     public Html stylesheet(String href) {
+        if (baseUri != null)
+            href = baseUri.resolve(href).normalize().toString();
         html.head().appendElement("link")
             .attr("rel", "stylesheet")
             .attr("href", href);
