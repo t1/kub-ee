@@ -37,5 +37,4 @@ When we gain more speed, we might reach something that would justify a rename to
   * Watch others deploy/undeploy
   * Load Metrics; by app & total
   * Pre-undeploy & post-deploy -> Load Balancers
-* PUT root bundle
-
+* exclude bundles/apps
