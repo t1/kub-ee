@@ -8,26 +8,64 @@ When we gain more speed, we might reach something that would justify a rename to
 
 ## User Journey
 
-* Tom is responsible for a pool of JBoss machines and the applications running there.
-* He deploys nginx and the Meta-Deployer on a machine that acts as a load balancer.
-* He deploys [The Deployer](https://github.com/t1/deployer) on the other JBoss machines and configures them to report to the Meta-Deployer, including their stage.
-* He browses to the Meta-Deployer and sees a matrix of all containers and all running applications showing their versions and load.
-* He opens a menu in one matrix cell and picks a different version which gets deployed immediately.
-* He picks `undeploy` and it gets undeployed and removed from the LB nginx config, which gets reloaded.
-* He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB.
-* He drags a cell from one machine to another and it gets deployed on the target and undeployed on the source; the LB is updated accordingly.
-* He switches to a _compact_ view that collapses the node indexes on the top so he only sees the stages;
-  the cells show the number of instances of an application on this stage;
-  if there are different versions on the nodes of one stage, both are displayed.
-* He clicks on a `+` button next to the number, and another instance is deployed;
-  the meta-deployer picks the node with the lowest load.
-* He clicks on a `-` button and one instance is undeployed;
-  the meta-deployer picks the application instance running on the node with the most load.
-* He opens a menu in one matrix cell and picks a different version;
-  he sees an in-place option to deploy the new version on all nodes (one-by-one) or only on one node;
-* He decides to update all, and sees the numbers of the different versions within the cell as the rollout progresses.
-* He configures a minimum and maximum load for one service on one stage,
-  and the meta deployer deploys or undeploys instances on more or less nodes to stay in that load range.
+1. Tom is responsible for a pool of JBoss machines and the applications running there.
+1. He deploys nginx and the Meta-Deployer on a machine that acts as a load balancer (LB).
+1. He deploys [The Deployer](https://github.com/t1/deployer) on the other JBoss machines and configures them
+   to report to the Meta-Deployer instance, including their stage.
+1. He browses to the Meta-Deployer and sees a matrix like this:
+<table>
+ <tbody>
+  <tr>
+   <th rowspan="2">Cluster</th>
+   <th rowspan="2">Application</th>
+   <th colspan="2">QA</th>
+   <th colspan="2">PROD</th>
+  </tr>
+  <tr>
+   <th>01</th>
+   <th>02</th>
+   <th>01</th>
+   <th>02</th>
+  </tr>
+  <tr>
+   <th rowspan="2">worker:8080</th>
+   <th>deployer</th>
+   <td>2.9.2</td>
+   <td>2.9.2</td>
+   <td>2.9.2</td>
+   <td>2.9.2</td>
+  </tr>
+  <tr>
+   <th>jolokia</th>
+   <td>1.3.6</td>
+   <td>1.3.5</td>
+   <td>1.3.5</td>
+   <td>1.3.5</td>
+  </tr>
+ </tbody>
+</table>
+
+   I.e. `Jolokia` is deployed in version `1.3.6` on `http://qa-worker01:8080`, which is a node in the `QA` stage
+   (the prefix `qa-` is part of the cluster config and not visible here).
+5. He opens a menu in one matrix cell and picks `undeploy`: The version gets undeployed,
+   after it's been removed from the LB nginx config (incl. reload and all current requests finishing).
+1. He opens a menu in another matrix cell and picks a different version which gets deployed,
+   while the LB is changed and updated before the undeploy of the old version and after the deploy of the new version.
+1. He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB.
+1. He drags a cell from one machine to another and it gets deployed on the target and undeployed on the source;
+   the LB is updated accordingly, i.e. once after it's been deployed to the new machine.
+1. He switches to a _compact_ view that collapses the node indexes on the top so he only sees the stages;
+   the cells show the number of instances of an application on this stage;
+   if there are different versions on the nodes of one stage, both are displayed.
+1. He clicks on a `+` button next to the number, and another instance is deployed;
+   the meta-deployer picks the node with the lowest load.
+1. He clicks on a `-` button and one instance is undeployed;
+   the meta-deployer picks the application instance running on the node with the most load.
+1. He opens a menu in one matrix cell and picks a different version;
+   he sees an in-place option to deploy the new version on all nodes (one-by-one) or only on one node;
+1. He decides to update all, and sees the numbers of the different versions within the cell as the rollout progresses.
+1. He configures a minimum and maximum load for one service on one stage,
+   and the meta deployer deploys or undeploys instances on more or less nodes to stay in that load range.
 
 
 ## New Requirements For The Deployer
@@ -35,6 +73,6 @@ When we gain more speed, we might reach something that would justify a rename to
 * Report to meta-deployer:
   * Web-Sockets to push audits
   * Watch others deploy/undeploy
-  * Load Metrics; by app & total
+  * Load metrics; by app & total
   * Pre-undeploy & post-deploy -> Load Balancers
 * exclude bundles/apps
