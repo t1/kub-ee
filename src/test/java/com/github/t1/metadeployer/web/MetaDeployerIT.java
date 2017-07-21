@@ -72,10 +72,13 @@ public class MetaDeployerIT {
     public void shouldGetIndexAsJson() throws Exception {
         String response = metaDeployer().request(APPLICATION_JSON_TYPE).get(String.class);
 
-        assertThat(response).isEqualTo(""
-                + "{\"load-balancers\":{"
+        assertThat(response).isEqualTo("{"
+                + "\"load-balancers\":{"
                 + /**/"\"href\":\"http://localhost:8080/api/load-balancers\","
                 + /**/"\"title\":\"Load Balancers\"},"
+                + "\"reverse-proxies\":{"
+                + /**/"\"href\":\"http://localhost:8080/api/reverse-proxies\","
+                + /**/"\"title\":\"Reverse Proxies\"},"
                 + "\"clusters\":{"
                 + /**/"\"href\":\"http://localhost:8080/api/clusters\","
                 + /**/"\"title\":\"Clusters\"},"

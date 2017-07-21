@@ -36,20 +36,17 @@ public class LinkListHtmlMessageBodyWriterTest {
                 + " <h1 class=\"page-header\">Links</h1> \n"
                 + " <ul class=\"list-group\"> \n"
                 + "  <li class=\"list-group-item\"><a rel=\"load-balancers\" href=\""
-                + BASE_URI
-                + "/load-balancers\">Load Balancers</a></li> \n"
+                + BASE_URI + "/load-balancers\">Load Balancers</a></li> \n"
+                + "  <li class=\"list-group-item\"><a rel=\"reverse-proxies\" href=\""
+                + BASE_URI + "/reverse-proxies\">Reverse Proxies</a></li> \n"
                 + "  <li class=\"list-group-item\"><a rel=\"clusters\" href=\""
-                + BASE_URI
-                + "/clusters\">Clusters</a></li> \n"
+                + BASE_URI + "/clusters\">Clusters</a></li> \n"
                 + "  <li class=\"list-group-item\"><a rel=\"slots\" href=\""
-                + BASE_URI
-                + "/slots\">Slots</a></li> \n"
+                + BASE_URI + "/slots\">Slots</a></li> \n"
                 + "  <li class=\"list-group-item\"><a rel=\"stages\" href=\""
-                + BASE_URI
-                + "/stages\">Stages</a></li> \n"
+                + BASE_URI + "/stages\">Stages</a></li> \n"
                 + "  <li class=\"list-group-item\"><a rel=\"deployments\" href=\""
-                + BASE_URI
-                + "/deployments\">Deployments</a></li> \n"
+                + BASE_URI + "/deployments\">Deployments</a></li> \n"
                 + " </ul> \n"
                 + "</div>");
     }

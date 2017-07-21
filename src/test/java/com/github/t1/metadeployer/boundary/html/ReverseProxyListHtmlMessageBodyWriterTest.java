@@ -1,11 +1,12 @@
 package com.github.t1.metadeployer.boundary.html;
 
-import com.github.t1.metadeployer.model.LoadBalancer;
+import com.github.t1.metadeployer.model.ReverseProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
 
 import java.io.*;
+import java.net.URI;
 import java.util.List;
 
 import static com.github.t1.metadeployer.tools.html.Html.*;
@@ -13,21 +14,22 @@ import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class LoadBalancerListHtmlMessageBodyWriterTest {
-    private final LoadBalancerListHtmlMessageBodyWriter writer = new LoadBalancerListHtmlMessageBodyWriter();
+public class ReverseProxyListHtmlMessageBodyWriterTest {
+    private final ReverseProxyListHtmlMessageBodyWriter writer = new ReverseProxyListHtmlMessageBodyWriter();
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        List<LoadBalancer> loadBalancers = asList(
-                LoadBalancer.builder().name("backend1").method("least_conn").server("b1s1").server("b1s2").build(),
-                LoadBalancer.builder().name("backend2").method("least_conn").server("b2s1").build()
+        List<ReverseProxy> reverseProxies = asList(
+                ReverseProxy.builder().from(URI.create("http://from1")).to(URI.create("http://to1")).build(),
+                ReverseProxy.builder().from(URI.create("http://from2")).to(URI.create("http://to2")).build(),
+                ReverseProxy.builder().from(URI.create("http://from3")).to(URI.create("http://to3")).build()
         );
         OutputStream out = new ByteArrayOutputStream();
 
-        writer.writeTo(loadBalancers, null, null, null, null, null, out);
+        writer.writeTo(reverseProxies, null, null, null, null, null, out);
 
         Document html = Jsoup.parse(out.toString());
-        assertThat(html.title()).isEqualTo("Load-Balancing");
+        assertThat(html.title()).isEqualTo("Reverse Proxies");
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
@@ -36,25 +38,26 @@ public class LoadBalancerListHtmlMessageBodyWriterTest {
                 + "<div class=\"container\"> \n"
                 + " <div class=\"panel panel-default\"> \n"
                 + "  <div class=\"panel-heading\"> \n"
-                + "   <h3 class=\"panel-title\">Load-Balancing</h3> \n"
+                + "   <h3 class=\"panel-title\">Reverse Proxies</h3> \n"
                 + "  </div> \n"
                 + "  <div class=\"table-responsive\"> \n"
                 + "   <table class=\"table table-striped\"> \n"
                 + "    <tbody> \n"
                 + "     <tr> \n"
-                + "      <th>Name</th> \n"
-                + "      <th>Method</th> \n"
-                + "      <th>Servers</th> \n"
+                + "      <th>from</th> \n"
+                + "      <th>to</th> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
-                + "      <td>backend1</td> \n"
-                + "      <td>least_conn</td> \n"
-                + "      <td>b1s1<br> b1s2</td> \n"
+                + "      <td>http://from1</td> \n"
+                + "      <td>http://to1</td> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
-                + "      <td>backend2</td> \n"
-                + "      <td>least_conn</td> \n"
-                + "      <td>b2s1</td> \n"
+                + "      <td>http://from2</td> \n"
+                + "      <td>http://to2</td> \n"
+                + "     </tr> \n"
+                + "     <tr> \n"
+                + "      <td>http://from3</td> \n"
+                + "      <td>http://to3</td> \n"
                 + "     </tr> \n"
                 + "    </tbody> \n"
                 + "   </table> \n"

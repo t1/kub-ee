@@ -40,6 +40,7 @@ public class Boundary {
     @GET public List<Link> getLinks() {
         return asList(
                 link("Load Balancers"),
+                link("Reverse Proxies"),
                 link("Clusters"),
                 link("Slots"),
                 link("Stages"),
@@ -56,16 +57,33 @@ public class Boundary {
 
     @Path("/load-balancers")
     @GET public List<LoadBalancer> getLoadBalancers() {
-        NginxConfig nginxConfig = NginxConfig.readFrom(
-                Paths.get("/Users/rdohna/workspace/meta-deployer/nginx.conf").toUri());
-        return nginxConfig.getServers()
-                          .stream()
-                          .map(server -> LoadBalancer
-                                  .builder()
-                                  .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
-                                  .to(URI.create(server.getLocation().getPass()))
-                                  .build())
-                          .collect(toList());
+        return readNginxConfig()
+                .getUpstreams()
+                .stream()
+                .map(server -> LoadBalancer
+                        .builder()
+                        .name(server.getName())
+                        .method(server.getMethod())
+                        .servers(server.getServers())
+                        .build())
+                .collect(toList());
+    }
+
+    @Path("/reverse-proxies")
+    @GET public List<ReverseProxy> getReverseProxies() {
+        return readNginxConfig()
+                .getServers()
+                .stream()
+                .map(server -> ReverseProxy
+                        .builder()
+                        .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
+                        .to(URI.create(server.getLocation().getPass()))
+                        .build())
+                .collect(toList());
+    }
+
+    private NginxConfig readNginxConfig() {
+        return NginxConfig.readFrom(Paths.get("/usr/local/etc/nginx/nginx.conf").toUri());
     }
 
     @Path("/clusters")

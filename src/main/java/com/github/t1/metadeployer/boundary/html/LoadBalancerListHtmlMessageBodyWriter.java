@@ -47,26 +47,23 @@ public class LoadBalancerListHtmlMessageBodyWriter implements MessageBodyWriter<
             this.loadBalancers = loadBalancers;
 
             header("Load-Balancing");
-            container().with(
-                    new Panel().heading("Load-Balancing")
-                               .with(
-                                       table = new Table()
-                               )
-            );
+            container().with(new Panel().heading("Load-Balancing").with(table = new Table()));
             tableHeader();
             this.loadBalancers.forEach(this::loadBalancerRow);
         }
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("from");
-            row.th().text("to");
+            row.th().text("Name");
+            row.th().text("Method");
+            row.th().text("Servers");
         }
 
         private void loadBalancerRow(LoadBalancer loadBalancer) {
             TableRow row = table.tr();
-            row.td().text(loadBalancer.getFrom().toString());
-            row.td().text(loadBalancer.getTo().toString());
+            row.td().text(loadBalancer.getName());
+            row.td().text(loadBalancer.getMethod());
+            row.td().html(String.join("<br>\n", loadBalancer.getServers()));
         }
     }
 }

@@ -2,10 +2,12 @@ package com.github.t1.metadeployer.model;
 
 import lombok.*;
 
-import java.net.URI;
+import java.util.List;
 
 @Value
 @Builder
 public class LoadBalancer {
-    URI from, to;
+    String name;
+    String method;
+    @Singular List<String> servers;
 }
