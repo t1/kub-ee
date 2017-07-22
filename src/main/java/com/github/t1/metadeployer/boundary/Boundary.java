@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
-import static com.github.t1.metadeployer.model.ClusterNode.*;
 import static java.util.Arrays.*;
 import static java.util.Locale.*;
 import static java.util.stream.Collectors.*;
@@ -130,13 +129,13 @@ public class Boundary {
     }
 
     @Path("/deployments/{id}")
-    @GET public GetDeploymentResponse getDeployment(@PathParam("id") String id) {
-        ClusterNode node = fromId(id, clusters);
-        String deployableName = deployableName(id);
-        Deployment deployment = controller.fetchDeploymentsOn(node)
-                                          .filter(d -> d.getName().equals(deployableName))
-                                          .findFirst()
-                                          .orElseThrow(() -> new DeployableNotFoundException(deployableName, node));
+    @GET public GetDeploymentResponse getDeployment(@PathParam("id") DeploymentId id) {
+        ClusterNode node = id.node(clusters);
+        Deployment deployment = controller
+                .fetchDeploymentsOn(node)
+                .filter(id::matchName)
+                .findFirst()
+                .orElseThrow(() -> new DeployableNotFoundException(id.deploymentName(), node));
         List<Version> available = controller.fetchVersions(node, deployment);
         return GetDeploymentResponse
                 .builder()
@@ -144,8 +143,6 @@ public class Boundary {
                 .available(available)
                 .build();
     }
-
-    private static String deployableName(String id) { return id.split(":")[4]; }
 
 
     public static class DeployableNotFoundException extends BadRequestException {
@@ -157,15 +154,15 @@ public class Boundary {
     @Data
     @Builder
     public static class GetDeploymentResponse {
-        private String id;
+        private DeploymentId id;
         private List<Version> available;
     }
 
 
     @Path("/deployments/{id}")
-    @POST public Response postDeployments(@PathParam("id") String id, @FormParam("version") String version) {
-        ClusterNode node = fromId(id, clusters);
-        controller.startVersionDeploy(node.deployerUri(), deployableName(id), version);
+    @POST public Response postDeployments(@PathParam("id") DeploymentId id, @FormParam("version") String version) {
+        ClusterNode node = id.node(clusters);
+        controller.startVersionDeploy(node.deployerUri(), id.deploymentName(), version);
         return Response.accepted().build();
     }
 }
