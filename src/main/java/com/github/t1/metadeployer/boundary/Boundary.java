@@ -1,29 +1,23 @@
 package com.github.t1.metadeployer.boundary;
 
 import com.github.t1.log.Logged;
-import com.github.t1.metadeployer.gateway.DeployerGateway;
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.control.Controller;
 import com.github.t1.metadeployer.model.*;
-import com.github.t1.nginx.NginxConfig;
-import lombok.*;
 import lombok.Builder;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.net.*;
-import java.nio.file.Paths;
+import java.net.URI;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.log.LogLevel.*;
-import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
 import static com.github.t1.metadeployer.model.ClusterNode.*;
 import static java.util.Arrays.*;
-import static java.util.Collections.*;
 import static java.util.Locale.*;
 import static java.util.stream.Collectors.*;
 
@@ -35,7 +29,7 @@ public class Boundary {
     @Inject List<Cluster> clusters;
     @Context UriInfo uriInfo;
 
-    DeployerGateway deployer = new DeployerGateway();
+    @Inject Controller controller;
 
     @GET public List<Link> getLinks() {
         return asList(
@@ -55,36 +49,34 @@ public class Boundary {
         return Link.fromUriBuilder(href).rel(rel).title(title).build();
     }
 
+
     @Path("/load-balancers")
     @GET public List<LoadBalancer> getLoadBalancers() {
-        return readNginxConfig()
-                .getUpstreams()
-                .stream()
-                .map(server -> LoadBalancer
-                        .builder()
-                        .name(server.getName())
-                        .method(server.getMethod())
-                        .servers(server.getServers())
-                        .build())
-                .collect(toList());
+        return controller.readNginxConfig()
+                         .getUpstreams()
+                         .stream()
+                         .map(server -> LoadBalancer
+                                 .builder()
+                                 .name(server.getName())
+                                 .method(server.getMethod())
+                                 .servers(server.getServers())
+                                 .build())
+                         .collect(toList());
     }
 
     @Path("/reverse-proxies")
     @GET public List<ReverseProxy> getReverseProxies() {
-        return readNginxConfig()
-                .getServers()
-                .stream()
-                .map(server -> ReverseProxy
-                        .builder()
-                        .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
-                        .to(URI.create(server.getLocation().getPass()))
-                        .build())
-                .collect(toList());
+        return controller.readNginxConfig()
+                         .getServers()
+                         .stream()
+                         .map(server -> ReverseProxy
+                                 .builder()
+                                 .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
+                                 .to(URI.create(server.getLocation().getPass()))
+                                 .build())
+                         .collect(toList());
     }
 
-    private NginxConfig readNginxConfig() {
-        return NginxConfig.readFrom(Paths.get("/usr/local/etc/nginx/nginx.conf").toUri());
-    }
 
     @Path("/clusters")
     @GET public List<Cluster> getClusters() { return clusters; }
@@ -96,6 +88,7 @@ public class Boundary {
                        .findFirst()
                        .orElseThrow(() -> new NotFoundException("cluster not found: '" + name + "'"));
     }
+
 
     @Path("/slots")
     @GET public List<Slot> getSlots() {
@@ -111,6 +104,7 @@ public class Boundary {
                        .orElseThrow(() -> new NotFoundException("slot not found: '" + name + "'"));
     }
 
+
     @Path("/stages")
     @GET public List<Stage> getStages() {
         return clusters.stream().flatMap(Cluster::stages).sorted().distinct().collect(toList());
@@ -125,85 +119,25 @@ public class Boundary {
                        .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
 
+
     @Path("/deployments")
     @GET public List<Deployment> getDeployments() {
         return clusters.stream().flatMap(this::fromCluster).collect(toList());
     }
 
     private Stream<Deployment> fromCluster(Cluster cluster) {
-        return cluster.stages().flatMap(stage -> stage.nodes(cluster)).flatMap(this::fetch);
+        return cluster.stages().flatMap(stage -> stage.nodes(cluster)).flatMap(controller::fetchDeploymentsOn);
     }
-
-    private Stream<Deployment> fetch(ClusterNode node) {
-        log.debug("fetch deployables from {}:", node);
-        return fetchDeployablesFrom(node)
-                .stream()
-                .peek(deployable -> log.debug("  - {}", deployable.getName()))
-                .map(deployable ->
-                        Deployment.builder()
-                                  .node(node)
-                                  .name(deployable.getName())
-                                  .groupId(orUnknown(deployable.getGroupId()))
-                                  .artifactId(orUnknown(deployable.getArtifactId()))
-                                  .version(orUnknown(deployable.getVersion()))
-                                  .type(orUnknown(deployable.getType()))
-                                  .error(deployable.getError())
-                                  .build());
-    }
-
-    private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
-
-    private List<Deployable> fetchDeployablesFrom(ClusterNode node) {
-        URI uri = node.deployerUri();
-        try {
-            return deployer.fetchDeployablesOn(uri);
-        } catch (Exception e) {
-            String error = errorString(e);
-            log.debug("deployer not found on {}: {}: {}", node, uri, error);
-            return singletonList(Deployable
-                    .builder()
-                    .name("-")
-                    .groupId("-")
-                    .artifactId("-")
-                    .type("-")
-                    .version("-")
-                    .error(error)
-                    .build());
-        }
-    }
-
-    private static String errorString(Throwable e) {
-        while (e.getCause() != null)
-            e = e.getCause();
-        String out = e.toString();
-        while (out.startsWith(ExecutionException.class.getName() + ": ")
-                || out.startsWith(ConnectException.class.getName() + ": ")
-                || out.startsWith(RuntimeException.class.getName() + ": "))
-            out = out.substring(out.indexOf(": ") + 2);
-        if (out.endsWith(UNKNOWN_HOST_SUFFIX))
-            out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
-        if (out.startsWith(UnknownHostException.class.getName() + ": "))
-            out = "unknown host";
-        if (out.equals("Connection refused (Connection refused)"))
-            out = "connection refused";
-        return out;
-    }
-
-    private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
 
     @Path("/deployments/{id}")
     @GET public GetDeploymentResponse getDeployment(@PathParam("id") String id) {
         ClusterNode node = fromId(id, clusters);
         String deployableName = deployableName(id);
-        Deployable deployable = fetchDeployablesFrom(node)
-                .stream()
-                .filter(d -> d.getName().equals(deployableName))
-                .findFirst()
-                .orElseThrow(() -> new DeployableNotFoundException(deployableName, node));
-        List<Version> available = fetchVersions(node, deployable)
-                .stream()
-                .map(s -> toVersion(deployable, s))
-                .collect(toList());
+        Deployment deployment = controller.fetchDeploymentsOn(node)
+                                          .filter(d -> d.getName().equals(deployableName))
+                                          .findFirst()
+                                          .orElseThrow(() -> new DeployableNotFoundException(deployableName, node));
+        List<Version> available = controller.fetchVersions(node, deployment);
         return GetDeploymentResponse
                 .builder()
                 .id(id)
@@ -212,27 +146,6 @@ public class Boundary {
     }
 
     private static String deployableName(String id) { return id.split(":")[4]; }
-
-    private List<String> fetchVersions(ClusterNode node, Deployable deployable) {
-        String groupId = deployable.getGroupId();
-        String artifactId = deployable.getArtifactId();
-        try {
-            return deployer.fetchVersions(node.deployerUri(), groupId, artifactId);
-        } catch (NotFoundException e) {
-            log.info("no versions found for {}:{} on {}", groupId, artifactId, node);
-            return singletonList(deployable.getVersion());
-        } catch (ProcessingException e) {
-            if (e.getCause() instanceof UnknownHostException) {
-                log.info("host not found: {} ({}:{})", node, groupId, artifactId);
-                return singletonList(deployable.getVersion());
-            }
-            throw e;
-        }
-    }
-
-    private Version toVersion(Deployable deployable, String version) {
-        return new Version(version, version.equals(deployable.getVersion()) ? deployed : undeployed);
-    }
 
 
     public static class DeployableNotFoundException extends BadRequestException {
@@ -248,22 +161,11 @@ public class Boundary {
         private List<Version> available;
     }
 
-    @Data
-    @AllArgsConstructor
-    public static class Version {
-        private String name;
-        private VersionStatus status;
-    }
-
-    public enum VersionStatus {
-        undeployed, deployee, deploying, deployed, undeployee, undeploying
-    }
-
 
     @Path("/deployments/{id}")
     @POST public Response postDeployments(@PathParam("id") String id, @FormParam("version") String version) {
         ClusterNode node = fromId(id, clusters);
-        deployer.startVersionDeploy(node.deployerUri(), deployableName(id), version);
+        controller.startVersionDeploy(node.deployerUri(), deployableName(id), version);
         return Response.accepted().build();
     }
 }

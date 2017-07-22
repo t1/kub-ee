@@ -151,6 +151,7 @@ function selectVersion(where, version) {
 
 // =======================================
 // see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+// TODO replace with https://github.com/bevacqua/dragula
 
 let sourceId;
 

@@ -8,7 +8,6 @@ import com.github.t1.log.Logged;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ejb.Asynchronous;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
@@ -123,7 +122,6 @@ public class DeployerGateway {
     }
 
 
-    @Asynchronous
     public void startVersionDeploy(URI uri, String application, String version) {
         log.info("deploy {} {} on {}", application, version, uri);
         Response response = httpClient

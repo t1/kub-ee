@@ -1,13 +1,13 @@
 package com.github.t1.metadeployer.web;
 
-import com.github.t1.metadeployer.boundary.Boundary.VersionStatus;
+import com.github.t1.metadeployer.model.VersionStatus;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.openqa.selenium.*;
 
 import java.util.List;
 
-import static com.github.t1.metadeployer.boundary.Boundary.VersionStatus.*;
+import static com.github.t1.metadeployer.model.VersionStatus.*;
 import static com.github.t1.metadeployer.web.VersionCell.*;
 import static com.github.t1.metadeployer.web.VersionItem.*;
 import static java.util.Arrays.*;
