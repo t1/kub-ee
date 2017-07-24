@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.gateway;
+package com.github.t1.metadeployer.gateway.deployer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -122,7 +122,7 @@ public class DeployerGateway {
     }
 
 
-    public void startVersionDeploy(URI uri, String application, String version) {
+    public void deployVersion(URI uri, String application, String version) {
         log.info("deploy {} {} on {}", application, version, uri);
         Response response = httpClient
                 .target(uri)

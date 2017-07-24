@@ -2,8 +2,6 @@
         com.github.t1.metadeployer.control.Controller.class,
         com.github.t1.metadeployer.model.Cluster.class,
         com.github.t1.metadeployer.tools.yaml.YamlDocument.class,
-
-        com.github.t1.nginx.NginxConfig.class,
 })
 package com.github.t1.metadeployer.boundary;
 

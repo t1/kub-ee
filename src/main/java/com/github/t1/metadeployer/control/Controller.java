@@ -1,16 +1,15 @@
 package com.github.t1.metadeployer.control;
 
-import com.github.t1.metadeployer.gateway.DeployerGateway;
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.gateway.deployer.DeployerGateway;
+import com.github.t1.metadeployer.gateway.deployer.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.metadeployer.model.*;
-import com.github.t1.nginx.NginxConfig;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ejb.*;
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import java.net.*;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -24,10 +23,15 @@ import static java.util.stream.Collectors.*;
 public class Controller {
     private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
 
+    @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
 
-    public NginxConfig readNginxConfig() {
-        return NginxConfig.readFrom(Paths.get("/usr/local/etc/nginx/nginx.conf").toUri());
+    public List<LoadBalancer> getLoadBalancers() {
+        return loadBalancing.getLoadBalancers();
+    }
+
+    public List<ReverseProxy> getReverseProxies() {
+        return loadBalancing.getReverseProxies();
     }
 
     private List<Deployable> fetchDeployablesFrom(ClusterNode node) {
@@ -72,6 +76,7 @@ public class Controller {
         return doFetch(node, deployment).stream().map(s -> toVersion(deployment, s)).collect(toList());
     }
 
+
     private List<String> doFetch(ClusterNode node, Deployment deployment) {
         String groupId = deployment.getGroupId();
         String artifactId = deployment.getArtifactId();
@@ -89,14 +94,14 @@ public class Controller {
         }
     }
 
-
     private Version toVersion(Deployment deployment, String version) {
         return new Version(version, version.equals(deployment.getVersion()) ? deployed : undeployed);
     }
 
-    @Asynchronous
-    public void startVersionDeploy(URI uri, String deployableName, String version) {
-        deployer.startVersionDeploy(uri, deployableName, version);
+    public void deployVersion(URI uri, String deployableName, String version) {
+        loadBalancing.removeFromLB(uri, deployableName);
+        deployer.deployVersion(uri, deployableName, version);
+        loadBalancing.addToLB(uri, deployableName);
     }
 
     public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {

@@ -20,9 +20,11 @@ public class ReverseProxyListHtmlMessageBodyWriterTest {
     @Test
     public void shouldWriteHtml() throws Exception {
         List<ReverseProxy> reverseProxies = asList(
-                ReverseProxy.builder().from(URI.create("http://from1")).to(URI.create("http://to1")).build(),
-                ReverseProxy.builder().from(URI.create("http://from2")).to(URI.create("http://to2")).build(),
-                ReverseProxy.builder().from(URI.create("http://from3")).to(URI.create("http://to3")).build()
+                ReverseProxy.builder().from(URI.create("http://from1"))
+                            .target(URI.create("http://to1"))
+                            .target(URI.create("http://to2")).build(),
+                ReverseProxy.builder().from(URI.create("http://from2")).build(),
+                ReverseProxy.builder().from(URI.create("http://from3")).target(URI.create("http://to3")).build()
         );
         OutputStream out = new ByteArrayOutputStream();
 
@@ -49,15 +51,22 @@ public class ReverseProxyListHtmlMessageBodyWriterTest {
                 + "     </tr> \n"
                 + "     <tr> \n"
                 + "      <td>http://from1</td> \n"
-                + "      <td>http://to1</td> \n"
+                + "      <td> \n"
+                + "       <ul class=\"list-unstyled\"> \n"
+                + "        <li>http://to1</li> \n"
+                + "        <li>http://to2</li> \n"
+                + "       </ul></td> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
                 + "      <td>http://from2</td> \n"
-                + "      <td>http://to2</td> \n"
+                + "      <td></td> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
                 + "      <td>http://from3</td> \n"
-                + "      <td>http://to3</td> \n"
+                + "      <td> \n"
+                + "       <ul class=\"list-unstyled\"> \n"
+                + "        <li>http://to3</li> \n"
+                + "       </ul></td> \n"
                 + "     </tr> \n"
                 + "    </tbody> \n"
                 + "   </table> \n"

@@ -1,6 +1,7 @@
 package com.github.t1.metadeployer.gateway;
 
-import com.github.t1.metadeployer.gateway.DeployerGateway.Deployable;
+import com.github.t1.metadeployer.gateway.deployer.DeployerGateway;
+import com.github.t1.metadeployer.gateway.deployer.DeployerGateway.Deployable;
 import com.github.t1.testtools.*;
 import lombok.SneakyThrows;
 import org.junit.*;

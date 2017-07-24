@@ -1,7 +1,7 @@
 'use strict';
 
 const deploymentsResource = baseUri + 'deployments/';
-const ACCEPTED = 202;
+const OK = 200;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -129,7 +129,7 @@ function selectVersion(where, version) {
 
     const refreshIcon = document.createElement('span');
     refreshIcon.className = versionIconClasses({status: 'deployee'});
-    $id(where).find('.dropdown-toggle span.version-name').prepend(refreshIcon);
+    $id(where).find('.dropdown-toggle span.version-name').append(refreshIcon);
 
     fetch(deploymentsResource + where, {
         method: 'post',
@@ -141,8 +141,9 @@ function selectVersion(where, version) {
     })
         .then(response => {
             console.debug('got response', response);
-            if (response.status !== ACCEPTED)
+            if (response.status !== OK)
                 throw new Error('unexpected response: ' + response.status);
+            refreshIcon.className = versionIconClasses({status: 'deployed'});
         })
         .catch(error => {
             console.debug('failed', error);

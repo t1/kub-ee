@@ -10,8 +10,10 @@ import javax.ws.rs.ext.*;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.net.URI;
 import java.util.List;
 
+import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -61,7 +63,10 @@ public class ReverseProxyListHtmlMessageBodyWriter implements MessageBodyWriter<
         private void row(ReverseProxy reverseProxy) {
             TableRow row = table.tr();
             row.td().text(reverseProxy.getFrom().toString());
-            row.td().text(reverseProxy.getTo().toString());
+            row.td().html(
+                    reverseProxy.getTargets().isEmpty() ? "" :
+                            reverseProxy.targets().map(URI::toString)
+                                        .collect(joining("<li>", "<ul class='list-unstyled'><li>", "</ul>")));
         }
     }
 }

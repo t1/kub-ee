@@ -11,7 +11,6 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -51,30 +50,14 @@ public class Boundary {
 
     @Path("/load-balancers")
     @GET public List<LoadBalancer> getLoadBalancers() {
-        return controller.readNginxConfig()
-                         .getUpstreams()
-                         .stream()
-                         .map(server -> LoadBalancer
-                                 .builder()
-                                 .name(server.getName())
-                                 .method(server.getMethod())
-                                 .servers(server.getServers())
-                                 .build())
-                         .collect(toList());
+        return controller.getLoadBalancers();
     }
 
     @Path("/reverse-proxies")
     @GET public List<ReverseProxy> getReverseProxies() {
-        return controller.readNginxConfig()
-                         .getServers()
-                         .stream()
-                         .map(server -> ReverseProxy
-                                 .builder()
-                                 .from(URI.create("http://" + server.getName() + ":" + server.getListen()))
-                                 .to(URI.create(server.getLocation().getPass()))
-                                 .build())
-                         .collect(toList());
+        return controller.getReverseProxies();
     }
+
 
 
     @Path("/clusters")
@@ -161,8 +144,7 @@ public class Boundary {
 
     @Path("/deployments/{id}")
     @POST public Response postDeployments(@PathParam("id") DeploymentId id, @FormParam("version") String version) {
-        ClusterNode node = id.node(clusters);
-        controller.startVersionDeploy(node.deployerUri(), id.deploymentName(), version);
-        return Response.accepted().build();
+        controller.deployVersion(id.node(clusters).deployerUri(), id.deploymentName(), version);
+        return Response.ok().build();
     }
 }
