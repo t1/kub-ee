@@ -1,6 +1,5 @@
-package com.github.t1.metadeployer.gateway;
+package com.github.t1.metadeployer.gateway.deployer;
 
-import com.github.t1.metadeployer.gateway.deployer.DeployerGateway;
 import com.github.t1.metadeployer.gateway.deployer.DeployerGateway.Deployable;
 import com.github.t1.testtools.*;
 import lombok.SneakyThrows;
@@ -23,7 +22,7 @@ public class DeployerGatewayIT {
 
     @Test
     public void shouldFetchDeployables() throws Exception {
-        List<Deployable> deployables = new DeployerGateway().fetchDeployablesOn(swarm.baseUri());
+        List<Deployable> deployables = new DeployerGateway().fetchDeploymentsFrom(swarm.baseUri());
 
         assertThat(deployables).containsExactly(
                 Deployable.builder()

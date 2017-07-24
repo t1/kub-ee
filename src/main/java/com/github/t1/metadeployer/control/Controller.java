@@ -1,7 +1,6 @@
 package com.github.t1.metadeployer.control;
 
 import com.github.t1.metadeployer.gateway.deployer.DeployerGateway;
-import com.github.t1.metadeployer.gateway.deployer.DeployerGateway.Deployable;
 import com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.metadeployer.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -34,14 +33,20 @@ public class Controller {
         return loadBalancing.getReverseProxies();
     }
 
-    private List<Deployable> fetchDeployablesFrom(ClusterNode node) {
-        URI uri = node.deployerUri();
+
+    public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {
+        log.debug("fetch deployments from {}:", node);
+        return fetchDeployablesFrom(node)
+                .peek(deployable -> log.debug("  - {}", deployable.getName()));
+    }
+
+    private Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
         try {
-            return deployer.fetchDeployablesOn(uri);
+            return deployer.fetchDeployablesFrom(node);
         } catch (Exception e) {
             String error = errorString(e);
-            log.debug("deployer not found on {}: {}: {}", node, uri, error);
-            return singletonList(Deployable
+            log.debug("deployer not found on {}: {}", node, error);
+            return Stream.of(Deployment
                     .builder()
                     .name("-")
                     .groupId("-")
@@ -72,10 +77,10 @@ public class Controller {
         return out;
     }
 
+
     public List<Version> fetchVersions(ClusterNode node, Deployment deployment) {
         return doFetch(node, deployment).stream().map(s -> toVersion(deployment, s)).collect(toList());
     }
-
 
     private List<String> doFetch(ClusterNode node, Deployment deployment) {
         String groupId = deployment.getGroupId();
@@ -98,28 +103,10 @@ public class Controller {
         return new Version(version, version.equals(deployment.getVersion()) ? deployed : undeployed);
     }
 
+
     public void deployVersion(URI uri, String deployableName, String version) {
         loadBalancing.removeFromLB(uri, deployableName);
         deployer.deployVersion(uri, deployableName, version);
         loadBalancing.addToLB(uri, deployableName);
     }
-
-    public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {
-        log.debug("fetch deployables from {}:", node);
-        return fetchDeployablesFrom(node)
-                .stream()
-                .peek(deployable -> log.debug("  - {}", deployable.getName()))
-                .map(deployable ->
-                        Deployment.builder()
-                                  .node(node)
-                                  .name(deployable.getName())
-                                  .groupId(orUnknown(deployable.getGroupId()))
-                                  .artifactId(orUnknown(deployable.getArtifactId()))
-                                  .version(orUnknown(deployable.getVersion()))
-                                  .type(orUnknown(deployable.getType()))
-                                  .error(deployable.getError())
-                                  .build());
-    }
-
-    private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 }

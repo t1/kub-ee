@@ -1,4 +1,4 @@
-package com.github.t1.metadeployer.gateway;
+package com.github.t1.metadeployer.gateway.deployer;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.t1.log.Logged;
+import com.github.t1.metadeployer.model.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,6 +15,7 @@ import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
@@ -26,7 +28,7 @@ import static javax.ws.rs.core.Response.Status.*;
 @Logged(level = INFO)
 @Slf4j
 public class DeployerGateway {
-    public static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory()
+    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory()
             // .enable(MINIMIZE_QUOTES)
             .disable(WRITE_DOC_START_MARKER))
             .setSerializationInclusion(NON_EMPTY)
@@ -36,48 +38,7 @@ public class DeployerGateway {
 
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
-    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
-        URI uri = UriBuilder.fromUri(deployerUri)
-                            .path("/repository/versions")
-                            .queryParam("artifactId", artifactId)
-                            .queryParam("groupId", groupId)
-                            .build();
-        return convertToVersionList(fetchYaml(uri));
-    }
-
-    @SneakyThrows(IOException.class)
-    private List<String> convertToVersionList(String string) {
-        return YAML.readValue(string, new TypeReference<List<String>>() {});
-    }
-
-    @Data
-    public static class Deployables {
-        @JsonProperty
-        private Map<String, Deployable> deployables;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Deployable {
-        @JsonProperty
-        private String name;
-        @JsonProperty("group-id")
-        private String groupId;
-        @JsonProperty("artifact-id")
-        private String artifactId;
-        @JsonProperty
-        private String type;
-        @JsonProperty
-        private String version;
-        @JsonProperty
-        private String error;
-    }
-
     private final Client httpClient = ClientBuilder.newClient();
-
-    public List<Deployable> fetchDeployablesOn(URI uri) { return convertToDeployableList(fetchYaml(uri)); }
 
     private String fetchYaml(URI uri) {
         Response response = httpClient
@@ -103,6 +64,68 @@ public class DeployerGateway {
         }
     }
 
+    private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
+
+
+    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
+        URI uri = UriBuilder.fromUri(deployerUri)
+                            .path("/repository/versions")
+                            .queryParam("artifactId", artifactId)
+                            .queryParam("groupId", groupId)
+                            .build();
+        return convertToVersionList(fetchYaml(uri));
+    }
+
+    @SneakyThrows(IOException.class)
+    private List<String> convertToVersionList(String string) {
+        return YAML.readValue(string, new TypeReference<List<String>>() {});
+    }
+
+
+    @Data
+    private static class Deployables {
+        @JsonProperty
+        private Map<String, Deployable> deployables;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Deployable {
+        @JsonProperty
+        private String name;
+        @JsonProperty("group-id")
+        private String groupId;
+        @JsonProperty("artifact-id")
+        private String artifactId;
+        @JsonProperty
+        private String type;
+        @JsonProperty
+        private String version;
+        @JsonProperty
+        private String error;
+    }
+
+    public Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
+        return fetchDeploymentsFrom(node.deployerUri())
+                .stream()
+                .map(deployable ->
+                        Deployment.builder()
+                                  .node(node)
+                                  .name(deployable.getName())
+                                  .groupId(orUnknown(deployable.getGroupId()))
+                                  .artifactId(orUnknown(deployable.getArtifactId()))
+                                  .version(orUnknown(deployable.getVersion()))
+                                  .type(orUnknown(deployable.getType()))
+                                  .error(deployable.getError())
+                                  .build());
+    }
+
+    List<Deployable> fetchDeploymentsFrom(URI uri) { return convertToDeployableList(fetchYaml(uri)); }
+
+    private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
+
     @SneakyThrows(IOException.class)
     private List<Deployable> convertToDeployableList(String string) {
         return YAML.readValue(string, Deployables.class)
@@ -113,7 +136,6 @@ public class DeployerGateway {
                    .collect(toList());
     }
 
-    private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
 
     private Deployable flatten(Map.Entry<String, Deployable> entry) {
         Deployable deployable = entry.getValue();

@@ -1,4 +1,6 @@
 @DependsUpon(packagesOf = {
+        com.github.t1.metadeployer.model.Deployment.class,
+
         com.fasterxml.jackson.annotation.JsonIgnore.class,
         com.fasterxml.jackson.core.JsonGenerator.class,
         com.fasterxml.jackson.core.type.TypeReference.class,

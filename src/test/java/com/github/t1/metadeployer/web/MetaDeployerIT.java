@@ -3,7 +3,7 @@ package com.github.t1.metadeployer.web;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.t1.metadeployer.boundary.ClusterConfig;
-import com.github.t1.metadeployer.gateway.DeployerMock;
+import com.github.t1.metadeployer.gateway.deployer.DeployerMock;
 import com.github.t1.metadeployer.model.*;
 import com.github.t1.testtools.*;
 import io.dropwizard.testing.junit.DropwizardClientRule;
