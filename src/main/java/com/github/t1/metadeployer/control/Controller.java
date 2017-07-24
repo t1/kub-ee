@@ -54,6 +54,7 @@ public class Controller {
                     .type("-")
                     .version("-")
                     .error(error)
+                    .node(node)
                     .build());
         }
     }

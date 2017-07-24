@@ -5,6 +5,7 @@ import com.github.t1.metadeployer.model.ReverseProxy.ReverseProxyBuilder;
 import com.github.t1.nginx.NginxConfig;
 import com.github.t1.nginx.NginxConfig.*;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.BadRequestException;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
 
+@Slf4j
 public class LoadBalancerGateway {
     private static final Path NGINX_CONFIG = Paths.get("/usr/local/etc/nginx/nginx.conf");
 
@@ -51,8 +53,11 @@ public class LoadBalancerGateway {
     }
 
     public void removeFromLB(URI uri, String deployableName) {
+        log.debug("remove {} from lb {}", deployableName, uri);
         NginxConfig config = withoutLoadBalancingTarget(uri, deployableName);
+        log.debug("write config");
         writeNginxConfig(config);
+        log.debug("reload nginx");
         nginxReload();
     }
 
@@ -101,7 +106,7 @@ public class LoadBalancerGateway {
 
     @SneakyThrows({ IOException.class, InterruptedException.class })
     private void nginxReload() {
-        ProcessBuilder builder = new ProcessBuilder("nginx -s reload");
+        ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
         Process process = builder.start();
         boolean inTime = process.waitFor(10, SECONDS);
         if (!inTime)
@@ -111,6 +116,26 @@ public class LoadBalancerGateway {
     }
 
     public void addToLB(URI uri, String deployableName) {
+        log.debug("add {} to lb {}", deployableName, uri);
+        NginxConfig config = withLoadBalancingTarget(uri, deployableName);
+        log.debug("write config");
+        writeNginxConfig(config);
+        log.debug("reload nginx");
+        nginxReload();
+    }
 
+    private NginxConfig withLoadBalancingTarget(URI uri, String deployableName) {
+        NginxConfig config = readNginxConfig();
+        NginxUpstream without = getLoadBalancer(config, deployableName);
+        URI serverUri = getProxyServerUri(uri, config);
+        NginxUpstream with = addLoadBalancerServer(without, serverUri);
+        return config.withoutUpstream(without.getName()).withUpstream(with);
+    }
+
+    private NginxUpstream addLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
+        String server = serverUri.getHost() + ":" + serverUri.getPort();
+        if (upstream.getServers().contains(server))
+            throw new BadRequestException("server " + server + " already in lb: " + upstream.getName());
+        return upstream.withServer(server);
     }
 }
