@@ -8,17 +8,22 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.BadRequestException;
-import java.io.IOException;
-import java.net.URI;
+import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.util.List;
+import java.util.concurrent.Callable;
 
+import static com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
 
 @Slf4j
 public class LoadBalancerGateway {
     private static final Path NGINX_CONFIG = Paths.get("/usr/local/etc/nginx/nginx.conf");
+
+    // TODO make this (and the port) configurable
+    private ReloadMode reloadMode = telnet;
 
     public List<LoadBalancer> getLoadBalancers() {
         return readNginxConfig()
@@ -104,16 +109,43 @@ public class LoadBalancerGateway {
         Files.write(NGINX_CONFIG, config.toString().getBytes());
     }
 
-    @SneakyThrows({ IOException.class, InterruptedException.class })
-    private void nginxReload() {
-        ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
-        Process process = builder.start();
-        boolean inTime = process.waitFor(10, SECONDS);
-        if (!inTime)
-            throw new BadRequestException("could not reload nginx in time");
-        if (process.exitValue() != 0)
-            throw new BadRequestException("nginx reload with error");
+    enum ReloadMode implements Callable<Void> {
+        direct {
+            @Override public Void call() throws Exception {
+                try (
+                        Socket socket = new Socket("localhost", NginxReloadService.PORT);
+                        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+                ) {
+                    out.println("reload");
+                    String response = in.readLine();
+                    log.debug("received: {}", response);
+                    assert "reloaded".equals(response);
+
+                    out.println("exit");
+                    response = in.readLine();
+                    log.debug("received: {}", response);
+                    assert "exiting".equals(response);
+                }
+                return null;
+            }
+        },
+
+        telnet {
+            @Override public Void call() throws Exception {
+                ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
+                Process process = builder.start();
+                boolean inTime = process.waitFor(10, SECONDS);
+                if (!inTime)
+                    throw new BadRequestException("could not reload nginx in time");
+                if (process.exitValue() != 0)
+                    throw new BadRequestException("nginx reload with error");
+                return null;
+            }
+        }
     }
+
+    @SneakyThrows(Exception.class) private void nginxReload() { reloadMode.call(); }
 
     public void addToLB(URI uri, String deployableName) {
         log.debug("add {} to lb {}", deployableName, uri);
