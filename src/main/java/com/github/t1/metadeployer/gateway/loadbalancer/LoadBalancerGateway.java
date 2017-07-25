@@ -126,12 +126,10 @@ public class LoadBalancerGateway {
                 ) {
                     out.println("reload");
                     String response = in.readLine();
-                    log.debug("received: {}", response);
                     assert "reloaded".equals(response);
 
                     out.println("exit");
                     response = in.readLine();
-                    log.debug("received: {}", response);
                     assert "exiting".equals(response);
                 }
                 return null;

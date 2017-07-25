@@ -1,7 +1,7 @@
 'use strict';
 
 const deploymentsResource = baseUri + 'deployments/';
-const OK = 200;
+const NO_CONTENT = 204;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -14,7 +14,7 @@ class DeploymentMenu extends React.Component {
     renderVersion(version) {
         return (
             <li key={version.name}
-                onClick={() => selectVersion(this.props.group, version)}
+                onClick={() => deployVersion(this.props.group, version)}
                 onMouseEnter={() => this.hover(version)}
                 onMouseLeave={() => this.hover(undefined)}
             >
@@ -124,8 +124,8 @@ function fetchVersions(where) {
         });
 }
 
-function selectVersion(where, version) {
-    console.debug('selectVersion', where, version);
+function deployVersion(where, version, other) {
+    console.debug('deployVersion', where, version, other);
 
     const refreshIcon = document.createElement('span');
     refreshIcon.className = versionIconClasses({status: 'deployee'});
@@ -137,11 +137,11 @@ function selectVersion(where, version) {
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept': 'application/json'
         },
-        body: 'version=' + version.name
+        body: 'version=' + version.name + ((other) ? '&' + other : '')
     })
         .then(response => {
             console.debug('got response', response);
-            if (response.status !== OK)
+            if (response.status !== NO_CONTENT)
                 throw new Error('unexpected response: ' + response.status);
             refreshIcon.className = versionIconClasses({status: 'deployed'});
         })
@@ -245,6 +245,7 @@ function drop_handler(event) {
     const sourceElement = document.getElementById(sourceId);
     const version = $(sourceElement).find('.version-name').text();
     console.debug(operation + ' ' + sourceId + ' -> ' + targetId + ' v' + version);
+    let other = '';
 
     switch (operation) {
         case 'copy':
@@ -257,11 +258,12 @@ function drop_handler(event) {
             sourceElement.id = targetId;
             replaceChildren(targetCell, sourceElement);
             sourceParentElement.append(undeployedNode());
+            other = 'remove=' + sourceId;
             break;
         default:
             throw new Error('undefined drop operation: ' + operation);
     }
-    selectVersion(targetId, {name: version, status: 'deployee'});
+    deployVersion(targetId, {name: version, status: 'deployee'}, other);
 }
 
 function undeployedNode() {

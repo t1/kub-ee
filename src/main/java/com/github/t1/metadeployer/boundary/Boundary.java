@@ -48,23 +48,15 @@ public class Boundary {
     }
 
 
-    @Path("/load-balancers")
-    @GET public List<LoadBalancer> getLoadBalancers() {
-        return controller.getLoadBalancers();
-    }
+    @GET @Path("/load-balancers") public List<LoadBalancer> getLoadBalancers() { return controller.getLoadBalancers(); }
 
-    @Path("/reverse-proxies")
-    @GET public List<ReverseProxy> getReverseProxies() {
-        return controller.getReverseProxies();
-    }
+    @GET @Path("/reverse-proxies")
+    public List<ReverseProxy> getReverseProxies() { return controller.getReverseProxies(); }
 
 
+    @GET @Path("/clusters") public List<Cluster> getClusters() { return clusters; }
 
-    @Path("/clusters")
-    @GET public List<Cluster> getClusters() { return clusters; }
-
-    @Path("/clusters/{name}")
-    @GET public Cluster getCluster(@PathParam("name") String name) {
+    @GET @Path("/clusters/{name}") public Cluster getCluster(@PathParam("name") String name) {
         return clusters.stream()
                        .filter(cluster -> cluster.getSimpleName().equals(name))
                        .findFirst()
@@ -72,13 +64,11 @@ public class Boundary {
     }
 
 
-    @Path("/slots")
-    @GET public List<Slot> getSlots() {
+    @GET @Path("/slots") public List<Slot> getSlots() {
         return clusters.stream().map(Cluster::getSlot).sorted().distinct().collect(toList());
     }
 
-    @Path("/slots/{name}")
-    @GET public Slot getSlot(@PathParam("name") String name) {
+    @GET @Path("/slots/{name}") public Slot getSlot(@PathParam("name") String name) {
         return clusters.stream()
                        .map(Cluster::getSlot)
                        .filter(slot -> slot.getName().equals(name))
@@ -87,13 +77,11 @@ public class Boundary {
     }
 
 
-    @Path("/stages")
-    @GET public List<Stage> getStages() {
+    @GET @Path("/stages") public List<Stage> getStages() {
         return clusters.stream().flatMap(Cluster::stages).sorted().distinct().collect(toList());
     }
 
-    @Path("/stages/{name}")
-    @GET public Stage getStage(@PathParam("name") String name) {
+    @GET @Path("/stages/{name}") public Stage getStage(@PathParam("name") String name) {
         return clusters.stream()
                        .flatMap(Cluster::stages)
                        .filter(stage -> stage.getName().equals(name))
@@ -102,8 +90,7 @@ public class Boundary {
     }
 
 
-    @Path("/deployments")
-    @GET public List<Deployment> getDeployments() {
+    @GET @Path("/deployments") public List<Deployment> getDeployments() {
         return clusters.stream().flatMap(this::fromCluster).collect(toList());
     }
 
@@ -111,8 +98,7 @@ public class Boundary {
         return cluster.stages().flatMap(stage -> stage.nodes(cluster)).flatMap(controller::fetchDeploymentsOn);
     }
 
-    @Path("/deployments/{id}")
-    @GET public GetDeploymentResponse getDeployment(@PathParam("id") DeploymentId id) {
+    @GET @Path("/deployments/{id}") public GetDeploymentResponse getDeployment(@PathParam("id") DeploymentId id) {
         ClusterNode node = id.node(clusters);
         Deployment deployment = controller
                 .fetchDeploymentsOn(node)
@@ -142,9 +128,12 @@ public class Boundary {
     }
 
 
-    @Path("/deployments/{id}")
-    @POST public Response postDeployments(@PathParam("id") DeploymentId id, @FormParam("version") String version) {
+    @POST @Path("/deployments/{id}") public void postDeployments(
+            @PathParam("id") DeploymentId id,
+            @FormParam("version") String version,
+            @FormParam("remove") DeploymentId remove) {
         controller.deployVersion(id.node(clusters).deployerUri(), id.deploymentName(), version);
-        return Response.ok().build();
+        if (remove != null)
+            controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName());
     }
 }

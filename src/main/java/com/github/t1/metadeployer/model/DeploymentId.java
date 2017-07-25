@@ -9,6 +9,8 @@ import java.util.List;
 public class DeploymentId {
     public final String value;
 
+    @Override public String toString() { return value; }
+
     public String deploymentName() { return split()[4]; }
 
     public ClusterNode node(List<Cluster> clusters) {

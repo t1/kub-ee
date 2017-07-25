@@ -144,13 +144,12 @@ public class DeployerGateway {
     }
 
 
-    public void deployVersion(URI uri, String application, String version) {
-        log.info("deploy {} {} on {}", application, version, uri);
+    public void deployVersion(URI uri, String deplymentName, String version) {
         Response response = httpClient
                 .target(uri)
                 .request()
                 .accept(APPLICATION_YAML_TYPE)
-                .post(Entity.form(new Form(application + ".version", version)));
+                .post(Entity.form(new Form(deplymentName + ".version", version)));
         try {
             String contentType = response.getHeaderString("Content-Type");
             String string = response.readEntity(String.class);
@@ -167,4 +166,6 @@ public class DeployerGateway {
             response.close();
         }
     }
+
+    public void undeploy(URI uri, String deploymentName) {}
 }

@@ -110,4 +110,9 @@ public class Controller {
         deployer.deployVersion(uri, deployableName, version);
         loadBalancing.addToLB(uri, deployableName);
     }
+
+    public void undeploy(URI uri, String deployableName) {
+        loadBalancing.removeFromLB(uri, deployableName);
+        deployer.undeploy(uri, deployableName);
+    }
 }
