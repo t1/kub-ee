@@ -224,13 +224,13 @@ function removeDropZoneStyles(event) {
     }
 }
 
+function removeDragSourceStyle() {
+    $id(sourceId).parent().removeClass('drag-source');
+}
+
 function drag_end() {
     removeDragSourceStyle();
     sourceId = undefined;
-}
-
-function removeDragSourceStyle() {
-    $id(sourceId).parent().removeClass('drag-source');
 }
 
 function drop_handler(event) {
@@ -243,7 +243,8 @@ function drop_handler(event) {
     const targetCell = targetElement.parent();
     const operation = op(event);
     const sourceElement = document.getElementById(sourceId);
-    console.debug(operation + ' ' + sourceId + ' -> ' + targetId);
+    const version = $(sourceElement).find('.version-name').text();
+    console.debug(operation + ' ' + sourceId + ' -> ' + targetId + ' v' + version);
 
     switch (operation) {
         case 'copy':
@@ -260,6 +261,7 @@ function drop_handler(event) {
         default:
             throw new Error('undefined drop operation: ' + operation);
     }
+    selectVersion(targetId, {name: version, status: 'deployee'});
 }
 
 function undeployedNode() {

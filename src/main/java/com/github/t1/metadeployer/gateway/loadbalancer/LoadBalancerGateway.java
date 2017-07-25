@@ -11,7 +11,7 @@ import javax.ws.rs.BadRequestException;
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
@@ -62,26 +62,30 @@ public class LoadBalancerGateway {
 
     public void removeFromLB(URI uri, String deployableName) {
         log.debug("remove {} from lb {}", deployableName, uri);
-        NginxConfig config = withoutLoadBalancingTarget(uri, deployableName);
-        log.debug("write config");
-        writeNginxConfig(config);
-        log.debug("reload nginx");
-        nginxReload();
+        Optional<NginxConfig> optional = withoutLoadBalancingTarget(uri, deployableName);
+        if (optional.isPresent()) {
+            log.debug("write config");
+            writeNginxConfig(optional.get());
+            log.debug("reload nginx");
+            nginxReload();
+        } else {
+            log.debug("{} is not in lb {}", deployableName, uri);
+        }
     }
 
-    private NginxConfig withoutLoadBalancingTarget(URI uri, String deployableName) {
+    private Optional<NginxConfig> withoutLoadBalancingTarget(URI uri, String deployableName) {
         NginxConfig config = readNginxConfig();
         NginxUpstream with = getLoadBalancer(config, deployableName);
         URI serverUri = getProxyServerUri(uri, config);
-        NginxUpstream without = removeLoadBalancerServer(with, serverUri);
-        return config.withoutUpstream(with.getName()).withUpstream(without);
+        Optional<NginxUpstream> optional = removeLoadBalancerServer(with, serverUri);
+        return optional.map(without -> config.withoutUpstream(with.getName()).withUpstream(without));
     }
 
-    private NginxUpstream removeLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
+    private Optional<NginxUpstream> removeLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
         String server = serverUri.getHost() + ":" + serverUri.getPort();
         if (!upstream.getServers().contains(server))
-            throw new BadRequestException("server " + server + " not in lb: " + upstream.getName());
-        return upstream.withoutServer(server);
+            return Optional.empty();
+        return Optional.of(upstream.withoutServer(server));
     }
 
     private NginxUpstream getLoadBalancer(NginxConfig config, String deployableName) {
@@ -113,7 +117,7 @@ public class LoadBalancerGateway {
     }
 
     enum ReloadMode implements Callable<Void> {
-        direct {
+        telnet {
             @Override public Void call() throws Exception {
                 try (
                         Socket socket = new Socket("localhost", NginxReloadService.PORT);
@@ -134,7 +138,7 @@ public class LoadBalancerGateway {
             }
         },
 
-        telnet {
+        direct {
             @Override public Void call() throws Exception {
                 ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
                 Process process = builder.start();
