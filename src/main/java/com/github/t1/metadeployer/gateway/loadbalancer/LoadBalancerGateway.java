@@ -18,6 +18,9 @@ import static com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGatewa
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
 
+/**
+ * see https://www.nginx.com/resources/admin-guide/load-balancer/
+ */
 @Slf4j
 public class LoadBalancerGateway {
     private static final Path NGINX_CONFIG = Paths.get("/usr/local/etc/nginx/nginx.conf");
