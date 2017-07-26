@@ -135,6 +135,6 @@ public class Boundary {
         if (version != null)
             controller.deployVersion(id.node(clusters).deployerUri(), id.deploymentName(), version);
         if (remove != null)
-            controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName());
+            controller.undeploy(remove.node(clusters).deployerUri(), remove.deploymentName());
     }
 }

@@ -136,7 +136,7 @@ function fetchVersions(where) {
 function deployVersion(where, version, other) {
     console.debug('deployVersion', where, version, other);
 
-    const refreshIcon = addCellIcon(where, 'deployee');
+    const refreshIcon = cellIcon(where, 'deployee');
 
     fetch(deploymentsResource + where, {
         method: 'post',
@@ -159,7 +159,7 @@ function deployVersion(where, version, other) {
 
 function undeploy(where) {
     console.debug('undeploy', where);
-    const undeployIcon = addCellIcon(where, 'undeployee');
+    const undeployIcon = cellIcon(where, 'undeployee');
 
     fetch(deploymentsResource + where, {
         method: 'post',
@@ -180,17 +180,19 @@ function undeploy(where) {
         });
 }
 
-function addCellIcon(id, status) {
+function cellIcon(id, status) {
     const parent = $id(id).find('.dropdown > .dropdown-toggle');
-    let icon = parent.find('.version-icon');
-    console.debug('####', parent, icon, icon.size());
-    if (icon.size() === 0) {
-        icon = document.createElement('span');
-        parent.append(icon);
-    } else {
-        icon = icon[0];
-    }
+    let icon = getOrCreateCellIcon(parent);
     icon.className = versionIconClasses({status: status});
+    return icon;
+}
+
+function getOrCreateCellIcon(parent) {
+    const iconNode = parent.find('.version-icon');
+    if (iconNode.size() !== 0)
+        return iconNode[0];
+    const icon = document.createElement('span');
+    parent.append(icon);
     return icon;
 }
 

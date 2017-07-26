@@ -144,12 +144,20 @@ public class DeployerGateway {
     }
 
 
-    public void deployVersion(URI uri, String deplymentName, String version) {
+    public void deployVersion(URI uri, String deploymentName, String version) {
+        postDeployer(uri, deploymentName, "version", version);
+    }
+
+    public void undeploy(URI uri, String deploymentName) {
+        postDeployer(uri, deploymentName, "state", "undeployed");
+    }
+
+    private void postDeployer(URI uri, String deploymentName, String key, String value) {
         Response response = httpClient
                 .target(uri)
                 .request()
                 .accept(APPLICATION_YAML_TYPE)
-                .post(Entity.form(new Form(deplymentName + ".version", version)));
+                .post(Entity.form(new Form(deploymentName + "." + key, value)));
         try {
             String contentType = response.getHeaderString("Content-Type");
             String string = response.readEntity(String.class);
@@ -166,6 +174,4 @@ public class DeployerGateway {
             response.close();
         }
     }
-
-    public void undeploy(URI uri, String deploymentName) {}
 }
