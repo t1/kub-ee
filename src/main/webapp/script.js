@@ -8,7 +8,16 @@ class DeploymentMenu extends React.Component {
         const versions = (this.props.versions)
             ? this.props.versions.map(version => this.renderVersion(version))
             : <span className="loading-indicator">Loading...</span>;
-        return <ul className="list-unstyled">{versions}</ul>
+        return <ul className="list-unstyled deployment-menu">
+            {versions}
+            <li>
+                <hr/>
+            </li>
+            <li onClick={() => undeploy(this.props.group)}>
+                <span className='glyphicon glyphicon-ban-circle version-icon'/>
+                undeploy
+            </li>
+        </ul>
     }
 
     renderVersion(version) {
@@ -127,9 +136,7 @@ function fetchVersions(where) {
 function deployVersion(where, version, other) {
     console.debug('deployVersion', where, version, other);
 
-    const refreshIcon = document.createElement('span');
-    refreshIcon.className = versionIconClasses({status: 'deployee'});
-    $id(where).find('.dropdown-toggle span.version-name').append(refreshIcon);
+    const refreshIcon = addCellIcon(where, 'deployee');
 
     fetch(deploymentsResource + where, {
         method: 'post',
@@ -150,15 +157,53 @@ function deployVersion(where, version, other) {
         });
 }
 
+function undeploy(where) {
+    console.debug('undeploy', where);
+    const undeployIcon = addCellIcon(where, 'undeployee');
+
+    fetch(deploymentsResource + where, {
+        method: 'post',
+        headers: {
+            'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': 'application/json'
+        },
+        body: 'remove=' + where
+    })
+        .then(response => {
+            console.debug('got response', response);
+            if (response.status !== NO_CONTENT)
+                throw new Error('unexpected response: ' + response.status);
+            undeployIcon.className = versionIconClasses({status: 'undeployed'});
+        })
+        .catch(error => {
+            console.debug('failed', error);
+        });
+}
+
+function addCellIcon(id, status) {
+    const parent = $id(id).find('.dropdown > .dropdown-toggle');
+    let icon = parent.find('.version-icon');
+    console.debug('####', parent, icon, icon.size());
+    if (icon.size() === 0) {
+        icon = document.createElement('span');
+        parent.append(icon);
+    } else {
+        icon = icon[0];
+    }
+    icon.className = versionIconClasses({status: status});
+    return icon;
+}
+
+function $id(selector) {
+    return $('#' + selector.split(':').join('\\:'));
+}
+
+
 // =======================================
 // see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
 // TODO replace with https://github.com/bevacqua/dragula
 
 let sourceId;
-
-function $id(selector) {
-    return $('#' + selector.split(':').join('\\:'));
-}
 
 function drag_start(event) {
     sourceId = event.currentTarget.id;

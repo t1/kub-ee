@@ -132,7 +132,8 @@ public class Boundary {
             @PathParam("id") DeploymentId id,
             @FormParam("version") String version,
             @FormParam("remove") DeploymentId remove) {
-        controller.deployVersion(id.node(clusters).deployerUri(), id.deploymentName(), version);
+        if (version != null)
+            controller.deployVersion(id.node(clusters).deployerUri(), id.deploymentName(), version);
         if (remove != null)
             controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName());
     }

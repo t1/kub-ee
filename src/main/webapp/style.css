@@ -41,6 +41,10 @@ div.table-responsive {
     padding-right: 15px;
 }
 
+ul.deployment-menu :hover {
+    background-color: lightgray;
+}
+
 span.loading-indicator {
     color: lightgray;
     font-style: italic;
@@ -61,6 +65,10 @@ span.loading-indicator {
 /* the transform of ...-deploying is set in the animation code */
 .version-icon-undeployee {
     transform: scale(-1, 1) translatex(calc(100% - 14px));
+}
+
+.deployment .version-icon {
+    margin-left: 10px;
 }
 
 .table > thead > tr > th,
