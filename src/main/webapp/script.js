@@ -60,6 +60,8 @@ function statusIcon(state) {
             return 'refresh';
         case 'undeploying':
             return 'refresh';
+        case 'removed':
+            return 'remove-circle';
     }
 }
 
@@ -103,11 +105,16 @@ function fetchVersions(where) {
         });
 }
 
+function removeMenu(where) {
+    $id(where).find('.versions-menu').children().remove();
+}
+
 function deploy(where, version) {
     console.debug('deploy', where, version);
 
     $id(where).find('.version-name').text(version.name);
     const refreshIcon = cellIcon(where, 'deploying');
+    removeMenu(where);
 
     return post(where, 'mode=deploy&version=' + version.name, refreshIcon, 'deployed', () => {
         refreshIcon.parentNode.removeChild(refreshIcon);
@@ -118,7 +125,7 @@ function undeploy(where) {
     console.debug('undeploy', where);
     const undeployIcon = cellIcon(where, 'undeploying');
 
-    return post(where, 'mode=undeploy', undeployIcon, 'undeployed', () => {
+    return post(where, 'mode=undeploy', undeployIcon, 'removed', () => {
         $id(where).parent().html(undeployedNode(where));
     });
 }
