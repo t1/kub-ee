@@ -81,39 +81,6 @@ function click_handler(event) {
         });
 }
 
-let animatedRotation = 0;
-
-function animate() {
-    animatedRotation += 360;
-    if (animatedRotation > 360000)
-        animatedRotation -= 360000;
-
-    function transform(now, undeploying) {
-        let transform = '';
-        if (undeploying)
-            transform += 'scale(-1, 1) translatex(calc(100% - 20px)) ';
-        transform += 'rotate(' + now + 'deg)';
-        return transform;
-    }
-
-    const idSelector = (status) => '.version-icon.version-icon-' + status;
-    const animatedIcons = $(idSelector('undeploying') + ', ' + idSelector('deploying'));
-    if (animatedIcons.size() === 0)
-        return;
-    animatedIcons.animate(
-        {rotation: animatedRotation},
-        {
-            duration: 2000,
-            easing: 'linear',
-            step: function (now) {
-                const undeploying = this.attributes['class'].value.indexOf('version-icon-undeploying') >= 0;
-                $(this).css({transform: transform(now, undeploying)});
-            },
-            complete: animate
-        }
-    );
-}
-
 function fetchVersions(where) {
     console.debug('fetchVersion', where);
 
@@ -157,7 +124,6 @@ function undeploy(where) {
 }
 
 function post(where, body, icon, status, faded) {
-    animate();
     return fetch(deploymentsResource + where, {
         method: 'post',
         headers: {
@@ -173,7 +139,6 @@ function post(where, body, icon, status, faded) {
             icon.className = versionIconClasses({status: status});
         })
         .then(() => {
-            $(icon).finish();
             $(icon).fadeOut(fadeOutTime, faded);
         })
         .catch(error => {

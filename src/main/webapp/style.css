@@ -59,16 +59,42 @@ span.loading-indicator {
 }
 
 .version-icon-deploying, .version-icon-undeploying {
-    transform-origin: 7px center;
+    transform-origin: 8px center;
 }
 
-/* the transform of ...-deploying is set in the animation code */
 .version-icon-undeployee {
     transform: scale(-1, 1) translatex(calc(100% - 14px));
 }
 
 .deployment .version-icon {
     margin-left: 10px;
+}
+
+.version-icon-deploying {
+    -webkit-animation: forward_rotation 2s infinite linear;
+}
+
+@-webkit-keyframes forward_rotation {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(359deg);
+    }
+}
+
+.version-icon-undeploying {
+    -webkit-animation: backward_rotation 2s infinite linear;
+    -webkit-transform: scale(-1, 1);
+}
+
+@-webkit-keyframes backward_rotation {
+    from {
+        -webkit-transform: rotate(359deg);
+    }
+    to {
+        -webkit-transform: rotate(0deg);
+    }
 }
 
 .table > thead > tr > th,
