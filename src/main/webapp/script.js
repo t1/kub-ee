@@ -2,7 +2,7 @@
 
 const deploymentsResource = baseUri + 'deployments/';
 const NO_CONTENT = 204;
-const fadeOutTime = 2000;
+const fadeOutTime = 1000;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -24,7 +24,7 @@ class DeploymentMenu extends React.Component {
     renderVersion(version) {
         return (
             <li key={version.name}
-                onClick={() => deployVersion(this.props.group, version)}
+                onClick={() => deploy(this.props.group, version)}
                 onMouseEnter={() => this.hover(version)}
                 onMouseLeave={() => this.hover(undefined)}
             >
@@ -67,49 +67,51 @@ function click_handler(event) {
     const cellId = $(event.target).parents('.deployment').attr('id');
     if (!cellId)
         return;
-    const idSelector = (className) => '#' + cellId.split(':').join('\\:') + ' .' + className;
-    const menu = $(idSelector('versions-menu'))[0];
+    const menu = $id(cellId).find('.versions-menu')[0];
 
     if (!menu || menu.hasChildNodes())
         return;
     console.debug('menu', menu, cellId);
-
-    let rot = 0;
-
-    function animate() {
-        rot += 360;
-        if (rot > 360000)
-            rot -= 360000;
-        function transform(now, undeploying) {
-            let transform = '';
-            if (undeploying)
-                transform += 'scale(-1, 1) translatex(calc(100% - 20px)) ';
-            transform += 'rotate(' + now + 'deg)';
-            return transform;
-        }
-
-        $(idSelector('version-icon-undeploying') + ', ' + idSelector('version-icon-deploying'))
-            .animate(
-                {rotation: rot},
-                {
-                    duration: 2000,
-                    easing: 'linear',
-                    step: function (now) {
-                        const undeploying = this.attributes['class'].value.indexOf('version-icon-undeploying') >= 0;
-                        $(this).css({transform: transform(now, undeploying)});
-                    },
-                    complete: animate
-                }
-            );
-    }
 
     ReactDOM.render(<DeploymentMenu group={cellId}/>, menu);
 
     fetchVersions(cellId)
         .then(versions => {
             ReactDOM.render(<DeploymentMenu group={cellId} versions={versions.available}/>, menu);
-        })
-        .then(animate);
+        });
+}
+
+let animatedRotation = 0;
+
+function animate() {
+    animatedRotation += 360;
+    if (animatedRotation > 360000)
+        animatedRotation -= 360000;
+
+    function transform(now, undeploying) {
+        let transform = '';
+        if (undeploying)
+            transform += 'scale(-1, 1) translatex(calc(100% - 20px)) ';
+        transform += 'rotate(' + now + 'deg)';
+        return transform;
+    }
+
+    const idSelector = (status) => '.version-icon.version-icon-' + status;
+    const animatedIcons = $(idSelector('undeploying') + ', ' + idSelector('deploying'));
+    if (animatedIcons.size() === 0)
+        return;
+    animatedIcons.animate(
+        {rotation: animatedRotation},
+        {
+            duration: 2000,
+            easing: 'linear',
+            step: function (now) {
+                const undeploying = this.attributes['class'].value.indexOf('version-icon-undeploying') >= 0;
+                $(this).css({transform: transform(now, undeploying)});
+            },
+            complete: animate
+        }
+    );
 }
 
 function fetchVersions(where) {
@@ -134,58 +136,45 @@ function fetchVersions(where) {
         });
 }
 
-function deployVersion(where, version, other) {
-    console.debug('deployVersion', where, version, other);
+function deploy(where, version) {
+    console.debug('deploy', where, version);
 
     $id(where).find('.version-name').text(version.name);
-    const refreshIcon = cellIcon(where, 'deployee');
+    const refreshIcon = cellIcon(where, 'deploying');
 
-    fetch(deploymentsResource + where, {
-        method: 'post',
-        headers: {
-            'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Accept': 'application/json'
-        },
-        body: 'version=' + version.name + ((other) ? '&' + other : '')
-    })
-        .then(response => {
-            console.debug('got response', response);
-            if (response.status !== NO_CONTENT)
-                throw new Error('unexpected response: ' + response.status);
-            refreshIcon.className = versionIconClasses({status: 'deployed'});
-        })
-        .then(() => {
-            $(refreshIcon).fadeOut(fadeOutTime, () => {
-                refreshIcon.parentNode.removeChild(refreshIcon);
-            });
-        })
-        .catch(error => {
-            console.debug('failed', error);
-        });
+    return post(where, 'mode=deploy&version=' + version.name, refreshIcon, 'deployed', () => {
+        refreshIcon.parentNode.removeChild(refreshIcon);
+    });
 }
 
 function undeploy(where) {
     console.debug('undeploy', where);
-    const undeployIcon = cellIcon(where, 'undeployee');
+    const undeployIcon = cellIcon(where, 'undeploying');
 
-    fetch(deploymentsResource + where, {
+    return post(where, 'mode=undeploy', undeployIcon, 'undeployed', () => {
+        $id(where).parent().html(undeployedNode(where));
+    });
+}
+
+function post(where, body, icon, status, faded) {
+    animate();
+    return fetch(deploymentsResource + where, {
         method: 'post',
         headers: {
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept': 'application/json'
         },
-        body: 'remove=' + where
+        body: body
     })
         .then(response => {
             console.debug('got response', response);
             if (response.status !== NO_CONTENT)
                 throw new Error('unexpected response: ' + response.status);
-            undeployIcon.className = versionIconClasses({status: 'undeployed'});
+            icon.className = versionIconClasses({status: status});
         })
         .then(() => {
-            $id(where).fadeOut(fadeOutTime, () => {
-                $id(where).parent().html(undeployedNode(where));
-            });
+            $(icon).finish();
+            $(icon).fadeOut(fadeOutTime, faded);
         })
         .catch(error => {
             console.debug('failed', error);
@@ -304,25 +293,26 @@ function drop_handler(event) {
     const sourceElement = document.getElementById(sourceId);
     const version = $(sourceElement).find('.version-name').text();
     console.debug(operation + ' ' + sourceId + ' -> ' + targetId + ' v' + version);
-    let other = '';
+
+    const nodeCopy = sourceElement.cloneNode(true);
+    nodeCopy.id = targetId;
+    replaceChildren(targetCell, nodeCopy);
 
     switch (operation) {
         case 'copy':
-            const nodeCopy = sourceElement.cloneNode(true);
-            nodeCopy.id = targetId;
-            replaceChildren(targetCell, nodeCopy);
+            deploy(targetId, {name: version, status: 'deploying'});
             break;
         case 'move':
-            const sourceParentElement = $id(sourceId).parent();
-            sourceElement.id = targetId;
-            replaceChildren(targetCell, sourceElement);
-            sourceParentElement.append(undeployedNode(sourceId));
-            other = 'remove=' + sourceId;
+            const id = sourceId;
+            cellIcon(sourceId, 'undeployee');
+            deploy(targetId, {name: version, status: 'deploying'})
+                .then(() => {
+                    undeploy(id)
+                });
             break;
         default:
             throw new Error('undefined drop operation: ' + operation);
     }
-    deployVersion(targetId, {name: version, status: 'deployee'}, other);
 }
 
 function undeployedNode(id) {

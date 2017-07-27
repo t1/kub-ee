@@ -128,13 +128,24 @@ public class Boundary {
     }
 
 
+    public enum DeploymentMode {deploy, undeploy}
+
     @POST @Path("/deployments/{id}") public void postDeployments(
             @PathParam("id") DeploymentId id,
             @FormParam("version") String version,
-            @FormParam("remove") DeploymentId remove) {
-        if (version != null)
+            @FormParam("mode") DeploymentMode mode) {
+
+        if (mode == null)
+            throw new BadRequestException("mode is a required parameter");
+        switch (mode) {
+        case deploy:
+            if (version == null)
+                throw new BadRequestException("version is a required parameter when deploying");
             controller.deploy(id.node(clusters).deployerUri(), id.deploymentName(), version);
-        if (remove != null)
-            controller.undeploy(remove.node(clusters).deployerUri(), remove.deploymentName());
+            break;
+        case undeploy:
+            controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName());
+            break;
+        }
     }
 }
