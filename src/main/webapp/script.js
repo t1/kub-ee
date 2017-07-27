@@ -2,6 +2,7 @@
 
 const deploymentsResource = baseUri + 'deployments/';
 const NO_CONTENT = 204;
+const fadeOutTime = 2000;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -153,6 +154,11 @@ function deployVersion(where, version, other) {
                 throw new Error('unexpected response: ' + response.status);
             refreshIcon.className = versionIconClasses({status: 'deployed'});
         })
+        .then(() => {
+            $(refreshIcon).fadeOut(fadeOutTime, () => {
+                refreshIcon.parentNode.removeChild(refreshIcon);
+            });
+        })
         .catch(error => {
             console.debug('failed', error);
         });
@@ -175,7 +181,11 @@ function undeploy(where) {
             if (response.status !== NO_CONTENT)
                 throw new Error('unexpected response: ' + response.status);
             undeployIcon.className = versionIconClasses({status: 'undeployed'});
-            $id(where).parent().html(undeployedNode(where));
+        })
+        .then(() => {
+            $id(where).fadeOut(fadeOutTime, () => {
+                $id(where).parent().html(undeployedNode(where));
+            });
         })
         .catch(error => {
             console.debug('failed', error);
