@@ -136,6 +136,7 @@ function fetchVersions(where) {
 function deployVersion(where, version, other) {
     console.debug('deployVersion', where, version, other);
 
+    $id(where).find('.version-name').text(version.name);
     const refreshIcon = cellIcon(where, 'deployee');
 
     fetch(deploymentsResource + where, {
@@ -174,6 +175,7 @@ function undeploy(where) {
             if (response.status !== NO_CONTENT)
                 throw new Error('unexpected response: ' + response.status);
             undeployIcon.className = versionIconClasses({status: 'undeployed'});
+            $id(where).parent().html(undeployedNode(where));
         })
         .catch(error => {
             console.debug('failed', error);
@@ -304,7 +306,7 @@ function drop_handler(event) {
             const sourceParentElement = $id(sourceId).parent();
             sourceElement.id = targetId;
             replaceChildren(targetCell, sourceElement);
-            sourceParentElement.append(undeployedNode());
+            sourceParentElement.append(undeployedNode(sourceId));
             other = 'remove=' + sourceId;
             break;
         default:
@@ -313,11 +315,11 @@ function drop_handler(event) {
     deployVersion(targetId, {name: version, status: 'deployee'}, other);
 }
 
-function undeployedNode() {
+function undeployedNode(id) {
     const element = document.createElement('div');
     element.className = 'deployment not-deployed';
     element.textContent = ' - ';
-    element.id = sourceId;
+    element.id = id;
     return element;
 }
 

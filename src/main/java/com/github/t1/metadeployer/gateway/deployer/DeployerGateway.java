@@ -144,7 +144,7 @@ public class DeployerGateway {
     }
 
 
-    public void deployVersion(URI uri, String deploymentName, String version) {
+    public void deploy(URI uri, String deploymentName, String version) {
         postDeployer(uri, deploymentName, "version", version);
     }
 
