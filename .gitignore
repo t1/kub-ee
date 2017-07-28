@@ -1,6 +1,6 @@
 .idea/
-meta-deployer.iml
+kub-ee.iml
 target/
 cluster-config.yaml
-node_modules/
+nginx.conf
 src/test/node/deployments.html

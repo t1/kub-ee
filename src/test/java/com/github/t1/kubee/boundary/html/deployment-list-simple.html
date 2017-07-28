@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kub-EE</title>
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../style.css">
+ </head>
+ <body>
+  <div class="container-fluid">
+   <div class="table-responsive">
+    <table class="table table-striped" id="deployables">
+     <tbody>
+      <tr>
+       <th rowspan="2">Cluster</th>
+       <th rowspan="2">Application</th>
+       <th class="stage" colspan="1">PROD</th>
+      </tr>
+      <tr>
+       <th class="node" id="node:PROD:1">&nbsp;</th>
+      </tr>
+      <tr>
+       <th id="cluster:localhost:1" rowspan="2">localhost:1</th>
+       <th class="deployable-name">deployer</th>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment" id="localhost:1:PROD:1:deployer" title="com.github.t1:deployer:unknown" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">unknown</span><span class="caret"></span></span>
+          <div class="dropdown-menu versions-menu"></div></span>
+        </div></td>
+      </tr>
+      <tr>
+       <th class="deployable-name">jolokia</th>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment" id="localhost:1:PROD:1:jolokia" title="com.github.t1:jolokia:1.3.4" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.3.4</span><span class="caret"></span></span>
+          <div class="dropdown-menu versions-menu"></div></span>
+        </div></td>
+      </tr>
+      <tr>
+       <th id="cluster:localhost:2" rowspan="2">localhost:2</th>
+       <th class="deployable-name">deployer</th>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment" id="localhost:2:PROD:1:deployer" title="com.github.t1:deployer:unknown" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">unknown</span><span class="caret"></span></span>
+          <div class="dropdown-menu versions-menu"></div></span>
+        </div></td>
+      </tr>
+      <tr>
+       <th class="deployable-name">jolokia</th>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment" id="localhost:2:PROD:1:jolokia" title="com.github.t1:jolokia:1.3.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.3.3</span><span class="caret"></span></span>
+          <div class="dropdown-menu versions-menu"></div></span>
+        </div></td>
+      </tr>
+     </tbody>
+    </table>
+   </div>
+  </div>
+  <script type="text/javascript" src="jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="react/react.js"></script>
+  <script type="text/javascript" src="react/react-dom.js"></script>
+  <script type="text/javascript" src="babel-standalone/babel.js"></script>
+  <script>const baseUri = 'http://localhost:8080/kub-ee/api/';</script>
+  <script type="text/babel" src="../script.js"></script>
+ </body>
+</html>

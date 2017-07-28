@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cat ../java/com/github/t1/metadeployer/boundary/deployment-list-full.html \
+cat ../java/com/github/t1/kubee/boundary/deployment-list-full.html \
     | sed 's|bootstrap/|http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/|' \
     | sed 's|jquery/|https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/|' \
     | sed 's|babel-standalone/|https://unpkg.com/babel-standalone@6/|' \
