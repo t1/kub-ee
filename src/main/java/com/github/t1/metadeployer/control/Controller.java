@@ -1,6 +1,7 @@
 package com.github.t1.metadeployer.control;
 
 import com.github.t1.metadeployer.gateway.deployer.DeployerGateway;
+import com.github.t1.metadeployer.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
 import com.github.t1.metadeployer.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.metadeployer.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +72,8 @@ public class Controller {
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
         if (out.startsWith(NotFoundException.class.getName() + ": "))
             out = "deployer not found";
+        if (out.startsWith(BadDeployerGatewayException.class.getName() + ": "))
+            out = "bad deployer gateway";
         if (out.startsWith(UnknownHostException.class.getName() + ": "))
             out = "unknown host";
         if (out.equals("Connection refused (Connection refused)"))

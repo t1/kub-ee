@@ -22,8 +22,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.stream.Collectors.*;
-import static javax.ws.rs.core.Response.Status.Family.*;
 import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.Family.*;
 
 @Logged(level = INFO)
 @Slf4j
@@ -53,6 +53,10 @@ public class DeployerGateway {
                 log.info("{} returns 404 Not Found: {}", uri, string);
                 throw new NotFoundException();
             }
+            if (BAD_GATEWAY.getStatusCode() == response.getStatus()) {
+                log.info("{} returns 502 Bad Gateway: {}", uri, string);
+                throw new BadDeployerGatewayException(string);
+            }
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
                 throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
@@ -62,6 +66,10 @@ public class DeployerGateway {
         } finally {
             response.close();
         }
+    }
+
+    public static class BadDeployerGatewayException extends RuntimeException {
+        public BadDeployerGatewayException(String message) { super(message); }
     }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
