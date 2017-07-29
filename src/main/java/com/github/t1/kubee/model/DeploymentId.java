@@ -3,7 +3,8 @@ package com.github.t1.kubee.model;
 import lombok.Value;
 
 import javax.ws.rs.BadRequestException;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Value
 public class DeploymentId {
@@ -11,7 +12,19 @@ public class DeploymentId {
 
     @Override public String toString() { return value; }
 
+    private String getStageName() { return split()[2]; }
+
     public String deploymentName() { return split()[4]; }
+
+    public Stage stage(List<Cluster> clusters) {
+        String name = getStageName();
+        return clusters.stream().flatMap(cluster -> asStream(cluster.stage(name))).findAny()
+                       .orElseThrow(() -> new BadRequestException("stage not found: " + name));
+    }
+
+    private static <T> Stream<T> asStream(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<T> opt) {
+        return opt.map(Stream::of).orElseGet(Stream::empty);
+    }
 
     public ClusterNode node(List<Cluster> clusters) {
         String[] split = split();

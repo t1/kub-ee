@@ -108,14 +108,14 @@ public class Controller {
     }
 
 
-    public void deploy(URI uri, String deployableName, String version) {
-        loadBalancing.removeFromLB(uri, deployableName);
+    public void deploy(URI uri, String deployableName, String version, Stage stage) {
+        loadBalancing.removeFromLB(uri, deployableName, stage);
         deployer.deploy(uri, deployableName, version);
-        loadBalancing.addToLB(uri, deployableName);
+        loadBalancing.addToLB(uri, deployableName, stage);
     }
 
-    public void undeploy(URI uri, String deployableName) {
-        loadBalancing.removeFromLB(uri, deployableName);
+    public void undeploy(URI uri, String deployableName, Stage stage) {
+        loadBalancing.removeFromLB(uri, deployableName, stage);
         deployer.undeploy(uri, deployableName);
     }
 }

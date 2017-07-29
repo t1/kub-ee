@@ -60,9 +60,9 @@ public class LoadBalancerGateway {
         return builder.build();
     }
 
-    public void removeFromLB(URI uri, String deployableName) {
+    public void removeFromLB(URI uri, String deployableName, Stage stage) {
         log.debug("remove {} from lb {}", deployableName, uri);
-        Optional<NginxConfig> optional = withoutLoadBalancingTarget(uri, deployableName);
+        Optional<NginxConfig> optional = withoutLoadBalancingTarget(uri, deployableName, stage);
         if (optional.isPresent()) {
             log.debug("write config");
             writeNginxConfig(optional.get());
@@ -73,9 +73,9 @@ public class LoadBalancerGateway {
         }
     }
 
-    private Optional<NginxConfig> withoutLoadBalancingTarget(URI uri, String deployableName) {
+    private Optional<NginxConfig> withoutLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
         NginxConfig config = readNginxConfig();
-        NginxUpstream with = getLoadBalancer(config, deployableName);
+        NginxUpstream with = getLoadBalancer(config, deployableName, stage);
         URI serverUri = getProxyServerUri(uri, config);
         Optional<NginxUpstream> optional = removeLoadBalancerServer(with, serverUri);
         return optional.map(without -> config.withoutUpstream(with.getName()).withUpstream(without));
@@ -88,8 +88,8 @@ public class LoadBalancerGateway {
         return Optional.of(upstream.withoutServer(server));
     }
 
-    private NginxUpstream getLoadBalancer(NginxConfig config, String deployableName) {
-        String loadBalancerName = deployableName + "-lb"; // TODO find uri in servers instead of lb naming convention
+    private NginxUpstream getLoadBalancer(NginxConfig config, String deployableName, Stage stage) {
+        String loadBalancerName = stage.getPrefix() + deployableName + stage.getSuffix() + "-lb";
         return config
                 .upstreams()
                 .filter(upstream -> upstream.getName().equals(loadBalancerName))
@@ -152,18 +152,18 @@ public class LoadBalancerGateway {
 
     @SneakyThrows(Exception.class) private void nginxReload() { reloadMode.call(); }
 
-    public void addToLB(URI uri, String deployableName) {
+    public void addToLB(URI uri, String deployableName, Stage stage) {
         log.debug("add {} to lb {}", deployableName, uri);
-        NginxConfig config = withLoadBalancingTarget(uri, deployableName);
+        NginxConfig config = withLoadBalancingTarget(uri, deployableName, stage);
         log.debug("write config");
         writeNginxConfig(config);
         log.debug("reload nginx");
         nginxReload();
     }
 
-    private NginxConfig withLoadBalancingTarget(URI uri, String deployableName) {
+    private NginxConfig withLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
         NginxConfig config = readNginxConfig();
-        NginxUpstream without = getLoadBalancer(config, deployableName);
+        NginxUpstream without = getLoadBalancer(config, deployableName, stage);
         URI serverUri = getProxyServerUri(uri, config);
         NginxUpstream with = addLoadBalancerServer(without, serverUri);
         return config.withoutUpstream(without.getName()).withUpstream(with);

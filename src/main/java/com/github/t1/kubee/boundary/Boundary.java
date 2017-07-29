@@ -141,10 +141,10 @@ public class Boundary {
         case deploy:
             if (version == null)
                 throw new BadRequestException("version is a required parameter when deploying");
-            controller.deploy(id.node(clusters).deployerUri(), id.deploymentName(), version);
+            controller.deploy(id.node(clusters).deployerUri(), id.deploymentName(), version, id.stage(clusters));
             break;
         case undeploy:
-            controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName());
+            controller.undeploy(id.node(clusters).deployerUri(), id.deploymentName(), id.stage(clusters));
             break;
         }
     }
