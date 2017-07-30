@@ -4,7 +4,9 @@ import lombok.SneakyThrows;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.Callable;
 
+import static java.lang.ProcessBuilder.Redirect.*;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
@@ -36,7 +38,7 @@ public class NginxReloadService {
                         String command = in.readLine();
                         System.out.println("> " + command);
                         if (command == null)
-                            continue;
+                            continue reconnect;
                         switch (command) {
                         case "stop":
                             out.println("stopping");
@@ -45,8 +47,7 @@ public class NginxReloadService {
                             out.println("exiting");
                             continue reconnect;
                         case "reload":
-                            reload();
-                            out.println("reloaded");
+                            out.println(reload());
                             break;
                         default:
                             out.println("unknown command: " + command);
@@ -60,13 +61,39 @@ public class NginxReloadService {
     }
 
     @SneakyThrows({ IOException.class, InterruptedException.class })
-    private void reload() {
-        ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
+    private String reload() {
+        ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload")
+                .redirectErrorStream(true).redirectOutput(INHERIT);
         Process process = builder.start();
         boolean inTime = process.waitFor(10, SECONDS);
         if (!inTime)
-            throw new IllegalStateException("could not reload nginx in time");
+            return "could not reload nginx in time";
         if (process.exitValue() != 0)
-            throw new IllegalStateException("nginx reload with error");
+            return "nginx reload with error";
+        return "reloaded";
+    }
+
+    public static class Adapter implements Callable<String> {
+        @Override public String call() {
+            try (
+                    Socket socket = new Socket("localhost", NginxReloadService.PORT);
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+            ) {
+                out.println("reload");
+                String response = in.readLine();
+                if (!"reloaded".equals(response))
+                    return "reload returned: " + response;
+
+                out.println("exit");
+                response = in.readLine();
+                if (!"exiting".equals(response))
+                    return "exit returned: " + response;
+
+                return null;
+            } catch (IOException e) {
+                return "nginx-reload adapter failed: " + e.getMessage();
+            }
+        }
     }
 }

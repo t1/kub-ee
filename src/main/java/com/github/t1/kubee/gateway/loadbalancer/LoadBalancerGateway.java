@@ -7,16 +7,19 @@ import com.github.t1.nginx.NginxConfig.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.BadRequestException;
+import javax.ws.rs.*;
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
+import static java.lang.ProcessBuilder.Redirect.*;
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
+import static javax.ws.rs.core.Response.Status.*;
 
 /**
  * see https://www.nginx.com/resources/admin-guide/load-balancer/
@@ -116,41 +119,46 @@ public class LoadBalancerGateway {
         Files.write(NGINX_CONFIG, config.toString().getBytes());
     }
 
-    enum ReloadMode implements Callable<Void> {
+    enum ReloadMode implements Callable<String> {
         telnet {
-            @Override public Void call() throws Exception {
-                try (
-                        Socket socket = new Socket("localhost", NginxReloadService.PORT);
-                        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
-                ) {
-                    out.println("reload");
-                    String response = in.readLine();
-                    assert "reloaded".equals(response);
+            @Override public String call() { return new NginxReloadService.Adapter().call();            }
+        },
 
-                    out.println("exit");
-                    response = in.readLine();
-                    assert "exiting".equals(response);
-                }
-                return null;
-            }
+        setUserIdScript {
+            @Override public String call() { return run("nginx-reload"); }
         },
 
         direct {
-            @Override public Void call() throws Exception {
-                ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload");
+            @Override public String call() { return run("/usr/local/bin/nginx", "-s", "reload"); }
+        };
+
+        private static String run(String... command) {
+            try {
+                ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(INHERIT);
                 Process process = builder.start();
                 boolean inTime = process.waitFor(10, SECONDS);
                 if (!inTime)
-                    throw new BadRequestException("could not reload nginx in time");
+                    return "could not reload nginx in time";
                 if (process.exitValue() != 0)
-                    throw new BadRequestException("nginx reload with error");
+                    return "nginx reload with error";
                 return null;
+            } catch (InterruptedException | IOException e) {
+                log.warn("reload failed", e);
+                return "reload failed: " + e.getMessage();
             }
         }
     }
 
-    @SneakyThrows(Exception.class) private void nginxReload() { reloadMode.call(); }
+    @SneakyThrows(Exception.class) private void nginxReload() {
+        String result = reloadMode.call();
+        if (result != null)
+            throw new FailedToReloadLoadBalancerException(result);
+    }
+
+
+    private class FailedToReloadLoadBalancerException extends ClientErrorException {
+        private FailedToReloadLoadBalancerException(String message) { super(message, CONFLICT); }
+    }
 
     public void addToLB(URI uri, String deployableName, Stage stage) {
         log.debug("add {} to lb {}", deployableName, uri);
