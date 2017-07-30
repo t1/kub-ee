@@ -10,7 +10,14 @@ import java.util.stream.Stream;
 @Builder
 public class ReverseProxy {
     URI from;
-    @Singular List<URI> targets;
+    @Singular List<Location> locations;
 
-    public Stream<URI> targets() { return targets.stream(); }
+    public Stream<Location> locations() { return locations.stream(); }
+
+    @Value
+    @Builder
+    public static class Location {
+        String fromPath;
+        URI target;
+    }
 }

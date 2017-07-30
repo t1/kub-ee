@@ -1,6 +1,7 @@
 package com.github.t1.kubee.boundary.html;
 
 import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.model.ReverseProxy.Location;
 import com.github.t1.kubee.tools.html.*;
 import com.github.t1.kubee.tools.html.Table.TableRow;
 
@@ -12,8 +13,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
 
 @Provider
@@ -56,17 +58,24 @@ public class ReverseProxyListHtmlMessageBodyWriter implements MessageBodyWriter<
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("from");
-            row.th().text("to");
+            row.th().text("From");
+            row.th().text("Path");
+            row.th().text("Target");
         }
 
         private void row(ReverseProxy reverseProxy) {
-            TableRow row = table.tr();
-            row.td().text(reverseProxy.getFrom().toString());
-            row.td().html(
-                    reverseProxy.getTargets().isEmpty() ? "" :
-                            reverseProxy.targets().map(URI::toString)
-                                        .collect(joining("<li>", "<ul class='list-unstyled'><li>", "</ul>")));
+            AtomicBoolean first = new AtomicBoolean(true);
+            Stream<Location> locations = reverseProxy.getLocations().isEmpty()
+                    ? Stream.of(Location.builder().fromPath("-").target(URI.create("-")).build())
+                    : reverseProxy.locations();
+            locations.forEach(location -> {
+                TableRow row = table.tr();
+                if (first.getAndSet(false))
+                    row.td().attr("rowspan", Integer.toString(reverseProxy.getLocations().size()))
+                       .text(reverseProxy.getFrom().toString());
+                row.td().text(location.getFromPath());
+                row.td().text(location.getTarget().toString());
+            });
         }
     }
 }

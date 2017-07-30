@@ -1,6 +1,7 @@
 package com.github.t1.kubee.boundary.html;
 
 import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.model.ReverseProxy.Location;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
@@ -21,10 +22,13 @@ public class ReverseProxyListHtmlMessageBodyWriterTest {
     public void shouldWriteHtml() throws Exception {
         List<ReverseProxy> reverseProxies = asList(
                 ReverseProxy.builder().from(URI.create("http://from1"))
-                            .target(URI.create("http://to1"))
-                            .target(URI.create("http://to2")).build(),
+                            .location(Location.builder().fromPath("a").target(URI.create("http://to1")).build())
+                            .location(Location.builder().fromPath("b").target(URI.create("http://to2")).build())
+                            .build(),
                 ReverseProxy.builder().from(URI.create("http://from2")).build(),
-                ReverseProxy.builder().from(URI.create("http://from3")).target(URI.create("http://to3")).build()
+                ReverseProxy.builder().from(URI.create("http://from3"))
+                            .location(Location.builder().fromPath("c").target(URI.create("http://to3")).build())
+                            .build()
         );
         OutputStream out = new ByteArrayOutputStream();
 
@@ -46,27 +50,28 @@ public class ReverseProxyListHtmlMessageBodyWriterTest {
                 + "   <table class=\"table table-striped\"> \n"
                 + "    <tbody> \n"
                 + "     <tr> \n"
-                + "      <th>from</th> \n"
-                + "      <th>to</th> \n"
+                + "      <th>From</th> \n"
+                + "      <th>Path</th> \n"
+                + "      <th>Target</th> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
-                + "      <td>http://from1</td> \n"
-                + "      <td> \n"
-                + "       <ul class=\"list-unstyled\"> \n"
-                + "        <li>http://to1</li> \n"
-                + "        <li>http://to2</li> \n"
-                + "       </ul></td> \n"
+                + "      <td rowspan=\"2\">http://from1</td> \n"
+                + "      <td>a</td> \n"
+                + "      <td>http://to1</td> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
-                + "      <td>http://from2</td> \n"
-                + "      <td></td> \n"
+                + "      <td>b</td> \n"
+                + "      <td>http://to2</td> \n"
                 + "     </tr> \n"
                 + "     <tr> \n"
-                + "      <td>http://from3</td> \n"
-                + "      <td> \n"
-                + "       <ul class=\"list-unstyled\"> \n"
-                + "        <li>http://to3</li> \n"
-                + "       </ul></td> \n"
+                + "      <td rowspan=\"0\">http://from2</td> \n"
+                + "      <td>-</td> \n"
+                + "      <td>-</td> \n"
+                + "     </tr> \n"
+                + "     <tr> \n"
+                + "      <td rowspan=\"1\">http://from3</td> \n"
+                + "      <td>c</td> \n"
+                + "      <td>http://to3</td> \n"
                 + "     </tr> \n"
                 + "    </tbody> \n"
                 + "   </table> \n"

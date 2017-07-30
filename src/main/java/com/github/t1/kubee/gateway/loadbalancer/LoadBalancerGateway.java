@@ -1,15 +1,15 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.*;
-import com.github.t1.kubee.model.ReverseProxy.ReverseProxyBuilder;
+import com.github.t1.kubee.model.ReverseProxy.*;
 import com.github.t1.nginx.NginxConfig;
 import com.github.t1.nginx.NginxConfig.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.*;
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -29,7 +29,7 @@ public class LoadBalancerGateway {
     private static final Path NGINX_CONFIG = Paths.get("/usr/local/etc/nginx/nginx.conf");
 
     // TODO make this (and the port) configurable
-    private ReloadMode reloadMode = telnet;
+    private ReloadMode reloadMode = service;
 
     public List<LoadBalancer> getLoadBalancers() {
         return readNginxConfig()
@@ -59,8 +59,15 @@ public class LoadBalancerGateway {
     private ReverseProxy buildReverseProxy(NginxServer server) {
         ReverseProxyBuilder builder = ReverseProxy.builder();
         builder.from(URI.create("http://" + server.getName() + ":" + server.getListen()));
-        server.getLocations().forEach(location -> builder.target(URI.create(location.getPass())));
+        server.getLocations().forEach(location -> builder.location(toLocation(location)));
         return builder.build();
+    }
+
+    private Location toLocation(NginxServerLocation location) {
+        return Location.builder()
+                       .fromPath((location.getName()))
+                       .target(URI.create(location.getPass()))
+                       .build();
     }
 
     public void removeFromLB(URI uri, String deployableName, Stage stage) {
@@ -88,7 +95,10 @@ public class LoadBalancerGateway {
         String server = serverUri.getHost() + ":" + serverUri.getPort();
         if (!upstream.getServers().contains(server))
             return Optional.empty();
-        return Optional.of(upstream.withoutServer(server));
+        NginxUpstream without = upstream.withoutServer(server);
+        if (without.getServers().isEmpty())
+            throw new BadRequestException("can't remove last server from lb");
+        return Optional.of(without);
     }
 
     private NginxUpstream getLoadBalancer(NginxConfig config, String deployableName, Stage stage) {
@@ -120,8 +130,8 @@ public class LoadBalancerGateway {
     }
 
     enum ReloadMode implements Callable<String> {
-        telnet {
-            @Override public String call() { return new NginxReloadService.Adapter().call();            }
+        service {
+            @Override public String call() { return new NginxReloadService.Adapter().call(); }
         },
 
         setUserIdScript {
