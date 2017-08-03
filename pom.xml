@@ -26,6 +26,9 @@
             <testResource>
                 <directory>src/test/java</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
             </testResource>
         </testResources>
         <plugins>

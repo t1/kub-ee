@@ -46,10 +46,16 @@ Manage the applications on multiple Java EE clusters.
 
    I.e. `Jolokia` is deployed in version `1.3.6` on `http://qa-worker-01:8080`, which is a node in the `QA` stage
    (the prefix `qa-` is part of the cluster config and not visible here). _(done)_
-5. He opens a menu in one matrix cell and picks `undeploy`: The version gets undeployed,
+5. If he doesn't have the rights to (un)deploy to a node, this is all he can do. _(todo)_
+1. He opens a menu in one matrix cell and picks `undeploy`: The version gets undeployed,
    after it's been removed from the LB nginx config (incl. reload and all current requests finishing). _(done)_
-1. He opens a menu in another matrix cell and picks a different version which gets deployed
+1. For an application `foo` with a variable in the deployer named `foo.version` (typically on DEV stages) _(todo)_
+   he opens a matrix cell menu and picks a different version which gets deployed
    after the node is removed from the app LB, and re-added after the update. _(done)_
+1. Before the undeploy and a second time after a deploy but before adding to the LB,
+   a health check is done. If the deploy made things worse, the last version is restored. _(todo)_
+1. If the deployments to a stage are done with a CI/CD pipeline, this menu only contains the current
+   and the fallback version for emergency rollbacks. _(todo)_
 1. He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB. _(done)_
 1. He drags a cell from one machine to another and it gets deployed on the target and undeployed on the source;
    the LB is updated accordingly. _(done)_
@@ -67,7 +73,31 @@ Manage the applications on multiple Java EE clusters.
    and Kub-EE automatically deploys or undeploys instances on more or less nodes to stay in that load range. _(todo)_
 
 
+## Conventions
+
+We follow the convention-over-configuration principle, so things simply work for a standard setup.
+If following these conventions do not suffice for a special case, we'll have to add a configuration point,
+but doing so prematurely would add extra complexity we'd rather like to avoid before we have such a real-world use case.
+
+1. An application `foo` can be (un)deployed with `foo.state` (`deployed` or `undeployed`).
+1. A different version of an application `foo` can be deployed with `foo.version`.
+1. The versions of an application `foo` can be found (by The Deployer) by using the deployment name on the node
+   to retrieve the group- and artifact-id.
+
+
+## Kubernetes Equivalents
+
+Some concepts match quite well the concepts of Kubernetes.
+Here's how to translate the terms:
+
+|| Kubernetes || Kub-EE || Comment ||
+| Pod | Bundle | Bundles can be nested and provide live templating, which Pods don't. |
+| Kubelet | The Deployer | The Deployer is unaware of Kub-EE |
+| Worker | JEE Container | Multiple JEE containers can run on one machine by using a different port offset
+ (typically by 100s), called Slots |
+
+
 ## Ideas For The Deployer
 
+* Health and load metrics; by app & total
 * Web-Sockets to push audits (maybe even watch others deploy/undeploy)
-* Load metrics; by app & total
