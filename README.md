@@ -87,14 +87,14 @@ but doing so prematurely would add extra complexity we'd rather like to avoid be
 
 ## Kubernetes Equivalents
 
-Some concepts match quite well the concepts of Kubernetes.
+Some Kub-EE concepts match quite well to the concepts of [Kubernetes](https://kubernetes.io).
 Here's how to translate the terms:
 
-|| Kubernetes || Kub-EE || Comment ||
+| Kubernetes | Kub-EE | Comment |
+| --- | --- | --- |
 | Pod | Bundle | Bundles can be nested and provide live templating, which Pods don't. |
 | Kubelet | The Deployer | The Deployer is unaware of Kub-EE |
-| Worker | JEE Container | Multiple JEE containers can run on one machine by using a different port offset
- (typically by 100s), called Slots |
+| Worker | JEE Container | Multiple JEE containers can run on one machine by using a different port offset (typically by 100s), called Slots |
 
 
 ## Ideas For The Deployer
