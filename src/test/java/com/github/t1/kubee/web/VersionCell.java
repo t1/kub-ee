@@ -32,12 +32,12 @@ class VersionCell {
         this.toggle.click();
     }
 
-    List<VersionItem> menu() {
+    List<VersionMenuItem> menu() {
         WebElement ul = this.menu.findElement(By.tagName("ul"));
         assertThat(ul).has(cssClass("list-unstyled"));
 
         return ul.findElements(By.tagName("li")).stream()
-                 .map(VersionItem::new)
+                 .map(VersionMenuItem::new)
                  .collect(toList());
     }
 

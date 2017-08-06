@@ -94,7 +94,7 @@ Here's how to translate the terms:
 | --- | --- | --- |
 | Pod | Bundle | Bundles can be nested and provide live templating, which Pods don't. |
 | Kubelet | The Deployer | The Deployer is unaware of Kub-EE |
-| Worker | JEE Container | Multiple JEE containers can run on one machine by using a different port offset (typically by 100s), called Slots |
+| Worker/Docker Host | JEE Container | Multiple JEE containers can run on one machine by using a different port offset (typically by 100s), called Slots |
 
 
 ## Ideas For The Deployer

@@ -1,73 +1,21 @@
-package com.github.t1.kubee.web;
+package com.github.t1.kubee.boundary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.t1.kubee.boundary.ClusterConfig;
-import com.github.t1.kubee.gateway.deployer.DeployerMock;
+import com.github.t1.kubee.AbstractIT;
 import com.github.t1.kubee.model.*;
-import com.github.t1.testtools.*;
-import io.dropwizard.testing.junit.DropwizardClientRule;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.*;
+import com.github.t1.testtools.OrderedJUnitRunner;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
-import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.nio.file.*;
 import java.util.List;
 
-import static com.github.t1.kubee.web.VersionCell.*;
-import static com.github.t1.kubee.web.VersionItem.*;
 import static javax.ws.rs.core.MediaType.*;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.*;
 
 @RunWith(OrderedJUnitRunner.class)
-public class KubEeIT {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Stage PROD = Stage.builder().name("PROD").path("application/").count(1).build();
-
-    private static final Path CLUSTER_CONFIG_PATH = Paths.get("target/kub-ee-it-cluster-config.yaml");
-
-    @ClassRule public static final DropwizardClientRule WORKER_1
-            = new DropwizardClientRule(new DeployerMock("1.2.3"));
-    @ClassRule public static final DropwizardClientRule WORKER_2
-            = new DropwizardClientRule(new DeployerMock("1.2.4"));
-
-    private static Cluster CLUSTER_1;
-    private static Cluster CLUSTER_2;
-
-    @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
-            .withProperty("kub-ee-deployer.cluster-config", CLUSTER_CONFIG_PATH);
-
-    @ClassRule public static final WebDriverRule DRIVER = new WebDriverRule(new FirefoxDriver());
-
-    private static DeploymentsPage deployments;
-
-    @BeforeClass public static void setup() {
-        CLUSTER_1 = Cluster.builder()
-                           .host(WORKER_1.baseUri().getHost())
-                           .slot(Slot.builder().name("1").http(WORKER_1.baseUri().getPort()).build())
-                           .stage(PROD)
-                           .build();
-        CLUSTER_2 = Cluster.builder()
-                           .host(WORKER_2.baseUri().getHost())
-                           .slot(Slot.builder().name("2").http(WORKER_2.baseUri().getPort()).build())
-                           .stage(PROD)
-                           .build();
-        new ClusterConfig().add(CLUSTER_1).add(CLUSTER_2).write(CLUSTER_CONFIG_PATH);
-
-        MASTER.deploy(ShrinkWrap.createFromZipFile(WebArchive.class, new File("target/kub-ee.war")));
-        deployments = new DeploymentsPage(DRIVER, MASTER.baseUri().resolve("/api/deployments"));
-    }
-
-
-    private WebTarget kubEE() { return ClientBuilder.newClient().target(MASTER.baseUri()).path("/api"); }
-
+public class BoundaryIT extends AbstractIT {
     @Test
     public void shouldGetIndexAsJson() throws Exception {
         String response = kubEE().request(APPLICATION_JSON_TYPE).get(String.class);
@@ -207,65 +155,4 @@ public class KubEeIT {
                 .contains("<th class=\"stage\" colspan=\"1\">PROD</th>")
                 .contains("<th class=\"deployable-name\">dummy</th>");
     }
-
-    @Test
-    public void shouldGoToDeploymentsPage() throws Exception {
-        deployments.navigateTo();
-
-        deployments.assertOpen();
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(closed);
-    }
-
-    @Test
-    public void shouldOpenDummyMenu() {
-        dummy().clickToggle();
-
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(open);
-
-        assertThat(dummy().menu())
-                .hasSize(3)
-                .has(versionItem("minus", "1.2.1", "undeployed"), atIndex(0))
-                .has(versionItem("minus", "1.2.2", "undeployed"), atIndex(1))
-                .has(versionItem("ok-circle", "1.2.3", "deployed"), atIndex(2));
-    }
-
-    @Test
-    public void shouldOpenDeployerMenu() {
-        deployer().clickToggle();
-
-        assertThat(deployer()).is(open);
-        assertThat(dummy()).is(closed);
-
-        assertThat(deployer().menu())
-                .hasSize(3)
-                .has(versionItem("minus", "2.9.1", "undeployed"), atIndex(0))
-                .has(versionItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
-                .has(versionItem("minus", "2.9.3", "undeployed"), atIndex(2));
-        assertThat(dummy().menu()).hasSize(3);
-    }
-
-    @Test
-    public void shouldCloseMenus() {
-        deployments.findCluster(CLUSTER_1).click();
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(closed);
-    }
-
-    @Test
-    public void shouldDragDeployment() throws Exception {
-        WebElement to = deployments.findDeployment(CLUSTER_2.node(PROD, 1), "dummy");
-        DRIVER.buildAction()
-              .clickAndHold(deployments.findDeployment(node11(), "dummy"))
-              .moveToElement(to)
-              .release(to)
-              .build().perform();
-    }
-
-    private VersionCell dummy() { return deployments.findDeploymentCell(node11(), "dummy"); }
-
-    private VersionCell deployer() { return deployments.findDeploymentCell(node11(), "deployer"); }
-
-    private ClusterNode node11() { return CLUSTER_1.node(PROD, 1); }
 }

@@ -9,8 +9,9 @@ import java.util.List;
 
 import static com.github.t1.kubee.model.VersionStatus.*;
 import static com.github.t1.kubee.web.VersionCell.*;
-import static com.github.t1.kubee.web.VersionItem.*;
+import static com.github.t1.kubee.web.VersionMenuItem.*;
 import static java.util.Arrays.*;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -36,9 +37,9 @@ public class VersionCellHelperTest {
 
         assertThat(dummy.menu())
                 .hasSize(3)
-                .has(versionItem("minus", "1.3.3", "undeployed"), atIndex(0))
-                .has(versionItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
-                .has(versionItem("refresh", "1.3.5", "undeploying"), atIndex(2));
+                .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
+                .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
+                .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
 
 
         deployer.clickToggle();
@@ -48,9 +49,9 @@ public class VersionCellHelperTest {
 
         assertThat(deployer.menu())
                 .hasSize(3)
-                .has(versionItem("minus", "1.3.3", "undeployed"), atIndex(0))
-                .has(versionItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
-                .has(versionItem("refresh", "1.3.5", "undeploying"), atIndex(2));
+                .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
+                .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
+                .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
     }
 
     private WebElement mockDeploymentElement(String id) {
@@ -81,9 +82,9 @@ public class VersionCellHelperTest {
         WebElement li = mockWebElement(null, null);
         WebElement icon = mockWebElement(null, "glyphicon glyphicon-" + iconName +
                 " version-icon version-icon-" + status);
-        when(li.findElement(argThat(byCssSelector("span.version-icon")))).thenReturn(icon);
+        when(li.findElements(argThat(byCssSelector("span.version-icon")))).thenReturn(singletonList(icon));
         WebElement label = mockWebElement(null, null);
-        when(li.findElement(argThat(byCssSelector("span.version")))).thenReturn(label);
+        when(li.findElements(argThat(byCssSelector("span.version")))).thenReturn(singletonList(label));
         when(label.getText()).thenReturn(versionName);
         return li;
     }

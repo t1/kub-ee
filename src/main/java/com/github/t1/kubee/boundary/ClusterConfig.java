@@ -15,6 +15,7 @@ import static com.github.t1.kubee.model.Stage.*;
 
 @ApplicationScoped
 public class ClusterConfig {
+    public static final String FILE_NAME_PROPERTY = "kub-ee.cluster-config";
     private final List<Cluster> clusters = new ArrayList<>();
 
     @Produces public List<Cluster> clusters() { return clusters; }
@@ -29,7 +30,7 @@ public class ClusterConfig {
     }
 
     private Path getConfigPath() {
-        String file = System.getProperty("kub-ee.cluster-config");
+        String file = System.getProperty(FILE_NAME_PROPERTY);
         if (file != null)
             return Paths.get(file);
         String root = System.getProperty("jboss.server.config.dir");
