@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
-import static com.github.t1.kubee.tools.ProblemDetail.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.Response.Status.*;

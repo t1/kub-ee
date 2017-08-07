@@ -141,8 +141,10 @@ function post(where, body, icon, status, faded) {
     })
         .then(response => {
             console.debug('got response', response);
-            if (response.status !== NO_CONTENT)
+            if (response.status !== NO_CONTENT) {
+                response.json().then(json => console.debug("error detail", json));
                 throw new Error('unexpected response: ' + response.status);
+            }
             icon.className = versionIconClasses({status: status});
         })
         .then(() => {

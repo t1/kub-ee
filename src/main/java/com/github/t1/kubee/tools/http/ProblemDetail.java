@@ -1,4 +1,4 @@
-package com.github.t1.kubee.tools;
+package com.github.t1.kubee.tools.http;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +28,9 @@ public class ProblemDetail {
 
     public static class ProblemDetailBuilder {
         public WebApplicationException exception() {
-            ProblemDetail entity = build();
-            return new WebApplicationException(entity.toString(), Response.status(status).entity(entity).build());
+            WebApplicationApplicationException exception = new WebApplicationApplicationException(build());
+            log.debug("problem detail", exception);
+            return exception;
         }
     }
 
@@ -61,6 +62,15 @@ public class ProblemDetail {
      */
     private URI instance = URI.create("urn:problem-instance:" + UUID.randomUUID());
 
+
+    public Response response() {
+        ResponseBuilder response = Response.status(this.status).entity(this);
+        response.header("X-Problem-Instance", instance);
+        if (type != null) { response.header("X-Problem-Type", type); }
+        if (title != null) { response.header("X-Problem-Title", title); }
+        if (detail != null) { response.header("X-Problem-Detail", detail); }
+        return response.build();
+    }
 
     @Override public String toString() {
         StringBuilder out = new StringBuilder();

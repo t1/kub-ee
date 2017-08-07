@@ -1,8 +1,8 @@
 package com.github.t1.kubee.boundary;
 
-import com.github.t1.log.Logged;
 import com.github.t1.kubee.control.Controller;
 import com.github.t1.kubee.model.*;
+import com.github.t1.log.Logged;
 import lombok.Builder;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import javax.ws.rs.core.*;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.ProblemDetail.badRequest;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.Arrays.*;
 import static java.util.Locale.*;

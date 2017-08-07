@@ -15,8 +15,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static com.github.t1.kubee.tools.ProblemDetail.*;
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 import static java.lang.ProcessBuilder.Redirect.*;
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;

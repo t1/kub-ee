@@ -11,8 +11,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.github.t1.kubee.tools.ProblemDetail.badRequest;
 import static com.github.t1.kubee.model.Stage.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 
 @ApplicationScoped
 public class ClusterConfig {
