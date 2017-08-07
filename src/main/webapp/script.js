@@ -1,8 +1,8 @@
 'use strict';
 
-const deploymentsResource = baseUri + 'deployments/';
+const DEPLOYMENTS_RESOURCE = baseUri + 'deployments/';
 const NO_CONTENT = 204;
-const fadeOutTime = 1000;
+const FADE_OUT_TIME = 1000;
 
 class DeploymentMenu extends React.Component {
     render() {
@@ -86,7 +86,7 @@ function click_handler(event) {
 function fetchVersions(where) {
     console.debug('fetchVersion', where);
 
-    return fetch(deploymentsResource + where, {
+    return fetch(DEPLOYMENTS_RESOURCE + where, {
         method: 'get',
         headers: {
             'Accept': 'application/json'
@@ -131,7 +131,7 @@ function undeploy(where) {
 }
 
 function post(where, body, icon, status, faded) {
-    return fetch(deploymentsResource + where, {
+    return fetch(DEPLOYMENTS_RESOURCE + where, {
         method: 'post',
         headers: {
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -146,7 +146,7 @@ function post(where, body, icon, status, faded) {
             icon.className = versionIconClasses({status: status});
         })
         .then(() => {
-            $(icon).fadeOut(fadeOutTime, faded);
+            $(icon).fadeOut(FADE_OUT_TIME, faded);
         })
         .catch(error => {
             console.debug('failed', error);

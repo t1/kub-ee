@@ -1,7 +1,7 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
-import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
+import com.github.t1.kubee.gateway.deployer.DeployerGateway.*;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.kubee.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,8 @@ import static java.util.stream.Collectors.*;
 @Slf4j
 @Stateless
 public class Controller {
-    private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
+    @SuppressWarnings("SpellCheckingInspection") private static final String UNKNOWN_HOST_SUFFIX
+            = ": nodename nor servname provided, or not known";
 
     @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
@@ -70,7 +71,7 @@ public class Controller {
             out = out.substring(out.indexOf(": ") + 2);
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
-        if (out.startsWith(NotFoundException.class.getName() + ": "))
+        if (out.startsWith(DeployerNotFoundException.class.getName() + ": "))
             out = "deployer not found";
         if (out.startsWith(BadDeployerGatewayException.class.getName() + ": "))
             out = "bad deployer gateway";

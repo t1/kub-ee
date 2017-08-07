@@ -14,6 +14,7 @@ import javax.ws.rs.core.*;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.tools.ProblemDetail.badRequest;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.Arrays.*;
 import static java.util.Locale.*;
@@ -136,11 +137,11 @@ public class Boundary {
             @FormParam("mode") DeploymentMode mode) {
 
         if (mode == null)
-            throw new BadRequestException("mode is a required parameter");
+            throw badRequest().detail("mode is a required parameter").exception();
         switch (mode) {
         case deploy:
             if (version == null)
-                throw new BadRequestException("version is a required parameter when deploying");
+                throw badRequest().detail("version is a required parameter when deploying").exception();
             controller.deploy(id.node(clusters).deployerUri(), id.deploymentName(), version, id.stage(clusters));
             break;
         case undeploy:

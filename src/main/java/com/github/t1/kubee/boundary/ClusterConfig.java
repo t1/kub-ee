@@ -11,6 +11,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+import static com.github.t1.kubee.tools.ProblemDetail.badRequest;
 import static com.github.t1.kubee.model.Stage.*;
 
 @ApplicationScoped
@@ -25,7 +26,7 @@ public class ClusterConfig {
         try (InputStream stream = Files.newInputStream(path)) {
             readFrom(stream);
         } catch (IOException e) {
-            throw new RuntimeException("can't read cluster config file: " + path);
+            throw badRequest().detail("can't read cluster config file: " + path).exception();
         }
     }
 

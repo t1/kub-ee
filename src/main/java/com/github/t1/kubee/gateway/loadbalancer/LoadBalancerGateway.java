@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static com.github.t1.kubee.tools.ProblemDetail.*;
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
 import static java.lang.ProcessBuilder.Redirect.*;
 import static java.util.concurrent.TimeUnit.*;
@@ -97,7 +98,7 @@ public class LoadBalancerGateway {
             return Optional.empty();
         NginxUpstream without = upstream.withoutServer(server);
         if (without.getServers().isEmpty())
-            throw new BadRequestException("can't remove last server from lb");
+            throw badRequest().detail("can't remove last server from lb").exception();
         return Optional.of(without);
     }
 
@@ -119,8 +120,9 @@ public class LoadBalancerGateway {
                 .orElseThrow(() -> new BadRequestException("No server found for uri " + uri))
                 .getLocations();
         if (locations.size() != 1)
-            throw new BadRequestException(
-                    "Expected exactly one location on server " + uri + " but found " + locations);
+            throw badRequest()
+                    .detail("Expected exactly one location on server " + uri + " but found " + locations)
+                    .exception();
         return URI.create(locations.get(0).getPass());
     }
 
@@ -190,7 +192,7 @@ public class LoadBalancerGateway {
     private NginxUpstream addLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
         String server = serverUri.getHost() + ":" + serverUri.getPort();
         if (upstream.getServers().contains(server))
-            throw new BadRequestException("server " + server + " already in lb: " + upstream.getName());
+            throw badRequest().detail("server " + server + " already in lb: " + upstream.getName()).exception();
         return upstream.withServer(server);
     }
 }

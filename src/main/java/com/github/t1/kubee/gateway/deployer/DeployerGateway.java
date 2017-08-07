@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.t1.log.Logged;
 import com.github.t1.kubee.model.*;
+import com.github.t1.log.Logged;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.NotFoundException;
+import javax.ws.rs.*;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
 import java.io.IOException;
@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
+import static com.github.t1.kubee.tools.ProblemDetail.*;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.Response.Status.*;
@@ -51,25 +52,29 @@ public class DeployerGateway {
             String string = response.readEntity(String.class);
             if (NOT_FOUND.getStatusCode() == response.getStatus()) {
                 log.info("{} returns 404 Not Found: {}", uri, string);
-                throw new NotFoundException();
+                throw new DeployerNotFoundException();
             }
             if (BAD_GATEWAY.getStatusCode() == response.getStatus()) {
                 log.info("{} returns 502 Bad Gateway: {}", uri, string);
                 throw new BadDeployerGatewayException(string);
             }
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
+                throw badGateway().detail("got " + statusInfo(response) + " from " + uri + ": " + string).exception();
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
-                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
-                        + " but got " + contentType + ": " + string);
+                throw badGateway()
+                        .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
+                        .exception();
             return string;
         } finally {
             response.close();
         }
     }
 
-    public static class BadDeployerGatewayException extends RuntimeException {
-        public BadDeployerGatewayException(String message) { super(message); }
+    public static class DeployerNotFoundException extends NotFoundException {
+    }
+
+    public static class BadDeployerGatewayException extends ServerErrorException {
+        private BadDeployerGatewayException(String message) { super(message, BAD_GATEWAY); }
     }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
@@ -174,10 +179,13 @@ public class DeployerGateway {
                 throw new NotFoundException();
             }
             if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw new RuntimeException("got " + statusInfo(response) + " from " + uri + ": " + string);
+                throw badGateway()
+                        .detail("got " + statusInfo(response) + " from " + uri + ": " + string)
+                        .exception();
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
-                throw new RuntimeException("expected " + APPLICATION_YAML_TYPE
-                        + " but got " + contentType + ": " + string);
+                throw badGateway()
+                        .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
+                        .exception();
         } finally {
             response.close();
         }
