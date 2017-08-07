@@ -7,11 +7,10 @@ import com.github.t1.nginx.NginxConfig.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.*;
+import javax.ws.rs.ClientErrorException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -86,10 +85,14 @@ public class LoadBalancerGateway {
 
     private Optional<NginxConfig> withoutLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
         NginxConfig config = readNginxConfig();
-        NginxUpstream with = getLoadBalancer(config, deployableName, stage);
+        Optional<NginxUpstream> with = config.upstream(loadBalancerName(deployableName, stage));
         URI serverUri = getProxyServerUri(uri, config);
-        Optional<NginxUpstream> optional = removeLoadBalancerServer(with, serverUri);
-        return optional.map(without -> config.withoutUpstream(with.getName()).withUpstream(without));
+        Optional<NginxUpstream> optional = with.flatMap(upstream -> removeLoadBalancerServer(upstream, serverUri));
+        return optional.map(without -> config.withoutUpstream(with.get().getName()).withUpstream(without));
+    }
+
+    private String loadBalancerName(String deployableName, Stage stage) {
+        return stage.getPrefix() + deployableName + stage.getSuffix() + "-lb";
     }
 
     private Optional<NginxUpstream> removeLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
@@ -102,22 +105,13 @@ public class LoadBalancerGateway {
         return Optional.of(without);
     }
 
-    private NginxUpstream getLoadBalancer(NginxConfig config, String deployableName, Stage stage) {
-        String loadBalancerName = stage.getPrefix() + deployableName + stage.getSuffix() + "-lb";
-        return config
-                .upstreams()
-                .filter(upstream -> upstream.getName().equals(loadBalancerName))
-                .findAny()
-                .orElseThrow(() -> new BadRequestException("LB not found for application '" + deployableName + "'"));
-    }
-
     private URI getProxyServerUri(URI uri, NginxConfig config) {
         List<NginxServerLocation> locations = config
                 .servers()
                 .filter(s -> s.getName().equals(uri.getHost()))
                 .filter(s -> s.getListen().equals(Integer.toString(uri.getPort())))
                 .findAny()
-                .orElseThrow(() -> new BadRequestException("No server found for uri " + uri))
+                .orElseThrow(() -> badRequest().detail("No server found for uri " + uri).exception())
                 .getLocations();
         if (locations.size() != 1)
             throw badRequest()
@@ -183,10 +177,19 @@ public class LoadBalancerGateway {
 
     private NginxConfig withLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
         NginxConfig config = readNginxConfig();
-        NginxUpstream without = getLoadBalancer(config, deployableName, stage);
+        String name = loadBalancerName(deployableName, stage);
+        Optional<NginxUpstream> without = config.upstream(name);
+        if (without.isPresent())
+            config.withoutUpstream(name);
+        else
+            without = Optional.of(createLoadBalancer(name));
         URI serverUri = getProxyServerUri(uri, config);
-        NginxUpstream with = addLoadBalancerServer(without, serverUri);
-        return config.withoutUpstream(without.getName()).withUpstream(with);
+        NginxUpstream with = addLoadBalancerServer(without.get(), serverUri);
+        return config.withUpstream(with);
+    }
+
+    private NginxUpstream createLoadBalancer(String name) {
+        return NginxUpstream.builder().name(name).method("least_conn").build();
     }
 
     private NginxUpstream addLoadBalancerServer(NginxUpstream upstream, URI serverUri) {

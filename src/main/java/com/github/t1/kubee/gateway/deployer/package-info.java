@@ -1,6 +1,6 @@
 @DependsUpon(packagesOf = {
         com.github.t1.kubee.model.Deployment.class,
-        com.github.t1.kubee.tools.ProblemDetail.class,
+        com.github.t1.kubee.tools.http.ProblemDetail.class,
 
         com.fasterxml.jackson.annotation.JsonIgnore.class,
         com.fasterxml.jackson.core.JsonGenerator.class,

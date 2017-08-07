@@ -6,6 +6,8 @@ import javax.ws.rs.BadRequestException;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+
 @Value
 public class DeploymentId {
     public final String value;
@@ -19,7 +21,7 @@ public class DeploymentId {
     public Stage stage(List<Cluster> clusters) {
         String name = getStageName();
         return clusters.stream().flatMap(cluster -> asStream(cluster.stage(name))).findAny()
-                       .orElseThrow(() -> new BadRequestException("stage not found: " + name));
+                       .orElseThrow(() -> badRequest().detail("stage not found: " + name).exception());
     }
 
     private static <T> Stream<T> asStream(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<T> opt) {
