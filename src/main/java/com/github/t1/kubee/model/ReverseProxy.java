@@ -17,6 +17,12 @@ public class ReverseProxy {
     @Value
     @Builder
     public static class Location {
+        public static LocationBuilder from(String fromPath) { return builder().fromPath(fromPath); }
+
+        public static class LocationBuilder {
+            public Location to(String target) { return target(URI.create(target)).build(); }
+        }
+
         String fromPath;
         URI target;
     }

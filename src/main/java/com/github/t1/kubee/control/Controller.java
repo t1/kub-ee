@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.*;
 import static com.github.t1.kubee.model.VersionStatus.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
@@ -110,13 +111,15 @@ public class Controller {
 
 
     public void deploy(URI uri, String deployableName, String version, Stage stage) {
-        loadBalancing.removeFromLB(uri, deployableName, stage);
+        String loadBalancerName = loadBalancerName(deployableName, stage);
+        loadBalancing.from(loadBalancerName).removeTarget(uri);
         deployer.deploy(uri, deployableName, version);
-        loadBalancing.addToLB(uri, deployableName, stage);
+        loadBalancing.to(loadBalancerName).addTarget(uri);
     }
 
     public void undeploy(URI uri, String deployableName, Stage stage) {
-        loadBalancing.removeFromLB(uri, deployableName, stage);
+        String loadBalancerName = loadBalancerName(deployableName, stage);
+        loadBalancing.from(loadBalancerName).removeTarget(uri);
         deployer.undeploy(uri, deployableName);
     }
 }

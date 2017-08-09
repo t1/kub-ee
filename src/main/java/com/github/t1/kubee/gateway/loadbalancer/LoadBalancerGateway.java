@@ -2,16 +2,15 @@ package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.model.ReverseProxy.*;
-import com.github.t1.nginx.NginxConfig;
+import com.github.t1.nginx.*;
 import com.github.t1.nginx.NginxConfig.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.ClientErrorException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
@@ -26,34 +25,32 @@ import static javax.ws.rs.core.Response.Status.*;
  */
 @Slf4j
 public class LoadBalancerGateway {
-    private static final Path NGINX_CONFIG = Paths.get("/usr/local/etc/nginx/nginx.conf");
+    private static final Path DEFAULT_NGINX_CONFIG_PATH = Paths.get("/usr/local/etc/nginx/nginx.conf");
+
+    Path nginxConfigPath = DEFAULT_NGINX_CONFIG_PATH;
 
     // TODO make this (and the port) configurable
-    private ReloadMode reloadMode = service;
+    Callable<String> reloadMode = service;
+
+    private NginxConfig readNginxConfig() { return NginxConfig.readFrom(nginxConfigPath.toUri()); }
+
 
     public List<LoadBalancer> getLoadBalancers() {
-        return readNginxConfig()
-                .getUpstreams()
-                .stream()
-                .map(server -> LoadBalancer
-                        .builder()
-                        .name(server.getName())
-                        .method(server.getMethod())
-                        .servers(server.getServers())
-                        .build())
-                .collect(toList());
+        return readNginxConfig().upstreams().map(this::buildLoadBalancer).collect(toList());
     }
 
-    private NginxConfig readNginxConfig() {
-        return NginxConfig.readFrom(NGINX_CONFIG.toUri());
+    private LoadBalancer buildLoadBalancer(NginxUpstream server) {
+        return LoadBalancer
+                .builder()
+                .name(server.getName())
+                .method(server.getMethod())
+                .servers(server.servers().map(HostPort::toString).collect(toList()))
+                .build();
     }
+
 
     public List<ReverseProxy> getReverseProxies() {
-        return readNginxConfig()
-                .getServers()
-                .stream()
-                .map(this::buildReverseProxy)
-                .collect(toList());
+        return readNginxConfig().getServers().stream().map(this::buildReverseProxy).collect(toList());
     }
 
     private ReverseProxy buildReverseProxy(NginxServer server) {
@@ -66,63 +63,41 @@ public class LoadBalancerGateway {
     private Location toLocation(NginxServerLocation location) {
         return Location.builder()
                        .fromPath((location.getName()))
-                       .target(URI.create(location.getPass()))
+                       .target(location.getProxyPass())
                        .build();
     }
 
-    public void removeFromLB(URI uri, String deployableName, Stage stage) {
-        log.debug("remove {} from lb {}", deployableName, uri);
-        Optional<NginxConfig> optional = withoutLoadBalancingTarget(uri, deployableName, stage);
-        if (optional.isPresent()) {
-            log.debug("write config");
-            writeNginxConfig(optional.get());
-            log.debug("reload nginx");
-            nginxReload();
-        } else {
-            log.debug("{} is not in lb {}", deployableName, uri);
-        }
+    public LoadBalancerRemoveAction from(String loadBalancerName) {
+        return new LoadBalancerRemoveAction(readNginxConfig(), loadBalancerName, this::updateNginx);
     }
 
-    private Optional<NginxConfig> withoutLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
-        NginxConfig config = readNginxConfig();
-        Optional<NginxUpstream> with = config.upstream(loadBalancerName(deployableName, stage));
-        URI serverUri = getProxyServerUri(uri, config);
-        Optional<NginxUpstream> optional = with.flatMap(upstream -> removeLoadBalancerServer(upstream, serverUri));
-        return optional.map(without -> config.withoutUpstream(with.get().getName()).withUpstream(without));
+    public LoadBalancerAddAction to(String loadBalancerName) {
+        return new LoadBalancerAddAction(readNginxConfig(), loadBalancerName, this::updateNginx);
     }
 
-    private String loadBalancerName(String deployableName, Stage stage) {
-        return stage.getPrefix() + deployableName + stage.getSuffix() + "-lb";
+    private void updateNginx(NginxConfig config) {
+        writeNginxConfig(config);
+        nginxReload();
     }
 
-    private Optional<NginxUpstream> removeLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
-        String server = serverUri.getHost() + ":" + serverUri.getPort();
-        if (!upstream.getServers().contains(server))
-            return Optional.empty();
-        NginxUpstream without = upstream.withoutServer(server);
-        if (without.getServers().isEmpty())
-            throw badRequest().detail("can't remove last server from lb").exception();
-        return Optional.of(without);
+    public static String loadBalancerName(String deployableName, Stage stage) {
+        return serverName(deployableName, stage) + "-lb";
     }
 
-    private URI getProxyServerUri(URI uri, NginxConfig config) {
-        List<NginxServerLocation> locations = config
-                .servers()
-                .filter(s -> s.getName().equals(uri.getHost()))
-                .filter(s -> s.getListen().equals(Integer.toString(uri.getPort())))
-                .findAny()
-                .orElseThrow(() -> badRequest().detail("No server found for uri " + uri).exception())
-                .getLocations();
-        if (locations.size() != 1)
-            throw badRequest()
-                    .detail("Expected exactly one location on server " + uri + " but found " + locations)
-                    .exception();
-        return URI.create(locations.get(0).getPass());
+    public static String serverName(String deployableName, Stage stage) {
+        return stage.getPrefix() + deployableName + stage.getSuffix();
     }
 
-    @SneakyThrows(IOException.class)
-    private void writeNginxConfig(NginxConfig config) {
-        Files.write(NGINX_CONFIG, config.toString().getBytes());
+    @SneakyThrows(IOException.class) private void writeNginxConfig(NginxConfig config) {
+        log.debug("write config");
+        Files.write(nginxConfigPath, config.toString().getBytes());
+    }
+
+    @SneakyThrows(Exception.class) private void nginxReload() {
+        log.debug("reload nginx");
+        String result = reloadMode.call();
+        if (result != null)
+            throw problem(CONFLICT).detail("failed to reload load balancer: " + result).exception();
     }
 
     enum ReloadMode implements Callable<String> {
@@ -153,49 +128,5 @@ public class LoadBalancerGateway {
                 return "reload failed: " + e.getMessage();
             }
         }
-    }
-
-    @SneakyThrows(Exception.class) private void nginxReload() {
-        String result = reloadMode.call();
-        if (result != null)
-            throw new FailedToReloadLoadBalancerException(result);
-    }
-
-
-    private class FailedToReloadLoadBalancerException extends ClientErrorException {
-        private FailedToReloadLoadBalancerException(String message) { super(message, CONFLICT); }
-    }
-
-    public void addToLB(URI uri, String deployableName, Stage stage) {
-        log.debug("add {} to lb {}", deployableName, uri);
-        NginxConfig config = withLoadBalancingTarget(uri, deployableName, stage);
-        log.debug("write config");
-        writeNginxConfig(config);
-        log.debug("reload nginx");
-        nginxReload();
-    }
-
-    private NginxConfig withLoadBalancingTarget(URI uri, String deployableName, Stage stage) {
-        NginxConfig config = readNginxConfig();
-        String name = loadBalancerName(deployableName, stage);
-        Optional<NginxUpstream> without = config.upstream(name);
-        if (without.isPresent())
-            config.withoutUpstream(name);
-        else
-            without = Optional.of(createLoadBalancer(name));
-        URI serverUri = getProxyServerUri(uri, config);
-        NginxUpstream with = addLoadBalancerServer(without.get(), serverUri);
-        return config.withUpstream(with);
-    }
-
-    private NginxUpstream createLoadBalancer(String name) {
-        return NginxUpstream.builder().name(name).method("least_conn").build();
-    }
-
-    private NginxUpstream addLoadBalancerServer(NginxUpstream upstream, URI serverUri) {
-        String server = serverUri.getHost() + ":" + serverUri.getPort();
-        if (upstream.getServers().contains(server))
-            throw badRequest().detail("server " + server + " already in lb: " + upstream.getName()).exception();
-        return upstream.withServer(server);
     }
 }
