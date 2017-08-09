@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static java.util.stream.Collectors.*;
 
 @Slf4j
 public class LoadBalancerRemoveAction extends LoadBalancerAction {
@@ -46,9 +45,7 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
         config(config -> config.withoutUpstream(name));
         config(config -> (upstream.getServers().size() > 1)
                 ? config.withUpstream(upstream.withoutServer(hostPort))
-                : config.withServers(config.servers()
-                                           .map(server -> server.withoutLocation(upstream))
-                                           .collect(toList())));
+                : config.withoutServer(serverName()));
         done();
     }
 }

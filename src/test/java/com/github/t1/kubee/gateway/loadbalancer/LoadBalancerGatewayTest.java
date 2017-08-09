@@ -111,8 +111,7 @@ public class LoadBalancerGatewayTest {
                 LoadBalancer.builder().name("jolokia-lb").method("least_conn")
                             .server("localhost:8180").server("localhost:8280").build(),
                 LoadBalancer.builder().name("jolokia" + "qa-lb")
-                            .server("localhost:8380").build()
-        );
+                            .server("localhost:8380").build());
         verifyZeroInteractions(gateway.reloadMode);
     }
 
@@ -141,8 +140,7 @@ public class LoadBalancerGatewayTest {
                             .build(),
                 ReverseProxy.builder().from(URI.create("http://worker" + "qa2:80"))
                             .location(Location.from("/").to("http://localhost:8480/"))
-                            .build()
-        );
+                            .build());
         verifyZeroInteractions(gateway.reloadMode);
     }
 
@@ -179,13 +177,9 @@ public class LoadBalancerGatewayTest {
                                         + "            proxy_set_header Host      $host;\n"
                                         + "            proxy_set_header X-Real-IP $remote_addr;\n"
                                         + "        }\n"
-                                        + "    }\n",
-                                ""
-                                        + "    server {\n"
-                                        + "        server_name jolokia" + "qa;\n"
-                                        + "        listen 80;\n"
                                         + "    }\n"
-                        ));
+                                        + "\n",
+                                ""));
         verify(gateway.reloadMode, only()).call();
     }
 
@@ -205,8 +199,7 @@ public class LoadBalancerGatewayTest {
                                         + "    upstream jolokia" + "qa-lb {\n"
                                         + "        server localhost:8380;\n"
                                         + "        server localhost:8480;\n"
-                                        + "    }\n")
-                );
+                                        + "    }\n"));
         verify(gateway.reloadMode, only()).call();
     }
 
@@ -231,15 +224,14 @@ public class LoadBalancerGatewayTest {
         assertThat(contentOf(gateway.nginxConfigPath.toFile()))
                 .isEqualTo(CONFIG
                         .replace(""
-                                        + "    upstream jolokia"+"qa-lb {\n"
+                                        + "    upstream jolokia" + "qa-lb {\n"
                                         + "        server localhost:8380;\n"
                                         + "    }\n",
                                 ""
-                                        + "    upstream jolokia"+"qa-lb {\n"
+                                        + "    upstream jolokia" + "qa-lb {\n"
                                         + "        server localhost:8180;\n"
                                         + "        server localhost:8380;\n"
-                                        + "    }\n")
-                );
+                                        + "    }\n"));
         verify(gateway.reloadMode, only()).call();
     }
 
@@ -276,8 +268,7 @@ public class LoadBalancerGatewayTest {
                                         + "    }\n"
                                         + "\n"
                                         + "    server {\n"
-                                        + "        server_name jolokia;\n")
-                );
+                                        + "        server_name jolokia;\n"));
         verify(gateway.reloadMode, only()).call();
     }
 }

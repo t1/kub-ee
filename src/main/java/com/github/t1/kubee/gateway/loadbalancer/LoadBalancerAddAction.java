@@ -43,9 +43,9 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
 
     private void induceProxyLocation() {
         if (!server(serverName()).isPresent())
-            config(config -> config.withServer(NginxServer.named(deployableName())));
+            config(config -> config.withServer(NginxServer.named(serverName())));
         NginxServer server = server(serverName()).orElseThrow(()
-                -> new RuntimeException("proxy '" + serverName() + "still not created"));
+                -> internalServerError().detail("proxy '" + serverName() + "' still not created").exception());
         if (!server.location("/").isPresent())
             config(config -> config.withoutServer(serverName()).withServer(server.withLocation(createLocation())));
     }
