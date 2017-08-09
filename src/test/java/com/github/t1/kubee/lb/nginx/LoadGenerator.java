@@ -38,7 +38,7 @@ public class LoadGenerator implements Runnable {
     }
 
     @Override public void run() {
-        WebTarget target = client.target("http://worker:80/jolokia/read/java.lang:type=Memory/HeapMemoryUsage");
+        WebTarget target = client.target("http://jolokia:80/read/java.lang:type=Memory/HeapMemoryUsage");
         Instant start = now();
         this.result = fetch(target);
         this.time = Duration.between(start, now());

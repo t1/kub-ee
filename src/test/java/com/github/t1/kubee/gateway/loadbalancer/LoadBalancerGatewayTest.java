@@ -29,9 +29,9 @@ public class LoadBalancerGatewayTest {
             + "    }\n"
             + "\n"
             + "    server {\n"
-            + "        server_name worker;\n"
+            + "        server_name jolokia;\n"
             + "        listen 80;\n"
-            + "        location /jolokia {\n"
+            + "        location / {\n"
             + "            proxy_pass http://jolokia-lb/jolokia;\n"
             + "            proxy_set_header Host      $host;\n"
             + "            proxy_set_header X-Real-IP $remote_addr;\n"
@@ -42,10 +42,12 @@ public class LoadBalancerGatewayTest {
             + "    }\n"
             + "\n"
             + "    server {\n"
-            + "        server_name worker" + "qa;\n"
+            + "        server_name jolokia" + "qa;\n"
             + "        listen 80;\n"
-            + "        location /jolokia {\n"
+            + "        location / {\n"
             + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+            + "            proxy_set_header Host      $host;\n"
+            + "            proxy_set_header X-Real-IP $remote_addr;\n"
             + "        }\n"
             + "    }\n"
             + "\n"
@@ -82,6 +84,8 @@ public class LoadBalancerGatewayTest {
             + "    }\n"
             + "}\n";
 
+    private static final Stage PROD = Stage.builder().name("PROD").count(2).build();
+    private static final Stage QA = Stage.builder().name("QA").suffix("qa").build();
 
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
@@ -95,13 +99,6 @@ public class LoadBalancerGatewayTest {
     private void givenConfig(String contents) throws IOException {
         gateway.nginxConfigPath = folder.newFile("test.config").toPath();
         write(gateway.nginxConfigPath, contents.getBytes("UTF-8"));
-    }
-
-    @Test
-    public void shouldGetLoadBalancerName() throws Exception {
-        String foo = LoadBalancerGateway.loadBalancerName("foo", Stage.builder().prefix("pre-").suffix("-suf").build());
-
-        assertThat(foo).isEqualTo("pre-foo-suf-lb");
     }
 
     @Test
@@ -126,12 +123,12 @@ public class LoadBalancerGatewayTest {
         List<ReverseProxy> reverseProxies = gateway.getReverseProxies();
 
         assertThat(reverseProxies).containsExactly(
-                ReverseProxy.builder().from(URI.create("http://worker:80"))
-                            .location(Location.from("/jolokia").to("http://jolokia-lb/jolokia"))
+                ReverseProxy.builder().from(URI.create("http://jolokia:80"))
+                            .location(Location.from("/").to("http://jolokia-lb/jolokia"))
                             .location(Location.from("/service").to("http://dummy/service"))
                             .build(),
-                ReverseProxy.builder().from(URI.create("http://worker" + "qa:80"))
-                            .location(Location.from("/jolokia").to("http://jolokia" + "qa-lb/jolokia"))
+                ReverseProxy.builder().from(URI.create("http://jolokia" + "qa:80"))
+                            .location(Location.from("/").to("http://jolokia" + "qa-lb/jolokia"))
                             .build(),
                 ReverseProxy.builder().from(URI.create("http://worker1:80"))
                             .location(Location.from("/").to("http://localhost:8180/"))
@@ -153,7 +150,7 @@ public class LoadBalancerGatewayTest {
     public void shouldRemoveFirstTargetFromLoadBalancer() throws Exception {
         givenConfig(CONFIG);
 
-        gateway.from("jolokia-lb").removeTarget(URI.create("http://worker1:80"));
+        gateway.from("jolokia", PROD).removeTarget(URI.create("http://worker1:80"));
 
         assertThat(contentOf(gateway.nginxConfigPath.toFile()))
                 .isEqualTo(CONFIG.replace("        server localhost:8180;\n", ""));
@@ -164,7 +161,7 @@ public class LoadBalancerGatewayTest {
     public void shouldRemoveFinalTargetFromLoadBalancer() throws Exception {
         givenConfig(CONFIG);
 
-        gateway.from("jolokia" + "qa-lb").removeTarget(URI.create("http://worker" + "qa1:80"));
+        gateway.from("jolokia", QA).removeTarget(URI.create("http://worker" + "qa1:80"));
 
         assertThat(contentOf(gateway.nginxConfigPath.toFile()))
                 .isEqualTo(CONFIG
@@ -174,9 +171,21 @@ public class LoadBalancerGatewayTest {
                                 + "    }\n"
                                 + "\n", "")
                         .replace(""
-                                + "        location /jolokia {\n"
-                                + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
-                                + "        }\n", ""));
+                                        + "    server {\n"
+                                        + "        server_name jolokia" + "qa;\n"
+                                        + "        listen 80;\n"
+                                        + "        location / {\n"
+                                        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+                                        + "            proxy_set_header Host      $host;\n"
+                                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+                                        + "        }\n"
+                                        + "    }\n",
+                                ""
+                                        + "    server {\n"
+                                        + "        server_name jolokia" + "qa;\n"
+                                        + "        listen 80;\n"
+                                        + "    }\n"
+                        ));
         verify(gateway.reloadMode, only()).call();
     }
 
@@ -184,7 +193,7 @@ public class LoadBalancerGatewayTest {
     public void shouldAddTargetToExistingLoadBalancer() throws Exception {
         givenConfig(CONFIG);
 
-        gateway.to("jolokia" + "qa-lb").addTarget(URI.create("http://worker" + "qa2:80"));
+        gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
 
         assertThat(contentOf(gateway.nginxConfigPath.toFile()))
                 .isEqualTo(CONFIG
@@ -202,10 +211,43 @@ public class LoadBalancerGatewayTest {
     }
 
     @Test
+    public void shouldAddTargetToEmptyLoadBalancer() throws Exception {
+        givenConfig(CONFIG.replace(""
+                        + "    server {\n"
+                        + "        server_name jolokia" + "qa;\n"
+                        + "        listen 80;\n"
+                        + "        location / {\n"
+                        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+                        + "        }\n"
+                        + "    }\n"
+                , ""
+                        + "    server {\n"
+                        + "        server_name jolokia" + "qa;\n"
+                        + "        listen 80;\n"
+                        + "    }\n"));
+
+        gateway.to("jolokia", QA).addTarget(URI.create("http://worker1:80"));
+
+        assertThat(contentOf(gateway.nginxConfigPath.toFile()))
+                .isEqualTo(CONFIG
+                        .replace(""
+                                        + "    upstream jolokia"+"qa-lb {\n"
+                                        + "        server localhost:8380;\n"
+                                        + "    }\n",
+                                ""
+                                        + "    upstream jolokia"+"qa-lb {\n"
+                                        + "        server localhost:8180;\n"
+                                        + "        server localhost:8380;\n"
+                                        + "    }\n")
+                );
+        verify(gateway.reloadMode, only()).call();
+    }
+
+    @Test
     public void shouldAddTargetToNewLoadBalancer() throws Exception {
         givenConfig(CONFIG);
 
-        gateway.to("foo" + "-lb").addTarget(URI.create("http://worker1:80"));
+        gateway.to("foo", PROD).addTarget(URI.create("http://worker1:80"));
 
         assertThat(contentOf(gateway.nginxConfigPath.toFile()))
                 .isEqualTo(CONFIG
@@ -219,6 +261,22 @@ public class LoadBalancerGatewayTest {
                                         + "        server localhost:8180;\n"
                                         + "    }\n"
                                         + "\n")
+                        .replace(""
+                                        + "    server {\n"
+                                        + "        server_name jolokia;\n",
+                                ""
+                                        + "    server {\n"
+                                        + "        server_name foo;\n"
+                                        + "        listen 80;\n"
+                                        + "        location / {\n"
+                                        + "            proxy_pass http://foo-lb/foo/;\n"
+                                        + "            proxy_set_header Host      $host;\n"
+                                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+                                        + "        }\n"
+                                        + "    }\n"
+                                        + "\n"
+                                        + "    server {\n"
+                                        + "        server_name jolokia;\n")
                 );
         verify(gateway.reloadMode, only()).call();
     }

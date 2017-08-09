@@ -67,25 +67,17 @@ public class LoadBalancerGateway {
                        .build();
     }
 
-    public LoadBalancerRemoveAction from(String loadBalancerName) {
-        return new LoadBalancerRemoveAction(readNginxConfig(), loadBalancerName, this::updateNginx);
+    public LoadBalancerRemoveAction from(String deployableName, Stage stage) {
+        return new LoadBalancerRemoveAction(readNginxConfig(), deployableName, stage, this::updateNginx);
     }
 
-    public LoadBalancerAddAction to(String loadBalancerName) {
-        return new LoadBalancerAddAction(readNginxConfig(), loadBalancerName, this::updateNginx);
+    public LoadBalancerAddAction to(String deployableName, Stage stage) {
+        return new LoadBalancerAddAction(readNginxConfig(), deployableName, stage, this::updateNginx);
     }
 
     private void updateNginx(NginxConfig config) {
         writeNginxConfig(config);
         nginxReload();
-    }
-
-    public static String loadBalancerName(String deployableName, Stage stage) {
-        return serverName(deployableName, stage) + "-lb";
-    }
-
-    public static String serverName(String deployableName, Stage stage) {
-        return stage.getPrefix() + deployableName + stage.getSuffix();
     }
 
     @SneakyThrows(IOException.class) private void writeNginxConfig(NginxConfig config) {
