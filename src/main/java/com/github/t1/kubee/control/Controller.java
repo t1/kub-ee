@@ -27,12 +27,12 @@ public class Controller {
     @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
 
-    public List<LoadBalancer> getLoadBalancers() {
-        return loadBalancing.getLoadBalancers();
+    public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
+        return stages.flatMap(stage -> loadBalancing.loadBalancers(stage));
     }
 
-    public List<ReverseProxy> getReverseProxies() {
-        return loadBalancing.getReverseProxies();
+    public Stream<ReverseProxy> reverseProxies(Stream<Stage> stages) {
+        return stages.flatMap(stage -> loadBalancing.reverseProxies(stage));
     }
 
 

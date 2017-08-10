@@ -83,7 +83,9 @@ but doing so prematurely would add extra complexity we'd rather like to avoid be
 1. A different version of an application `foo` can be deployed with `foo.version`.
 1. The versions of an application `foo` can be found (by The Deployer) by using the deployment name on the node
    to retrieve the group- and artifact-id.
-
+1. On a QA stage with the suffix `-qa`, an application `foo` is proxied to `http://foo-qa-lb/foo`,
+   where `foo-qa-lb` is the application load-balancer. 
+1. The nginx config file is in `/usr/local/etc/nginx` and has the prefix and suffix of its stage, e.g. `nginx-qa.conf`.
 
 ## Kubernetes Equivalents
 

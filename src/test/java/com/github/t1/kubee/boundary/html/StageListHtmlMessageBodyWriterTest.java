@@ -41,7 +41,7 @@ public class StageListHtmlMessageBodyWriterTest {
                 + "     <th>suffix</th> \n"
                 + "     <th>path</th> \n"
                 + "     <th>count</th> \n"
-                + "     <th>indexLength</th> \n"
+                + "     <th>index-length</th> \n"
                 + "    </tr> \n"
                 + "    <tr> \n"
                 + "     <th>DEV</th> \n"

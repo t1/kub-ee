@@ -1,10 +1,11 @@
 package com.github.t1.kubee.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.t1.kubee.model.Cluster.ClusterBuilder;
 import com.github.t1.kubee.tools.yaml.*;
 import lombok.*;
 
-import java.util.Comparator;
+import java.util.*;
 import java.util.stream.*;
 
 import static java.lang.String.*;
@@ -29,7 +30,9 @@ public class Stage implements Comparable<Stage> {
     int count;
 
     /** The digits used for the host names on this stage, i.e. 2 would result in a host name `...01` */
-    int indexLength;
+    @JsonProperty("index-length") int indexLength;
+
+    @Singular("loadBalancerConfig") Map<String, String> loadBalancerConfig;
 
 
     public Stream<ClusterNode> nodes() { return nodes(null); }
@@ -61,10 +64,10 @@ public class Stage implements Comparable<Stage> {
 
 
     public static class StageBuilder {
-        private String path = DEFAULT_PATH;
         private String prefix = "";
         private String suffix = "";
         private int count = 1;
+        private String path = DEFAULT_PATH;
         private ClusterBuilder clusterBuilder;
 
         StageBuilder read(YamlEntry entry) {
@@ -73,11 +76,12 @@ public class Stage implements Comparable<Stage> {
         }
 
         private StageBuilder read(YamlMapping value) {
-            value.get("suffix").ifPresent(node -> suffix(node.asString()));
             value.get("prefix").ifPresent(node -> prefix(node.asString()));
+            value.get("suffix").ifPresent(node -> suffix(node.asString()));
             value.get("count").ifPresent(node -> count(node.asInt()));
-            value.get("indexLength").ifPresent(node -> indexLength(node.asInt()));
+            value.get("index-length").ifPresent(node -> indexLength(node.asInt()));
             value.get("path").ifPresent(node -> path(node.asString()));
+            value.get("load-balancer").ifPresent(node -> loadBalancerConfig(node.asStringMap()));
             return this;
         }
 

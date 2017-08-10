@@ -60,7 +60,7 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
             row.th().text("suffix");
             row.th().text("path");
             row.th().text("count");
-            row.th().text("indexLength");
+            row.th().text("index-length");
         }
 
         private void stageRow(Stage stage) {

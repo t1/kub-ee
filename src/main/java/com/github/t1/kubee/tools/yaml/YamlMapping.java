@@ -3,8 +3,8 @@ package com.github.t1.kubee.tools.yaml;
 import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.*;
 
 import static com.github.t1.kubee.tools.yaml.YamlNode.*;
 import static java.util.Collections.*;
@@ -24,9 +24,11 @@ public class YamlMapping {
                 .orElse(NULL_NODE);
     }
 
-    public Stream<YamlEntry> stream() {
-        return entries.stream().map(YamlEntry::new);
+    public Map<String, String> asStringMap() {
+        return stream().collect(Collectors.toMap(entry -> entry.key().asString(), entry -> entry.value().asString()));
     }
+
+    public Stream<YamlEntry> stream() { return entries.stream().map(YamlEntry::new); }
 
     @Override public String toString() {
         return "{\n" + stream().map(YamlEntry::toString).collect(joining(",\n")) + "\n}";

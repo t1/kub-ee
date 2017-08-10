@@ -51,12 +51,12 @@ public class BoundaryIT extends AbstractIT {
                 + /**/"\"host\":\"localhost\","
                 + /**/"\"slot\":{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443},"
                 + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
-                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + /**//**/"\"count\":1,\"index-length\":0,\"loadBalancerConfig\":{}}]"
                 + "},{"
                 + /**/"\"host\":\"localhost\","
                 + /**/"\"slot\":{\"name\":\"2\",\"http\":" + WORKER_2.baseUri().getPort() + ",\"https\":443},"
                 + /**/"\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
-                + /**//**/"\"count\":1,\"indexLength\":0}]"
+                + /**//**/"\"count\":1,\"index-length\":0,\"loadBalancerConfig\":{}}]"
                 + "}]");
     }
 
@@ -71,7 +71,7 @@ public class BoundaryIT extends AbstractIT {
                 + "\"host\":\"localhost\","
                 + "\"slot\":{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443},"
                 + "\"stages\":[{\"name\":\"PROD\",\"prefix\":\"\",\"suffix\":\"\",\"path\":\"application/\","
-                + /**/"\"count\":1,\"indexLength\":0}]"
+                + /**/"\"count\":1,\"index-length\":0,\"loadBalancerConfig\":{}}]"
                 + "}");
     }
 
@@ -104,7 +104,8 @@ public class BoundaryIT extends AbstractIT {
                 + "\"suffix\":\"\","
                 + "\"path\":\"application/\","
                 + "\"count\":1,"
-                + "\"indexLength\":0"
+                + "\"index-length\":0,"
+                + "\"loadBalancerConfig\":{}"
                 + "}]");
     }
 
@@ -120,7 +121,8 @@ public class BoundaryIT extends AbstractIT {
                 + "\"suffix\":\"\","
                 + "\"path\":\"application/\","
                 + "\"count\":1,"
-                + "\"indexLength\":0"
+                + "\"index-length\":0"
+                + ",\"loadBalancerConfig\":{}"
                 + "}");
     }
 

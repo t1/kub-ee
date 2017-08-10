@@ -1,6 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import lombok.SneakyThrows;
+import lombok.*;
 
 import java.io.*;
 import java.net.*;
@@ -14,20 +14,28 @@ import static java.util.concurrent.TimeUnit.*;
  * set-user-ID-on-execution bit set (`chmod +s`) doesn't work on my Mac. Start it like this:<br>
  * <code>sudo java -cp target/classes com.github.t1.kubee.gateway.loadbalancer.NginxReloadService</code>
  */
+@RequiredArgsConstructor
 public class NginxReloadService {
-    static final int PORT = 6060;
+    static final int DEFAULT_PORT = 6060;
 
     public static void main(String[] args) {
-        System.out.println("Start NginxReload as " + System.getProperty("user.name") + " listen on port " + PORT);
-        new NginxReloadService().run();
+        int port = DEFAULT_PORT;
+        for (String arg : args) {
+            if (arg.startsWith("--port="))
+                port = Integer.parseInt(arg.substring(7));
+        }
+        System.out.println("Start NginxReload as " + System.getProperty("user.name") + " listen on port " + port);
+        new NginxReloadService(port).run();
     }
+
+    private final int port;
 
     @SneakyThrows(IOException.class)
     private void run() {
         reconnect:
         while (true)
             try (
-                    ServerSocket serverSocket = new ServerSocket(PORT);
+                    ServerSocket serverSocket = new ServerSocket(port);
                     Socket clientSocket = serverSocket.accept();
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
@@ -73,10 +81,13 @@ public class NginxReloadService {
         return "reloaded";
     }
 
+    @RequiredArgsConstructor
     public static class Adapter implements Callable<String> {
+        final int port;
+
         @Override public String call() {
             try (
-                    Socket socket = new Socket("localhost", NginxReloadService.PORT);
+                    Socket socket = new Socket("localhost", port);
                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
             ) {

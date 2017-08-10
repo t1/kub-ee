@@ -91,7 +91,7 @@ public class Cluster {
                 String name = split[1];
                 slots.put(name, Slot.from(name, value.asMapping()));
                 break;
-            case "indexLength":
+            case "index-length":
                 indexLength = value.asInt();
                 break;
             default:

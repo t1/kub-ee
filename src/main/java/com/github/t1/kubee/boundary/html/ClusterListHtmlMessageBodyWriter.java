@@ -88,7 +88,7 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
                     + " prefix: '" + stage.getPrefix() + "' <br>"
                     + " suffix: '" + stage.getSuffix() + "' <br>"
                     + " count: " + stage.getCount() + " <br>"
-                    + " indexLength: " + stage.getIndexLength() + " ";
+                    + " index-length: " + stage.getIndexLength() + " ";
         }
     }
 }

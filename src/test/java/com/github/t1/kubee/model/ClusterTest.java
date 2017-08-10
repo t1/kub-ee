@@ -15,28 +15,41 @@ public class ClusterTest {
 
     private static final Cluster[] CLUSTERS = {
             Cluster.builder().host("server-a.server.lan").slot(SLOT_1)
-                   .stage().name("DEV").prefix("").suffix("dev").indexLength(2).count(2).add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2).add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3).add()
+                   .stage().name("DEV").prefix("").suffix("dev").indexLength(2).count(2)
+                   .loadBalancerConfig("reload", "set-user-id-script").add()
+                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
+                   .loadBalancerConfig("reload", "service")
+                   .loadBalancerConfig("port", "12345").add()
+                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
+                   .loadBalancerConfig("reload", "direct").add()
                     .build(),
             Cluster.builder().host("server-a.server.lan").slot(SLOT_2)
-                   .stage().name("DEV").prefix("").suffix("dev").count(2).indexLength(2).add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2).add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3).add()
+                   .stage().name("DEV").prefix("").suffix("dev").count(2).indexLength(2)
+                   .loadBalancerConfig("reload", "set-user-id-script").add()
+                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
+                   .loadBalancerConfig("reload", "service")
+                   .loadBalancerConfig("port", "12345").add()
+                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
+                   .loadBalancerConfig("reload", "direct").add()
                     .build(),
             Cluster.builder().host("server-b.server.lan").slot(SLOT_2)
-                   .stage().name("DEV").prefix("").suffix("test").count(2).indexLength(2).add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2).add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3).add()
+                   .stage().name("DEV").prefix("").suffix("test").count(2).indexLength(2)
+                   .loadBalancerConfig("reload", "set-user-id-script").add()
+                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
+                   .loadBalancerConfig("reload", "service")
+                   .loadBalancerConfig("port", "12345").add()
+                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
+                   .loadBalancerConfig("reload", "direct").add()
                     .build(),
             Cluster.builder().host("localhost").slot(SLOT_1)
-                   .stage().name("PROD").prefix("").suffix("").count(1).indexLength(0).add()
+                   .stage().name("PROD").prefix("").suffix("").count(1).indexLength(0)
+                   .loadBalancerConfig("reload", "direct").add()
                     .build()
     };
 
     public static ClusterConfig readClusterConfig() {
         ClusterConfig clusterConfig = new ClusterConfig();
-        clusterConfig.readFrom(ClusterTest.class.getResourceAsStream("cluster-config.yaml"));
+        clusterConfig.readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
         return clusterConfig;
     }
 
@@ -52,10 +65,10 @@ public class ClusterTest {
         Cluster cluster = CLUSTERS[0];
         Stream<URI> uris = cluster.stages().flatMap(stage -> stage.nodes(cluster)).map(ClusterNode::uri);
         assertThat(uris).containsExactly(
-                URI.create("http://server-a"+"dev01.server.lan:8180"),
-                URI.create("http://server-a"+"dev02.server.lan:8180"),
-                URI.create("http://qa"+"server-a01.server.lan:8180"),
-                URI.create("http://qa"+"server-a02.server.lan:8180"),
+                URI.create("http://server-a" + "dev01.server.lan:8180"),
+                URI.create("http://server-a" + "dev02.server.lan:8180"),
+                URI.create("http://qa" + "server-a01.server.lan:8180"),
+                URI.create("http://qa" + "server-a02.server.lan:8180"),
                 URI.create("http://server-a01.server.lan:8180"),
                 URI.create("http://server-a02.server.lan:8180"),
                 URI.create("http://server-a03.server.lan:8180")

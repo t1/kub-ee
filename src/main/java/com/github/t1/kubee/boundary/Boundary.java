@@ -50,10 +50,12 @@ public class Boundary {
     }
 
 
-    @GET @Path("/load-balancers") public List<LoadBalancer> getLoadBalancers() { return controller.getLoadBalancers(); }
+    @GET @Path("/load-balancers") public List<LoadBalancer> getLoadBalancers() {
+        return controller.loadBalancers(stages()).collect(toList());
+    }
 
     @GET @Path("/reverse-proxies")
-    public List<ReverseProxy> getReverseProxies() { return controller.getReverseProxies(); }
+    public List<ReverseProxy> getReverseProxies() { return controller.reverseProxies(stages()).collect(toList()); }
 
 
     @GET @Path("/clusters") public List<Cluster> getClusters() { return clusters; }
@@ -79,17 +81,16 @@ public class Boundary {
     }
 
 
-    @GET @Path("/stages") public List<Stage> getStages() {
-        return clusters.stream().flatMap(Cluster::stages).sorted().distinct().collect(toList());
-    }
+    @GET @Path("/stages") public List<Stage> getStages() { return stages().collect(toList()); }
 
     @GET @Path("/stages/{name}") public Stage getStage(@PathParam("name") String name) {
-        return clusters.stream()
-                       .flatMap(Cluster::stages)
-                       .filter(stage -> stage.getName().equals(name))
-                       .findFirst()
-                       .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
+        return stages()
+                .filter(stage -> stage.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
+
+    private Stream<Stage> stages() { return clusters.stream().flatMap(Cluster::stages).sorted().distinct(); }
 
 
     @GET @Path("/deployments") public List<Deployment> getDeployments() {

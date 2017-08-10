@@ -3,4 +3,5 @@ kub-ee.iml
 target/
 cluster-config.yaml
 nginx.conf
+nginxqa.conf
 src/test/node/deployments.html

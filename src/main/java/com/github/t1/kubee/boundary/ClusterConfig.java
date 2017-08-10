@@ -56,9 +56,7 @@ public class ClusterConfig {
         private final BufferedWriter out;
 
         @SneakyThrows(IOException.class)
-        private ClusterWriter(Path path) {
-            this.out = Files.newBufferedWriter(path);
-        }
+        private ClusterWriter(Path path) { this.out = Files.newBufferedWriter(path); }
 
         @SneakyThrows(IOException.class)
         public void write() {
@@ -88,7 +86,7 @@ public class ClusterConfig {
             if (!stage.getSuffix().isEmpty())
                 append("    suffix: ").append(stage.getSuffix()).append("\n");
             if (stage.getIndexLength() > 0)
-                append("    indexLength: ").append(stage.getIndexLength()).append("\n");
+                append("    index-length: ").append(stage.getIndexLength()).append("\n");
             append("    count: ").append(stage.getCount()).append("\n");
             if (!stage.getPath().equals(DEFAULT_PATH))
                 append("    path: ").append(stage.getPath()).append("\n");

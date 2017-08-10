@@ -3,6 +3,7 @@ package com.github.t1.kubee.tools.yaml;
 import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.*;
 
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -63,6 +64,7 @@ public class YamlNode {
         return new YamlMapping((node == null) ? emptyList() : ((MappingNode) node).getValue());
     }
 
+    public Map<String, String> asStringMap() { return asMapping().asStringMap(); }
 
     @Override public String toString() {
         if (node == null)

@@ -4,39 +4,30 @@ import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.model.ReverseProxy.*;
 import com.github.t1.nginx.*;
 import com.github.t1.nginx.NginxConfig.*;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.*;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.stream.Stream;
 
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway.ReloadMode.*;
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static java.lang.ProcessBuilder.Redirect.*;
-import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
-import static javax.ws.rs.core.Response.Status.*;
 
 /**
  * see https://www.nginx.com/resources/admin-guide/load-balancer/
  */
 @Slf4j
 public class LoadBalancerGateway {
-    private static final Path DEFAULT_NGINX_CONFIG_PATH = Paths.get("/usr/local/etc/nginx/nginx.conf");
+    Map<String, LoadBalancerConfigAdapter> configAdapters = new LinkedHashMap<>();
 
-    Path nginxConfigPath = DEFAULT_NGINX_CONFIG_PATH;
+    LoadBalancerConfigAdapter nginx(Stage stage) {
+        return configAdapters.computeIfAbsent(stage.getName(), name -> new LoadBalancerConfigAdapter(stage));
+    }
 
-    // TODO make this (and the port) configurable
-    Callable<String> reloadMode = service;
-
-    private NginxConfig readNginxConfig() { return NginxConfig.readFrom(nginxConfigPath.toUri()); }
+    private NginxConfig read(Stage stage) { return nginx(stage).read(); }
 
 
-    public List<LoadBalancer> getLoadBalancers() {
-        return readNginxConfig().upstreams().map(this::buildLoadBalancer).collect(toList());
+    public Stream<LoadBalancer> loadBalancers(Stage stage) {
+        return read(stage).upstreams().map(this::buildLoadBalancer);
     }
 
     private LoadBalancer buildLoadBalancer(NginxUpstream server) {
@@ -49,8 +40,8 @@ public class LoadBalancerGateway {
     }
 
 
-    public List<ReverseProxy> getReverseProxies() {
-        return readNginxConfig().getServers().stream().map(this::buildReverseProxy).collect(toList());
+    public Stream<ReverseProxy> reverseProxies(Stage stage) {
+        return read(stage).getServers().stream().map(this::buildReverseProxy);
     }
 
     private ReverseProxy buildReverseProxy(NginxServer server) {
@@ -67,58 +58,13 @@ public class LoadBalancerGateway {
                        .build();
     }
 
+
     public LoadBalancerRemoveAction from(String deployableName, Stage stage) {
-        return new LoadBalancerRemoveAction(readNginxConfig(), deployableName, stage, this::updateNginx);
+        return new LoadBalancerRemoveAction(read(stage), deployableName, stage, nginx(stage)::update);
     }
+
 
     public LoadBalancerAddAction to(String deployableName, Stage stage) {
-        return new LoadBalancerAddAction(readNginxConfig(), deployableName, stage, this::updateNginx);
-    }
-
-    private void updateNginx(NginxConfig config) {
-        writeNginxConfig(config);
-        nginxReload();
-    }
-
-    @SneakyThrows(IOException.class) private void writeNginxConfig(NginxConfig config) {
-        log.debug("write config");
-        Files.write(nginxConfigPath, config.toString().getBytes());
-    }
-
-    @SneakyThrows(Exception.class) private void nginxReload() {
-        log.debug("reload nginx");
-        String result = reloadMode.call();
-        if (result != null)
-            throw problem(CONFLICT).detail("failed to reload load balancer: " + result).exception();
-    }
-
-    enum ReloadMode implements Callable<String> {
-        service {
-            @Override public String call() { return new NginxReloadService.Adapter().call(); }
-        },
-
-        setUserIdScript {
-            @Override public String call() { return run("nginx-reload"); }
-        },
-
-        direct {
-            @Override public String call() { return run("/usr/local/bin/nginx", "-s", "reload"); }
-        };
-
-        private static String run(String... command) {
-            try {
-                ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(INHERIT);
-                Process process = builder.start();
-                boolean inTime = process.waitFor(10, SECONDS);
-                if (!inTime)
-                    return "could not reload nginx in time";
-                if (process.exitValue() != 0)
-                    return "nginx reload with error";
-                return null;
-            } catch (InterruptedException | IOException e) {
-                log.warn("reload failed", e);
-                return "reload failed: " + e.getMessage();
-            }
-        }
+        return new LoadBalancerAddAction(read(stage), deployableName, stage, nginx(stage)::update);
     }
 }
