@@ -9,8 +9,6 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-
 @Slf4j
 public class LoadBalancerRemoveAction extends LoadBalancerAction {
     LoadBalancerRemoveAction(NginxConfig config, String deployableName, Stage stage, Consumer<NginxConfig> then) {
@@ -21,24 +19,30 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
 
     private void removeTarget(HostPort hostPort) {
         log.debug("remove {} from lb {}", hostPort, loadBalancerName());
-        NginxServer server = server(hostPort)
-                .orElseThrow(() -> badRequest().detail("no proxy found for " + hostPort).exception());
-        HostPort location = HostPort.of(server
-                .location("/")
-                .orElseThrow(() -> badRequest().detail("proxy " + hostPort + " has no location '/'").exception())
-                .getProxyPass());
-        log.debug("found server {} for {}", location, hostPort);
+        hostPort = resolveProxy(hostPort);
         Optional<NginxUpstream> upstreamOptional = upstream(loadBalancerName());
         if (upstreamOptional.isPresent()) {
             NginxUpstream upstream = upstreamOptional.get();
-            if (upstream.getServers().contains(location)) {
-                removeLocation(loadBalancerName(), upstream, location);
+            if (upstream.getServers().contains(hostPort)) {
+                removeLocation(loadBalancerName(), upstream, hostPort);
             } else {
-                log.debug("server {} not in upstream {}", location, loadBalancerName());
+                log.debug("server {} not in upstream {}", hostPort, loadBalancerName());
             }
         } else {
             log.debug("no upstream '{}' found", loadBalancerName());
         }
+    }
+
+    private HostPort resolveProxy(HostPort hostPort) {
+        return server(hostPort)
+                .flatMap(server -> server.location("/"))
+                .map(location -> {
+                    log.debug("found server {} for {}", location, hostPort);
+                    return location;
+                })
+                .map(NginxServerLocation::getProxyPass)
+                .map(HostPort::of)
+                .orElse(hostPort);
     }
 
     private void removeLocation(String name, NginxUpstream upstream, HostPort hostPort) {
