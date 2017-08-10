@@ -16,6 +16,8 @@ import static java.util.concurrent.TimeUnit.*;
 @Slf4j
 class LoadBalancerConfigAdapter {
     static final String RELOAD_MODE = "reload";
+    static final String CONFIG_PATH = "config-path";
+    private static final Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
 
     final Path configPath;
 
@@ -30,6 +32,12 @@ class LoadBalancerConfigAdapter {
         this.reload = reloadMode(stage);
     }
 
+    private static Path configPath(Stage stage) {
+        return NGINX_ETC.resolve(stage.getLoadBalancerConfig()
+                                      .getOrDefault(CONFIG_PATH,
+                                               stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
+    }
+
     private Reload reloadMode(Stage stage) {
         String mode = stage.getLoadBalancerConfig().getOrDefault(RELOAD_MODE, "service");
         switch (mode) {
@@ -42,26 +50,6 @@ class LoadBalancerConfigAdapter {
         default:
             throw new IllegalArgumentException("unknown reload mode: " + mode);
         }
-    }
-
-
-    static class ServiceReload implements Reload {
-        static final String RELOAD_SERVICE_PORT = "port";
-
-        final NginxReloadService.Adapter adapter;
-
-        private ServiceReload(Stage stage) { this.adapter = new NginxReloadService.Adapter(reloadServicePort(stage)); }
-
-        private int reloadServicePort(Stage stage) {
-            return Optional.ofNullable(stage.getLoadBalancerConfig().get(RELOAD_SERVICE_PORT))
-                           .map(Integer::parseInt).orElse(NginxReloadService.DEFAULT_PORT);
-        }
-
-        @Override public String reload() { return adapter.call(); }
-    }
-
-    private static Path configPath(Stage stage) {
-        return Paths.get("/usr/local/etc/nginx").resolve(stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf");
     }
 
 
@@ -85,11 +73,26 @@ class LoadBalancerConfigAdapter {
     }
 
 
-    class DirectReload implements Reload {
+    static class ServiceReload implements Reload {
+        static final String RELOAD_SERVICE_PORT = "port";
+
+        final NginxReloadService.Adapter adapter;
+
+        private ServiceReload(Stage stage) { this.adapter = new NginxReloadService.Adapter(reloadServicePort(stage)); }
+
+        private int reloadServicePort(Stage stage) {
+            return Optional.ofNullable(stage.getLoadBalancerConfig().get(RELOAD_SERVICE_PORT))
+                           .map(Integer::parseInt).orElse(NginxReloadService.DEFAULT_PORT);
+        }
+
+        @Override public String reload() { return adapter.call(); }
+    }
+
+    static class DirectReload implements Reload {
         @Override public String reload() { return run("/usr/local/bin/nginx", "-s", "reload"); }
     }
 
-    class SetUserIdScriptReload implements Reload {
+    static class SetUserIdScriptReload implements Reload {
         @Override public String reload() { return run("nginx-reload"); }
     }
 

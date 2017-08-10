@@ -4,4 +4,5 @@ target/
 cluster-config.yaml
 nginx.conf
 nginxqa.conf
+nginx-mib.conf
 src/test/node/deployments.html

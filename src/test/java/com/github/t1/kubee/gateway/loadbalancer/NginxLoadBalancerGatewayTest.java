@@ -348,6 +348,18 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
+    public void shouldCreateConfigAdapterWithPath() throws Exception {
+        Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(CONFIG_PATH, "/tmp/nginx.conf").build();
+        gateway.configAdapters.clear();
+
+        gateway.nginx(stage);
+
+        assertThat(gateway.configAdapters).containsKey(stage.getName());
+        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        assertThat(adapter.configPath).hasToString("/tmp/nginx.conf");
+    }
+
+    @Test
     public void shouldCreateConfigAdapterWithPort() throws Exception {
         Stage stage = Stage.builder().name("DUMMY").suffix("dummy").loadBalancerConfig(
                 ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
