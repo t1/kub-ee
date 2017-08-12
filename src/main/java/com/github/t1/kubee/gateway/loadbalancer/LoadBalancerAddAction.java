@@ -25,8 +25,8 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
 
         induceProxyLocation();
 
-        URI serverUri = getProxyServerUri(hostPort);
-        NginxUpstream with = addUpstreamServer(upstream, HostPort.of(serverUri));
+        hostPort = resolveProxy(hostPort);
+        NginxUpstream with = addUpstreamServer(upstream, hostPort);
         config(config -> config.withUpstream(with));
         done();
     }
@@ -59,20 +59,6 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
     }
 
     private NginxUpstream createUpstream(String name) { return NginxUpstream.named(name).withMethod("least_conn"); }
-
-    private URI getProxyServerUri(HostPort hostPort) {
-        List<NginxServerLocation> locations = servers()
-                .filter(s -> s.getName().equals(hostPort.getHost()))
-                .filter(s -> s.getListen() == hostPort.getPort())
-                .findAny()
-                .orElseThrow(() -> badRequest().detail("No server found for " + hostPort).exception())
-                .getLocations();
-        if (locations.size() != 1)
-            throw badRequest()
-                    .detail("Expected exactly one location on server " + hostPort + " but found " + locations)
-                    .exception();
-        return locations.get(0).getProxyPass();
-    }
 
     private NginxUpstream addUpstreamServer(NginxUpstream upstream, HostPort hostPort) {
         if (upstream.getServers().contains(hostPort))

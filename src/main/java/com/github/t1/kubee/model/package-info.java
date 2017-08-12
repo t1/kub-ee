@@ -1,6 +1,8 @@
 @DependsUpon(packagesOf = {
         com.github.t1.kubee.tools.http.ProblemDetail.class,
         com.github.t1.kubee.tools.yaml.YamlDocument.class,
+
+        org.yaml.snakeyaml.nodes.Node.class,
 })
 package com.github.t1.kubee.model;
 

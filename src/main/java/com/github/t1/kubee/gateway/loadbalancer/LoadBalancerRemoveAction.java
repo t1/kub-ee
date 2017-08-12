@@ -33,18 +33,6 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
         }
     }
 
-    private HostPort resolveProxy(HostPort hostPort) {
-        return server(hostPort)
-                .flatMap(server -> server.location("/"))
-                .map(location -> {
-                    log.debug("found server {} for {}", location, hostPort);
-                    return location;
-                })
-                .map(NginxServerLocation::getProxyPass)
-                .map(HostPort::of)
-                .orElse(hostPort);
-    }
-
     private void removeLocation(String name, NginxUpstream upstream, HostPort hostPort) {
         config(config -> config.withoutUpstream(name));
         config(config -> (upstream.getServers().size() > 1)

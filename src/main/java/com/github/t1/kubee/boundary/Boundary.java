@@ -51,7 +51,7 @@ public class Boundary {
 
 
     @GET @Path("/load-balancers") public List<LoadBalancer> getLoadBalancers() {
-        return controller.loadBalancers(stages()).collect(toList());
+        return controller.loadBalancers(stages()).distinct().collect(toList());
     }
 
     @GET @Path("/reverse-proxies")
@@ -94,7 +94,7 @@ public class Boundary {
 
 
     @GET @Path("/deployments") public List<Deployment> getDeployments() {
-        return clusters.stream().flatMap(this::fromCluster).collect(toList());
+        return clusters.stream().flatMap(this::fromCluster).sorted().collect(toList());
     }
 
     private Stream<Deployment> fromCluster(Cluster cluster) {

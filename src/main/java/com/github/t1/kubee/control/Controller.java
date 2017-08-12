@@ -1,20 +1,24 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
-import com.github.t1.kubee.gateway.deployer.DeployerGateway.*;
+import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Audits.Audit;
+import com.github.t1.kubee.model.Audits.Audit.Change;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import java.net.*;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.model.VersionStatus.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
+import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
@@ -71,7 +75,7 @@ public class Controller {
             out = out.substring(out.indexOf(": ") + 2);
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
-        if (out.startsWith(DeployerNotFoundException.class.getName() + ": "))
+        if (out.startsWith(NotFoundException.class.getName() + ": "))
             out = "deployer not found";
         if (out.startsWith(BadDeployerGatewayException.class.getName() + ": "))
             out = "bad deployer gateway";
@@ -111,12 +115,40 @@ public class Controller {
 
     public void deploy(URI uri, String deployableName, String version, Stage stage) {
         loadBalancing.from(deployableName, stage).removeTarget(uri);
-        deployer.deploy(uri, deployableName, version);
+        Audits audits = deployer.deploy(uri, deployableName, version);
+        check(audits, "deploy", deployableName, version);
         loadBalancing.to(deployableName, stage).addTarget(uri);
     }
 
     public void undeploy(URI uri, String deployableName, Stage stage) {
         loadBalancing.from(deployableName, stage).removeTarget(uri);
-        deployer.undeploy(uri, deployableName);
+        Audits audits = deployer.undeploy(uri, deployableName);
+        check(audits, "undeploy", deployableName, null);
+    }
+
+    private void check(Audits audits, String operation, String name, String version) {
+        String errorPrefix = "expected " + operation + " audit for " + name;
+
+        Optional<Audit> audit = audits.findDeployment(name);
+        if (!audit.isPresent())
+            throw badRequest().detail(errorPrefix).exception();
+
+        String actualOperation = audit.get().getOperation();
+        List<String> expectedOperations = ("deploy".equals(operation))
+                ? asList("add", "change") : singletonList("remove");
+        if (!expectedOperations.contains(actualOperation))
+            throw badRequest().detail(errorPrefix + " to be in " + expectedOperations + " but is a " + actualOperation)
+                              .exception();
+
+        Optional<Change> versionChange = audit.get().findChange("version");
+        if (!versionChange.isPresent())
+            throw badRequest().detail(errorPrefix + " to change version to " + version).exception();
+
+        String newVersion = versionChange.get().getNewValue();
+        if (!Objects.equals(newVersion, version)) {
+            String message = errorPrefix + " to change version to " + version + ", but changed to " + newVersion;
+            throw badRequest().detail(message).exception();
+        }
+        log.debug("audit {} change {} {}", operation, name, versionChange.get());
     }
 }

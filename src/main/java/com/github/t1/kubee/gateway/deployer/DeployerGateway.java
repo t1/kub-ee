@@ -15,11 +15,10 @@ import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.*;
 import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 import static com.github.t1.log.LogLevel.*;
 import static java.util.stream.Collectors.*;
@@ -29,11 +28,7 @@ import static javax.ws.rs.core.Response.Status.Family.*;
 @Logged(level = INFO)
 @Slf4j
 public class DeployerGateway {
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory()
-            // .enable(MINIMIZE_QUOTES)
-            .disable(WRITE_DOC_START_MARKER))
-            .setSerializationInclusion(NON_EMPTY)
-            // preferable to @JsonNaming, but conflicts in container: .setPropertyNamingStrategy(KEBAB_CASE)
+    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory())
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .findAndRegisterModules();
 
@@ -42,17 +37,21 @@ public class DeployerGateway {
     private final Client httpClient = ClientBuilder.newClient();
 
     private String fetchYaml(URI uri) {
-        Response response = httpClient
+        return fetchYaml(uri, Invocation.Builder::get);
+    }
+
+    private String fetchYaml(URI uri, Function<Invocation.Builder, Response> method) {
+        Invocation.Builder invocation = httpClient
                 .target(uri)
                 .request()
-                .accept(APPLICATION_YAML_TYPE)
-                .get();
+                .accept(APPLICATION_YAML_TYPE);
+        Response response = method.apply(invocation);
         try {
             String contentType = response.getHeaderString("Content-Type");
             String string = response.readEntity(String.class);
             if (NOT_FOUND.getStatusCode() == response.getStatus()) {
                 log.info("{} returns 404 Not Found: {}", uri, string);
-                throw new DeployerNotFoundException();
+                throw new NotFoundException();
             }
             if (BAD_GATEWAY.getStatusCode() == response.getStatus()) {
                 log.info("{} returns 502 Bad Gateway: {}", uri, string);
@@ -70,9 +69,6 @@ public class DeployerGateway {
         }
     }
 
-    public static class DeployerNotFoundException extends NotFoundException {
-    }
-
     public static class BadDeployerGatewayException extends ServerErrorException {
         private BadDeployerGatewayException(String message) { super(message, BAD_GATEWAY); }
     }
@@ -86,11 +82,11 @@ public class DeployerGateway {
                             .queryParam("artifactId", artifactId)
                             .queryParam("groupId", groupId)
                             .build();
-        return convertToVersionList(fetchYaml(uri));
+        return toVersionList(fetchYaml(uri));
     }
 
     @SneakyThrows(IOException.class)
-    private List<String> convertToVersionList(String string) {
+    private List<String> toVersionList(String string) {
         return YAML.readValue(string, new TypeReference<List<String>>() {});
     }
 
@@ -135,12 +131,12 @@ public class DeployerGateway {
                                   .build());
     }
 
-    List<Deployable> fetchDeploymentsFrom(URI uri) { return convertToDeployableList(fetchYaml(uri)); }
+    List<Deployable> fetchDeploymentsFrom(URI uri) { return toDeployableList(fetchYaml(uri)); }
 
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 
     @SneakyThrows(IOException.class)
-    private List<Deployable> convertToDeployableList(String string) {
+    private List<Deployable> toDeployableList(String string) {
         return YAML.readValue(string, Deployables.class)
                    .getDeployables()
                    .entrySet()
@@ -157,37 +153,15 @@ public class DeployerGateway {
     }
 
 
-    public void deploy(URI uri, String deploymentName, String version) {
-        postDeployer(uri, deploymentName, "version", version);
+    public Audits deploy(URI uri, String deploymentName, String version) {
+        return postDeployer(uri, deploymentName, "version", version);
     }
 
-    public void undeploy(URI uri, String deploymentName) {
-        postDeployer(uri, deploymentName, "state", "undeployed");
+    public Audits undeploy(URI uri, String deploymentName) {
+        return postDeployer(uri, deploymentName, "state", "undeployed");
     }
 
-    private void postDeployer(URI uri, String deploymentName, String key, String value) {
-        Response response = httpClient
-                .target(uri)
-                .request()
-                .accept(APPLICATION_YAML_TYPE)
-                .post(Entity.form(new Form(deploymentName + "." + key, value)));
-        try {
-            String contentType = response.getHeaderString("Content-Type");
-            String string = response.readEntity(String.class);
-            if (NOT_FOUND.getStatusCode() == response.getStatus()) {
-                log.info("{} returns 404 Not Found: {}", uri, string);
-                throw new NotFoundException();
-            }
-            if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw badGateway()
-                        .detail("got " + statusInfo(response) + " from " + uri + ": " + string)
-                        .exception();
-            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
-                throw badGateway()
-                        .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
-                        .exception();
-        } finally {
-            response.close();
-        }
+    private Audits postDeployer(URI uri, String deploymentName, String key, String value) {
+        return Audits.parseYaml(fetchYaml(uri, i -> i.post(Entity.form(new Form(deploymentName + "." + key, value)))));
     }
 }

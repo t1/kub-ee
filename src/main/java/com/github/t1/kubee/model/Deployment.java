@@ -3,12 +3,14 @@ package com.github.t1.kubee.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
+import java.util.Comparator;
+
 /**
  * Meta data about an application deployed on a cluster node
  */
 @Value
 @Builder(toBuilder = true)
-public class Deployment {
+public class Deployment implements Comparable<Deployment> {
     /** the name and context root of the deployment */
     String name;
 
@@ -39,4 +41,8 @@ public class Deployment {
     public String id() { return node.id() + ":" + name; }
 
     public String gav() { return groupId + ":" + artifactId + ":" + version; }
+
+    @Override public int compareTo(Deployment that) {
+        return Comparator.comparing(Deployment::getName).compare(this, that);
+    }
 }
