@@ -5,7 +5,7 @@ import com.github.t1.nginx.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.github.t1.kubee.tools.http.ProblemDetail.*;
@@ -21,24 +21,27 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
 
     private void addTarget(HostPort hostPort) {
         log.debug("add {} to lb {}", hostPort, loadBalancerName());
-        NginxUpstream upstream = upstream();
+        NginxUpstream upstream = removeOrCreateUpstream();
 
         induceProxyLocation();
 
         hostPort = resolveProxy(hostPort);
-        NginxUpstream with = addUpstreamServer(upstream, hostPort);
+        NginxUpstream with = withUpstreamServer(upstream, hostPort);
         config(config -> config.withUpstream(with));
         done();
     }
 
-    private NginxUpstream upstream() {
+    private NginxUpstream removeOrCreateUpstream() {
         Optional<NginxUpstream> upstream = upstream(loadBalancerName());
-        if (upstream.isPresent()) {
-            config(config -> config.withoutUpstream(loadBalancerName()));
-            return upstream.get();
-        } else {
+        if (!upstream.isPresent())
             return createUpstream(loadBalancerName());
-        }
+        config(config -> config.withoutUpstream(loadBalancerName()));
+        return upstream.get();
+    }
+
+    private NginxUpstream createUpstream(String name) {
+        log.debug("create upstream {}", name);
+        return NginxUpstream.named(name).withMethod("least_conn");
     }
 
     private void induceProxyLocation() {
@@ -58,9 +61,7 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
                         + "            proxy_set_header X-Real-IP $remote_addr;");
     }
 
-    private NginxUpstream createUpstream(String name) { return NginxUpstream.named(name).withMethod("least_conn"); }
-
-    private NginxUpstream addUpstreamServer(NginxUpstream upstream, HostPort hostPort) {
+    private NginxUpstream withUpstreamServer(NginxUpstream upstream, HostPort hostPort) {
         if (upstream.getServers().contains(hostPort))
             throw badRequest().detail("server " + hostPort + " already in lb: " + upstream.getName()).exception();
         return upstream.withServer(hostPort);

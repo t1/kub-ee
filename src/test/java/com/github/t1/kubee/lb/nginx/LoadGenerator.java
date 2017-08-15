@@ -12,15 +12,16 @@ import static javax.ws.rs.core.Response.Status.Family.*;
 public class LoadGenerator implements Runnable {
     public static void main(String[] args) throws Exception {
         LoadGenerator generator = new LoadGenerator();
+        System.out.println("warmup");
         generator.warmup();
         Statistics statistics = new Statistics();
         System.out.println("start");
         Instant start = now();
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 100; i++) {
             generator.run();
             statistics.add(generator.time, generator.result);
             // System.out.println(generator.time.toMillis() + ": " + generator.result);
-            if (i % 100 == 0)
+            if (i % 10 == 0)
                 System.out.print(".");
             // Thread.sleep(3);
         }
@@ -38,7 +39,7 @@ public class LoadGenerator implements Runnable {
     }
 
     @Override public void run() {
-        WebTarget target = client.target("http://jolokia:80/read/java.lang:type=Memory/HeapMemoryUsage");
+        WebTarget target = client.target("http://ping?sleep=100");
         Instant start = now();
         this.result = fetch(target);
         this.time = Duration.between(start, now());
@@ -48,7 +49,7 @@ public class LoadGenerator implements Runnable {
         Response response = null;
         try {
             // response = completable(target.request().async().get()).get(10, MILLISECONDS);
-            response = target.request().get();
+            response = target.request("application/yaml").get();
             // System.out.println(response.getHeaderString("Content-Type"));
             if (response.getStatusInfo().getFamily() == SUCCESSFUL)
                 return "success";
