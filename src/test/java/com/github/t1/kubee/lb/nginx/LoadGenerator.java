@@ -17,7 +17,7 @@ public class LoadGenerator implements Runnable {
         Statistics statistics = new Statistics();
         System.out.println("start");
         Instant start = now();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 300; i++) {
             generator.run();
             statistics.add(generator.time, generator.result);
             // System.out.println(generator.time.toMillis() + ": " + generator.result);

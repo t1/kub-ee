@@ -15,7 +15,9 @@ public class Audits {
     List<Audit> audits;
 
     public Optional<Audit> findDeployment(String name) {
-        return audits.stream().filter(audit -> audit.getName().equals(name)).findAny();
+        return (audits == null)
+                ? Optional.empty()
+                : audits.stream().filter(audit -> audit.getName().equals(name)).findAny();
     }
 
     @Value

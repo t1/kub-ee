@@ -28,6 +28,7 @@ public class Controller {
     @SuppressWarnings("SpellCheckingInspection") private static final String UNKNOWN_HOST_SUFFIX
             = ": nodename nor servname provided, or not known";
 
+    @Inject List<Cluster> clusters;
     @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
 
@@ -113,20 +114,37 @@ public class Controller {
     }
 
 
-    public void deploy(URI uri, String deployableName, String version, Stage stage) {
-        loadBalancing.from(deployableName, stage).removeTarget(uri);
-        Audits audits = deployer.deploy(uri, deployableName, version);
-        check(audits, "deploy", deployableName, version);
-        loadBalancing.to(deployableName, stage).addTarget(uri);
+    public void deploy(DeploymentId id, String versionAfter) {
+        ClusterNode node = id.node(clusters);
+        String versionBefore = deployer.fetchVersion(id.deploymentName(), node);
+        try {
+            if (versionAfter.equals(versionBefore)) {
+                log.info("redeploy {} @ {} on {}", id.deploymentName(), versionBefore, node);
+                undeploy(id);
+            } else {
+                log.info("update {} on {} from {} to {}", id.deploymentName(), node, versionBefore, versionAfter);
+                loadBalancing.from(id.deploymentName(), node.getStage()).removeTarget(node.uri());
+            }
+            Audits audits = deployer.deploy(node, id.deploymentName(), versionAfter);
+            checkAudits(audits, "deploy", id.deploymentName(), versionAfter);
+        } catch (RuntimeException e) {
+            log.warn("rollback {} on {} to {} failed: {}", id.deploymentName(), node, versionBefore, e.getMessage());
+            deployer.undeploy(node, id.deploymentName());
+            deployer.deploy(node, id.deploymentName(), versionBefore);
+            throw e;
+        } finally {
+            loadBalancing.to(id.deploymentName(), node.getStage()).addTarget(node.uri());
+        }
     }
 
-    public void undeploy(URI uri, String deployableName, Stage stage) {
-        loadBalancing.from(deployableName, stage).removeTarget(uri);
-        Audits audits = deployer.undeploy(uri, deployableName);
-        check(audits, "undeploy", deployableName, null);
+    public void undeploy(DeploymentId id) {
+        ClusterNode node = id.node(clusters);
+        loadBalancing.from(id.deploymentName(), node.getStage()).removeTarget(node.uri());
+        Audits audits = deployer.undeploy(node, id.deploymentName());
+        checkAudits(audits, "undeploy", id.deploymentName(), null);
     }
 
-    private void check(Audits audits, String operation, String name, String version) {
+    private void checkAudits(Audits audits, String operation, String name, String version) {
         String errorPrefix = "expected " + operation + " audit for " + name;
 
         Optional<Audit> audit = audits.findDeployment(name);

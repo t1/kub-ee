@@ -11,7 +11,6 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -137,19 +136,16 @@ public class Boundary {
             @PathParam("id") DeploymentId id,
             @FormParam("version") String version,
             @FormParam("mode") DeploymentMode mode) {
-
         if (mode == null)
             throw badRequest().detail("mode is a required parameter").exception();
-        URI deployerUri = id.node(clusters).deployerUri();
-        Stage stage = id.stage(clusters);
         switch (mode) {
         case deploy:
             if (version == null)
                 throw badRequest().detail("version is a required parameter when deploying").exception();
-            controller.deploy(deployerUri, id.deploymentName(), version, stage);
+            controller.deploy(id, version);
             break;
         case undeploy:
-            controller.undeploy(deployerUri, id.deploymentName(), stage);
+            controller.undeploy(id);
             break;
         }
     }

@@ -69,6 +69,15 @@ public class DeployerGateway {
         }
     }
 
+    public String fetchVersion(String deployableName, ClusterNode node) {
+        return fetchDeploymentsFrom(node.deployerUri())
+                .stream()
+                .filter(deployable -> deployable.getName().equals(deployableName))
+                .findAny()
+                .map(Deployable::getVersion)
+                .orElse(null);
+    }
+
     public static class BadDeployerGatewayException extends ServerErrorException {
         private BadDeployerGatewayException(String message) { super(message, BAD_GATEWAY); }
     }
@@ -153,15 +162,16 @@ public class DeployerGateway {
     }
 
 
-    public Audits deploy(URI uri, String deploymentName, String version) {
-        return postDeployer(uri, deploymentName, "version", version);
+    public Audits deploy(ClusterNode node, String deploymentName, String version) {
+        return postDeployer(node, deploymentName, "version", version);
     }
 
-    public Audits undeploy(URI uri, String deploymentName) {
-        return postDeployer(uri, deploymentName, "state", "undeployed");
+    public Audits undeploy(ClusterNode node, String deploymentName) {
+        return postDeployer(node, deploymentName, "state", "undeployed");
     }
 
-    private Audits postDeployer(URI uri, String deploymentName, String key, String value) {
-        return Audits.parseYaml(fetchYaml(uri, i -> i.post(Entity.form(new Form(deploymentName + "." + key, value)))));
+    private Audits postDeployer(ClusterNode node, String deploymentName, String key, String value) {
+        return Audits.parseYaml(fetchYaml(node.deployerUri(),
+                i -> i.post(Entity.form(new Form(deploymentName + "." + key, value)))));
     }
 }
