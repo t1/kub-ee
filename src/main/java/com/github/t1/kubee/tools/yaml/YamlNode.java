@@ -19,6 +19,31 @@ public class YamlNode {
 
     private final Node node;
 
+    @Override public String toString() {
+        if (node == null)
+            return "NullNode";
+        StringBuilder out = new StringBuilder();
+        out.append(node.getNodeId()).append(":");
+        switch (node.getNodeId()) {
+        case scalar:
+            out.append('\'').append(asString()).append('\'');
+            break;
+        case sequence:
+            out.append(asSequence());
+            break;
+        case mapping:
+            out.append(asMapping());
+            break;
+        case anchor:
+            out.append("anchor");
+            break;
+        }
+        return out.toString();
+    }
+
+
+    public YamlTag getTag() { return new YamlTag(node.getTag()); }
+
 
     public boolean isNull() { return node == null; }
 
@@ -65,26 +90,4 @@ public class YamlNode {
     }
 
     public Map<String, String> asStringMap() { return asMapping().asStringMap(); }
-
-    @Override public String toString() {
-        if (node == null)
-            return "NullNode";
-        StringBuilder out = new StringBuilder();
-        out.append(node.getNodeId()).append(":");
-        switch (node.getNodeId()) {
-        case scalar:
-            out.append('\'').append(asString()).append('\'');
-            break;
-        case sequence:
-            out.append(asSequence());
-            break;
-        case mapping:
-            out.append(asMapping());
-            break;
-        case anchor:
-            out.append("anchor");
-            break;
-        }
-        return out.toString();
-    }
 }

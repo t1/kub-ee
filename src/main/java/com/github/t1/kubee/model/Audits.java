@@ -1,13 +1,11 @@
 package com.github.t1.kubee.model;
 
-import com.github.t1.kubee.tools.yaml.YamlParser.*;
+import com.github.t1.kubee.tools.yaml.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.nodes.Node;
 
+import java.io.StringReader;
 import java.util.*;
-
-import static com.github.t1.kubee.tools.yaml.YamlParser.*;
 
 @Slf4j
 @Data
@@ -26,8 +24,8 @@ public class Audits {
 
         @Override public String toString() { return "\"" + text + "\""; }
 
-        private static Warning from(Node node) {
-            Map<String, String> map = asStringMap(node);
+        private static Warning from(YamlNode node) {
+            Map<String, String> map = node.asStringMap();
             return new Warning(map.get("text"));
         }
     }
@@ -55,24 +53,24 @@ public class Audits {
 
             @Override public String toString() { return name + ":" + oldValue + "->" + newValue; }
 
-            public static Change from(Node node) {
+            public static Change from(YamlNode node) {
                 ChangeBuilder change = change();
-                Mapping.mapString("name", change::name)
-                       .mapString("old-value", change::oldValue)
-                       .mapString("new-value", change::newValue)
-                       .from(node);
+                node.asMapping()
+                    .mapString("name", change::name)
+                    .mapString("old-value", change::oldValue)
+                    .mapString("new-value", change::newValue);
                 return change.build();
             }
         }
 
-        public static Audit from(Node node) {
+        public static Audit from(YamlNode node) {
             AuditBuilder audit = audit();
-            audit.type(node.getTag().getValue());
-            Mapping.mapString("operation", audit::operation)
-                   .mapString("name", audit::name)
-                   .mapString("category", audit::name)
-                   .mapSequence("changes", audit::changes, Change::from)
-                   .from(node);
+            audit.type(node.getTag().asString());
+            node.asMapping()
+                .mapString("operation", audit::operation)
+                .mapString("name", audit::name)
+                .mapString("category", audit::name)
+                .mapSequence("changes", audit::changes, Change::from);
             return audit.build();
         }
     }
@@ -83,10 +81,11 @@ public class Audits {
      */
     public static Audits parseYaml(String yaml) {
         Audits audits = new Audits();
-        Mapping.mapString("processState", audits::setProcessState)
-               .mapSequence("warnings", audits::setWarnings, Warning::from)
-               .mapSequence("audits", audits::setAudits, Audit::from)
-               .from(parse(yaml));
+        YamlDocument document = YamlDocument.from(new StringReader(yaml));
+        document.asMapping()
+                .mapString("processState", audits::setProcessState)
+                .mapSequence("warnings", audits::setWarnings, Warning::from)
+                .mapSequence("audits", audits::setAudits, Audit::from);
         return audits;
     }
 }

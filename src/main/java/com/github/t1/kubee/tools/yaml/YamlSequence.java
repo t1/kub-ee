@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.Node;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Collections.*;
@@ -18,7 +19,7 @@ public class YamlSequence {
 
     public Stream<YamlNode> stream() { return nodes.stream().map(YamlNode::new); }
 
-    @Override public String toString() {
-        return "{" + stream().map(YamlNode::toString).collect(joining(",")) + "}";
-    }
+    @Override public String toString() { return stream().map(YamlNode::toString).collect(joining(",", "{", "}")); }
+
+    public <U> Stream<U> map(Function<YamlNode, U> function) { return stream().map(function); }
 }
