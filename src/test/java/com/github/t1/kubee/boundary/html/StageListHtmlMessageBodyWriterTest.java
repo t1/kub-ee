@@ -18,7 +18,7 @@ public class StageListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        Boundary boundary = BoundaryFactory.createWithClusters();
+        Boundary boundary = BoundaryMockFactory.createWithClusters();
         List<Stage> stages = boundary.getStages();
         OutputStream out = new ByteArrayOutputStream();
 

@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary.html;
 
-import com.github.t1.kubee.boundary.BoundaryFactory;
+import com.github.t1.kubee.boundary.BoundaryMockFactory;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class LinkListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        List<Link> links = BoundaryFactory.createWithBaseUri(BASE_URI).getLinks();
+        List<Link> links = BoundaryMockFactory.createWithBaseUri(BASE_URI).getLinks();
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(links, null, null, null, null, null, out);

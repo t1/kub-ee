@@ -1,5 +1,6 @@
 package com.github.t1.kubee.boundary.html;
 
+import com.github.t1.kubee.control.Controller;
 import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.tools.html.*;
 import com.github.t1.kubee.tools.html.Table.TableRow;
@@ -22,7 +23,7 @@ import static javax.ws.rs.core.MediaType.*;
 @Provider
 @Produces(TEXT_HTML)
 public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<List<Deployment>> {
-    @Inject List<Cluster> clusters;
+    @Inject Controller controller;
     @Context UriInfo uriInfo;
 
     @Override
@@ -69,7 +70,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private Collection<Stage> mergedStages() {
             Map<String, Stage> map = new LinkedHashMap<>();
-            clusters.stream().flatMap(Cluster::stages)
+            controller.clusters().flatMap(Cluster::stages)
                     .map(this::copyNameCountLength)
                     .forEach(stage -> map.merge(stage.getName(), stage, Stage::largerCount));
             return map.values();
@@ -130,7 +131,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private void tableBody() {
-            clusters.forEach(cluster -> {
+            controller.clusters().forEach(cluster -> {
                 List<String> deployableNames = deployableNames(cluster);
                 deployableNames.forEach(deployableName -> {
                     TableRow row = table.tr();

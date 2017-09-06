@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.*;
 @Path("/")
 @Stateless
 public class Boundary {
-    @Inject List<Cluster> clusters;
     @Context UriInfo uriInfo;
 
     @Inject Controller controller;
@@ -57,26 +56,26 @@ public class Boundary {
     public List<ReverseProxy> getReverseProxies() { return controller.reverseProxies(stages()).collect(toList()); }
 
 
-    @GET @Path("/clusters") public List<Cluster> getClusters() { return clusters; }
+    @GET @Path("/clusters") public List<Cluster> getClusters() { return controller.clusters().collect(toList()); }
 
     @GET @Path("/clusters/{name}") public Cluster getCluster(@PathParam("name") String name) {
-        return clusters.stream()
-                       .filter(cluster -> cluster.getSimpleName().equals(name))
-                       .findFirst()
-                       .orElseThrow(() -> new NotFoundException("cluster not found: '" + name + "'"));
+        return controller.clusters()
+                         .filter(cluster -> cluster.getSimpleName().equals(name))
+                         .findFirst()
+                         .orElseThrow(() -> new NotFoundException("cluster not found: '" + name + "'"));
     }
 
 
     @GET @Path("/slots") public List<Slot> getSlots() {
-        return clusters.stream().map(Cluster::getSlot).sorted().distinct().collect(toList());
+        return controller.clusters().map(Cluster::getSlot).sorted().distinct().collect(toList());
     }
 
     @GET @Path("/slots/{name}") public Slot getSlot(@PathParam("name") String name) {
-        return clusters.stream()
-                       .map(Cluster::getSlot)
-                       .filter(slot -> slot.getName().equals(name))
-                       .findFirst()
-                       .orElseThrow(() -> new NotFoundException("slot not found: '" + name + "'"));
+        return controller.clusters()
+                         .map(Cluster::getSlot)
+                         .filter(slot -> slot.getName().equals(name))
+                         .findFirst()
+                         .orElseThrow(() -> new NotFoundException("slot not found: '" + name + "'"));
     }
 
 
@@ -89,11 +88,11 @@ public class Boundary {
                 .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
 
-    private Stream<Stage> stages() { return clusters.stream().flatMap(Cluster::stages).sorted().distinct(); }
+    private Stream<Stage> stages() { return controller.clusters().flatMap(Cluster::stages).sorted().distinct(); }
 
 
     @GET @Path("/deployments") public List<Deployment> getDeployments() {
-        return clusters.stream().flatMap(this::fromCluster).sorted().collect(toList());
+        return controller.clusters().flatMap(this::fromCluster).sorted().collect(toList());
     }
 
     private Stream<Deployment> fromCluster(Cluster cluster) {
@@ -101,7 +100,7 @@ public class Boundary {
     }
 
     @GET @Path("/deployments/{id}") public GetDeploymentResponse getDeployment(@PathParam("id") DeploymentId id) {
-        ClusterNode node = id.node(clusters);
+        ClusterNode node = id.node(controller.clusters());
         Deployment deployment = controller
                 .fetchDeploymentsOn(node)
                 .filter(id::matchName)

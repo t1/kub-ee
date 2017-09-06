@@ -9,14 +9,12 @@ import java.io.*;
 import java.net.*;
 import java.util.List;
 
+import static com.github.t1.kubee.control.ControllerMockFactory.*;
 import static java.util.Arrays.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class DeploymentListHtmlMessageBodyWriterTest {
-    private static final String EVENTS = " draggable=\"true\" ondragstart=\"drag_start(event);\" "
-            + "ondragend=\"drag_end(event);\" ondragenter=\"drag_enter(event);\" ondragover=\"drag_over(event);\" "
-            + "ondragleave=\"drag_leave(event);\" ondrop=\"drop_handler(event);";
     private DeploymentListHtmlMessageBodyWriter writer = new DeploymentListHtmlMessageBodyWriter();
 
     @Before
@@ -24,6 +22,9 @@ public class DeploymentListHtmlMessageBodyWriterTest {
         writer.uriInfo = mock(UriInfo.class);
         when(writer.uriInfo.getBaseUri()).thenReturn(URI.create("http://localhost:8080/kub-ee/api/"));
     }
+
+    private void givenClusters(List<Cluster> clusters) { writer.controller = create(clusters); }
+
 
     private DeploymentBuilder createDeployment(String name) {
         return Deployment.builder()
@@ -34,6 +35,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
     }
 
     private DeploymentBuilder createDeployment() { return Deployment.builder().groupId("com.github.t1").type("war"); }
+
 
     @Test
     public void shouldWriteSimple() throws Exception {
@@ -46,7 +48,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
                              .slot(Slot.builder().name("2").http(2).build())
                              .stage(prod)
                              .build();
-        writer.clusters = asList(one, two);
+        givenClusters(asList(one, two));
         ClusterNode prod1 = prod.index(one, 1);
         ClusterNode prod2 = prod.index(two, 1);
 
@@ -67,10 +69,11 @@ public class DeploymentListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteFull() throws Exception {
-        writer.clusters = ClusterTest.readClusterConfig().clusters();
+        List<Cluster> clusters = ClusterTest.readClusterConfig().clusters();
+        givenClusters(clusters);
 
-        assertThat(writer.clusters).hasSize(4);
-        Cluster a1 = writer.clusters.get(0);
+        assertThat(clusters).hasSize(4);
+        Cluster a1 = clusters.get(0);
         assertThat(a1.id()).isEqualTo("server-a:1");
         ClusterNode a1_dev_1 = a1.getStages().get(0).index(a1, 1);
         ClusterNode a1_dev_2 = a1.getStages().get(0).index(a1, 2);
@@ -80,15 +83,15 @@ public class DeploymentListHtmlMessageBodyWriterTest {
         ClusterNode a1_prod_2 = a1.getStages().get(2).index(a1, 2);
         ClusterNode a1_prod_3 = a1.getStages().get(2).index(a1, 3);
 
-        Cluster a2 = writer.clusters.get(1);
+        Cluster a2 = clusters.get(1);
         assertThat(a2.id()).isEqualTo("server-a:2");
 
-        Cluster b2 = writer.clusters.get(2);
+        Cluster b2 = clusters.get(2);
         assertThat(b2.id()).isEqualTo("server-b:2");
         ClusterNode b2_dev_1 = b2.getStages().get(0).index(b2, 1);
         ClusterNode b2_dev_2 = b2.getStages().get(0).index(b2, 2);
 
-        Cluster l = writer.clusters.get(3);
+        Cluster l = clusters.get(3);
         assertThat(l.id()).isEqualTo("localhost:1");
 
         DeploymentBuilder foo = createDeployment("foo");

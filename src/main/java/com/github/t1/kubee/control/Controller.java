@@ -32,6 +32,9 @@ public class Controller {
     @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
 
+
+    public Stream<Cluster> clusters() { return clusters.stream(); }
+
     public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
         return stages.flatMap(stage -> loadBalancing.loadBalancers(stage));
     }
@@ -115,7 +118,7 @@ public class Controller {
 
 
     public void deploy(DeploymentId id, String versionAfter) {
-        ClusterNode node = id.node(clusters);
+        ClusterNode node = id.node(clusters());
         String versionBefore = deployer.fetchVersion(id.deploymentName(), node);
         try {
             if (versionAfter.equals(versionBefore)) {
@@ -138,7 +141,7 @@ public class Controller {
     }
 
     public void undeploy(DeploymentId id) {
-        ClusterNode node = id.node(clusters);
+        ClusterNode node = id.node(clusters());
         loadBalancing.from(id.deploymentName(), node.getStage()).removeTarget(node.uri());
         Audits audits = deployer.undeploy(node, id.deploymentName());
         checkAudits(audits, "undeploy", id.deploymentName(), null);

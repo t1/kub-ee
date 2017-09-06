@@ -28,15 +28,14 @@ public class DeploymentId {
         return opt.map(Stream::of).orElseGet(Stream::empty);
     }
 
-    public ClusterNode node(List<Cluster> clusters) {
+    public ClusterNode node(Stream<Cluster> clusters) {
         String[] split = split();
         String clusterName = split[0];
         String slotName = split[1];
         String stageName = split[2];
         int index = Integer.valueOf(split[3]);
 
-        Cluster cluster = clusters.stream()
-                                  .filter(c -> c.getSimpleName().equals(clusterName))
+        Cluster cluster = clusters.filter(c -> c.getSimpleName().equals(clusterName))
                                   .filter(c -> c.getSlot().getName().equals(slotName))
                                   .findFirst()
                                   .orElseThrow(() -> new ClusterNotFoundException(clusterName));

@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary;
 
-import com.github.t1.kubee.model.ClusterTest;
+import com.github.t1.kubee.control.ControllerMockFactory;
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 
 import javax.ws.rs.core.UriInfo;
@@ -8,10 +8,10 @@ import java.net.URI;
 
 import static org.mockito.Mockito.*;
 
-public class BoundaryFactory {
+public class BoundaryMockFactory {
     public static Boundary createWithClusters() {
         Boundary boundary = new Boundary();
-        boundary.clusters = ClusterTest.readClusterConfig().clusters();
+        boundary.controller = ControllerMockFactory.createWithClusters();
         return boundary;
     }
 
