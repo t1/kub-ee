@@ -69,7 +69,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteFull() throws Exception {
-        List<Cluster> clusters = ClusterTest.readClusterConfig().clusters();
+        List<Cluster> clusters = ClusterTest.readClusterConfig().getClusters();
         givenClusters(clusters);
 
         assertThat(clusters).hasSize(4);

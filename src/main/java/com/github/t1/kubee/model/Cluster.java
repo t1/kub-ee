@@ -1,6 +1,7 @@
 package com.github.t1.kubee.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.t1.kubee.model.Cluster.HealthConfig.HealthConfigBuilder;
 import com.github.t1.kubee.model.Stage.StageBuilder;
 import com.github.t1.kubee.tools.yaml.*;
 import lombok.*;
@@ -17,12 +18,12 @@ import static java.util.stream.Collectors.*;
  */
 @Slf4j
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class Cluster {
-
     private final String host;
     private final Slot slot;
     private final List<Stage> stages;
+    private final HealthConfig healthConfig;
 
     public Stream<Stage> stages() { return (stages == null) ? Stream.empty() : stages.stream(); }
 
@@ -57,6 +58,7 @@ public class Cluster {
 
     private static class ClusterBuilderContext {
         private Map<String, Slot> slots = new HashMap<>();
+        private HealthConfigBuilder health = HealthConfig.builder();
         private int indexLength = 0;
 
         public Stream<Cluster> from(YamlEntry entry) {
@@ -80,6 +82,7 @@ public class Cluster {
                         .host(key)
                         .slot(slot)
                         .readStages(entry.value(), indexLength)
+                        .healthConfig(health.build())
                         .build());
             }
         }
@@ -93,6 +96,9 @@ public class Cluster {
                 break;
             case "index-length":
                 indexLength = value.asInt();
+                break;
+            case "health":
+                health.path(value.asMapping().get("path").asStringOr(""));
                 break;
             default:
                 log.warn("unknown config key '{}'", key);
@@ -117,5 +123,12 @@ public class Cluster {
             stages.add(stage);
             return this;
         }
+    }
+
+    @lombok.Value
+    @lombok.experimental.Wither
+    @lombok.Builder
+    public static class HealthConfig {
+        String path;
     }
 }

@@ -32,6 +32,7 @@ public class Stage implements Comparable<Stage> {
     /** The digits used for the host names on this stage, i.e. 2 would result in a host name `...01` */
     @JsonProperty("index-length") int indexLength;
 
+    /** Generic config map for stage specific balancer setting */
     @Singular("loadBalancerConfig") Map<String, String> loadBalancerConfig;
 
 

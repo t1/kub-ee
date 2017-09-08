@@ -4,12 +4,12 @@ import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.model.ReverseProxy.Location;
 import com.github.t1.nginx.NginxConfig;
 import org.junit.*;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 
 import java.io.*;
 import java.net.URI;
-import java.util.List;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.*;
@@ -18,6 +18,23 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class NginxLoadBalancerGatewayTest {
+    public static Path setConfigDir(Path path) {
+        Path old = LoadBalancerConfigAdapter.NGINX_ETC;
+        LoadBalancerConfigAdapter.NGINX_ETC = path;
+        return old;
+    }
+
+    public static class ReloadMock implements Reload {
+        public static int calls = 0;
+        public static String error = null;
+
+        @Override public String reload() {
+            calls++;
+            return error;
+        }
+    }
+
+
     private static final String CONFIG_QA = ""
             + "http {\n"
             + "    upstream jolokia" + "qa-lb {\n"
@@ -94,8 +111,6 @@ public class NginxLoadBalancerGatewayTest {
     private static final Stage PROD = Stage.builder().name("PROD").count(2).build();
     private static final Stage[] NOTHING = {};
 
-    @Rule public TemporaryFolder folder = new TemporaryFolder();
-
     private final LoadBalancerGateway gateway = new LoadBalancerGateway();
     private final LoadBalancerConfigAdapter nginxDev = mock(LoadBalancerConfigAdapter.class);
     private final LoadBalancerConfigAdapter nginxQa = mock(LoadBalancerConfigAdapter.class);
@@ -103,6 +118,7 @@ public class NginxLoadBalancerGatewayTest {
 
 
     @Before public void setUp() throws Exception {
+        gateway.configAdapters = new LinkedHashMap<>();
         gateway.configAdapters.put(DEV.getName(), nginxDev);
         gateway.configAdapters.put(QA.getName(), nginxQa);
         gateway.configAdapters.put(PROD.getName(), nginxProd);
@@ -383,7 +399,7 @@ public class NginxLoadBalancerGatewayTest {
     public void shouldCreateDefaultQaConfigAdapter() throws Exception {
         gateway.configAdapters.clear();
 
-        gateway.nginx(QA);
+        gateway.config(QA);
 
         assertThat(gateway.configAdapters).containsKey(QA.getName());
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(QA.getName());
@@ -397,7 +413,7 @@ public class NginxLoadBalancerGatewayTest {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(CONFIG_PATH, "/tmp/nginx.conf").build();
         gateway.configAdapters.clear();
 
-        gateway.nginx(stage);
+        gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
@@ -410,7 +426,7 @@ public class NginxLoadBalancerGatewayTest {
                 ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
         gateway.configAdapters.clear();
 
-        gateway.nginx(stage);
+        gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
@@ -424,7 +440,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.configAdapters.clear();
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "foo").build();
 
-        assertThatThrownBy(() -> gateway.nginx(stage))
+        assertThatThrownBy(() -> gateway.config(stage))
                 .hasMessage("unknown reload mode: foo");
     }
 
@@ -433,7 +449,7 @@ public class NginxLoadBalancerGatewayTest {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "direct").build();
         gateway.configAdapters.clear();
 
-        gateway.nginx(stage);
+        gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
@@ -446,7 +462,7 @@ public class NginxLoadBalancerGatewayTest {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "set-user-id-script").build();
         gateway.configAdapters.clear();
 
-        gateway.nginx(stage);
+        gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());

@@ -1,6 +1,8 @@
 package com.github.t1.kubee.model;
 
-import com.github.t1.kubee.boundary.ClusterConfig;
+import com.github.t1.kubee.control.ClusterConfig;
+import com.github.t1.kubee.gateway.loadbalancer.NginxLoadBalancerGatewayTest.ReloadMock;
+import com.github.t1.kubee.model.Cluster.HealthConfig;
 import org.junit.Test;
 
 import java.net.URI;
@@ -13,45 +15,46 @@ public class ClusterTest {
     public static final Slot SLOT_1 = Slot.builder().name("1").http(8180).https(8543).build();
     public static final Slot SLOT_2 = Slot.builder().name("2").http(8280).https(8643).build();
 
-    private static final Cluster[] CLUSTERS = {
+    public static final HealthConfig HEALTH_CONFIG = HealthConfig.builder().path("dummy/health/path").build();
+
+    public static final Stage DEV = Stage.builder().name("DEV").prefix("").suffix("dev").count(2).indexLength(2)
+                                         .loadBalancerConfig("reload", "custom")
+                                         .loadBalancerConfig("class", ReloadMock.class.getName())
+                                         .build();
+    private static final Stage QA = Stage.builder().name("QA").prefix("qa").suffix("").count(2).indexLength(2)
+                                         .loadBalancerConfig("reload", "service")
+                                         .loadBalancerConfig("port", "12345")
+                                         .build();
+    private static final Stage PROD = Stage.builder().name("PROD").prefix("").suffix("").count(3).indexLength(2)
+                                           .loadBalancerConfig("reload", "direct").build();
+
+    public static final Cluster[] CLUSTERS = {
             Cluster.builder().host("server-a.server.lan").slot(SLOT_1)
-                   .stage().name("DEV").prefix("").suffix("dev").indexLength(2).count(2)
-                   .loadBalancerConfig("reload", "set-user-id-script").add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
-                   .loadBalancerConfig("reload", "service")
-                   .loadBalancerConfig("port", "12345").add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
-                   .loadBalancerConfig("reload", "direct").add()
-                    .build(),
+                   .stage(DEV)
+                   .stage(QA)
+                   .stage(PROD)
+                   .healthConfig(HEALTH_CONFIG).build(),
             Cluster.builder().host("server-a.server.lan").slot(SLOT_2)
-                   .stage().name("DEV").prefix("").suffix("dev").count(2).indexLength(2)
-                   .loadBalancerConfig("reload", "set-user-id-script").add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
-                   .loadBalancerConfig("reload", "service")
-                   .loadBalancerConfig("port", "12345").add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
-                   .loadBalancerConfig("reload", "direct").add()
-                    .build(),
+                   .stage(DEV)
+                   .stage(QA)
+                   .stage(PROD)
+                   .healthConfig(HEALTH_CONFIG).build(),
             Cluster.builder().host("server-b.server.lan").slot(SLOT_2)
                    .stage().name("DEV").prefix("").suffix("test").count(2).indexLength(2)
                    .loadBalancerConfig("reload", "set-user-id-script").add()
-                   .stage().name("QA").prefix("qa").suffix("").indexLength(2).count(2)
-                   .loadBalancerConfig("reload", "service")
-                   .loadBalancerConfig("port", "12345").add()
-                   .stage().name("PROD").prefix("").suffix("").indexLength(2).count(3)
-                   .loadBalancerConfig("reload", "direct").add()
-                    .build(),
+                   .stage(QA)
+                   .stage(PROD)
+                   .healthConfig(HEALTH_CONFIG).build(),
             Cluster.builder().host("localhost").slot(SLOT_1)
                    .stage().name("PROD").prefix("").suffix("").count(1).indexLength(0)
                    .loadBalancerConfig("reload", "direct").add()
-                    .build()
+                   .healthConfig(HEALTH_CONFIG).build()
     };
 
     public static ClusterConfig readClusterConfig() {
-        ClusterConfig clusterConfig = new ClusterConfig();
-        clusterConfig.readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
-        return clusterConfig;
+        return new ClusterConfig().readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
     }
+
 
     @Test
     public void shouldReadYamlConfig() throws Exception {

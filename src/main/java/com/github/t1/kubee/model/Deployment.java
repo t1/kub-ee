@@ -30,7 +30,7 @@ public class Deployment implements Comparable<Deployment> {
         return "Deployment(" + name + ":" + type
                 + "|" + groupId + ":" + artifactId + ":" + version
                 + "|" + node
-                + (hasError() ? "" : "|error=" + error)
+                + (hasError() ? "|error=" + error : "")
                 + ")";
     }
 

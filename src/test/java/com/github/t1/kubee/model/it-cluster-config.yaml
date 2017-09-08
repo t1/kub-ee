@@ -1,0 +1,16 @@
+:slot:1:
+  http: ${slot-1-port}
+  https: 443
+:slot:2:
+  http: ${slot-2-port}
+  https: 443
+:health:
+  path: -check
+localhost:1:
+  PROD:
+    count: 1
+    path: application/
+localhost:2:
+  PROD:
+    count: 1
+    path: application/

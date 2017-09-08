@@ -13,17 +13,20 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
 
 /**
+ * Controls the load balancer. The public interface is generic, the implementation is NGINX specific.
  * see https://www.nginx.com/resources/admin-guide/load-balancer/
  */
 @Slf4j
 public class LoadBalancerGateway {
-    Map<String, LoadBalancerConfigAdapter> configAdapters = new LinkedHashMap<>();
+    Map<String, LoadBalancerConfigAdapter> configAdapters;
 
-    LoadBalancerConfigAdapter nginx(Stage stage) {
+    public LoadBalancerConfigAdapter config(Stage stage) {
+        if (configAdapters == null) // not directly in field, so Mockito thenCallRealMethod works
+            configAdapters = new LinkedHashMap<>();
         return configAdapters.computeIfAbsent(stage.getName(), name -> new LoadBalancerConfigAdapter(stage));
     }
 
-    private NginxConfig read(Stage stage) { return nginx(stage).read(); }
+    private NginxConfig read(Stage stage) { return config(stage).read(); }
 
 
     public Stream<LoadBalancer> loadBalancers(Stage stage) {
@@ -60,11 +63,11 @@ public class LoadBalancerGateway {
 
 
     public LoadBalancerRemoveAction from(String deployableName, Stage stage) {
-        return new LoadBalancerRemoveAction(read(stage), deployableName, stage, nginx(stage)::update);
+        return new LoadBalancerRemoveAction(read(stage), deployableName, stage, config(stage)::update);
     }
 
 
     public LoadBalancerAddAction to(String deployableName, Stage stage) {
-        return new LoadBalancerAddAction(read(stage), deployableName, stage, nginx(stage)::update);
+        return new LoadBalancerAddAction(read(stage), deployableName, stage, config(stage)::update);
     }
 }

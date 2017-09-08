@@ -53,7 +53,7 @@ Manage the applications on multiple Java EE clusters.
    he opens a matrix cell menu and picks a different version which gets deployed
    after the node is removed from the app LB, and re-added after the update. _(done)_
 1. Before the undeploy and a second time after a deploy but before adding to the LB,
-   a health check is done. If the deploy made things worse, the last version is restored. _(todo)_
+   a health check is done. If the deploy made things worse, the last version is restored. _(done)_
 1. If the deployments to a stage are done with a CI/CD pipeline, this menu only contains the current
    and the fallback version for emergency rollbacks. _(todo)_
 1. He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB. _(done)_

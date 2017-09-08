@@ -17,7 +17,7 @@ public class ClusterListHtmlMessageBodyWriterTest {
 
     @Test
     public void shouldWriteHtml() throws Exception {
-        List<Cluster> clusters = ClusterTest.readClusterConfig().clusters();
+        List<Cluster> clusters = ClusterTest.readClusterConfig().getClusters();
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(clusters, null, null, null, null, null, out);

@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.Optional;
+import java.util.*;
 
 import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 import static java.lang.ProcessBuilder.Redirect.*;
@@ -17,7 +17,7 @@ import static java.util.concurrent.TimeUnit.*;
 class LoadBalancerConfigAdapter {
     static final String RELOAD_MODE = "reload";
     static final String CONFIG_PATH = "config-path";
-    private static final Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
+    static Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
 
     final Path configPath;
 
@@ -35,11 +35,12 @@ class LoadBalancerConfigAdapter {
     private static Path configPath(Stage stage) {
         return NGINX_ETC.resolve(stage.getLoadBalancerConfig()
                                       .getOrDefault(CONFIG_PATH,
-                                               stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
+                                              stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
     }
 
     private Reload reloadMode(Stage stage) {
-        String mode = stage.getLoadBalancerConfig().getOrDefault(RELOAD_MODE, "service");
+        Map<String, String> config = stage.getLoadBalancerConfig();
+        String mode = config.getOrDefault(RELOAD_MODE, "service");
         switch (mode) {
         case "service":
             return new ServiceReload(stage);
@@ -47,8 +48,21 @@ class LoadBalancerConfigAdapter {
             return new DirectReload();
         case "set-user-id-script":
             return new SetUserIdScriptReload();
+        case "custom":
+            return customReload(config);
         default:
             throw new IllegalArgumentException("unknown reload mode: " + mode);
+        }
+    }
+
+    private Reload customReload(Map<String, String> config) {
+        String className = config.get("class");
+        if (className == null)
+            throw new IllegalArgumentException("missing 'class' config for 'custom' mode");
+        try {
+            return (Reload) Class.forName(className).newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("can't instantiate custom reload class " + className);
         }
     }
 

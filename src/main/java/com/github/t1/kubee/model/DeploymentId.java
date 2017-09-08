@@ -6,8 +6,17 @@ import javax.ws.rs.BadRequestException;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static com.github.t1.kubee.tools.http.ProblemDetail.*;
 
+/**
+ * A String made out of these components delimited by colons:<ol>
+ * <li>cluster name</li>
+ * <li>slot name</li>
+ * <li>stage name</li>
+ * <li>node index</li>
+ * <li>deployment name</li>
+ * </ol>
+ */
 @Value
 public class DeploymentId {
     public final String value;

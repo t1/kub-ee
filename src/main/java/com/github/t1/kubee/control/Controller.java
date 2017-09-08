@@ -2,6 +2,7 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
+import com.github.t1.kubee.gateway.health.HealthGateway;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.model.Audits.Audit;
@@ -31,6 +32,7 @@ public class Controller {
     @Inject List<Cluster> clusters;
     @Inject LoadBalancerGateway loadBalancing;
     @Inject DeployerGateway deployer;
+    @Inject HealthGateway healthGateway;
 
 
     public Stream<Cluster> clusters() { return clusters.stream(); }
@@ -92,10 +94,10 @@ public class Controller {
 
 
     public List<Version> fetchVersions(ClusterNode node, Deployment deployment) {
-        return doFetch(node, deployment).stream().map(s -> toVersion(deployment, s)).collect(toList());
+        return doFetchVersions(node, deployment).stream().map(s -> toVersion(deployment, s)).collect(toList());
     }
 
-    private List<String> doFetch(ClusterNode node, Deployment deployment) {
+    private List<String> doFetchVersions(ClusterNode node, Deployment deployment) {
         String groupId = deployment.getGroupId();
         String artifactId = deployment.getArtifactId();
         try {
@@ -119,32 +121,56 @@ public class Controller {
 
     public void deploy(DeploymentId id, String versionAfter) {
         ClusterNode node = id.node(clusters());
-        String versionBefore = deployer.fetchVersion(id.deploymentName(), node);
+        String name = id.deploymentName();
+        deploy(node, name, versionAfter);
+    }
+
+    private void deploy(ClusterNode node, String name, String versionAfter) {
+        String versionBefore = deployer.fetchVersion(name, node);
+
+        boolean healthyBefore = healthGateway.fetch(node, name);
+        if (!healthyBefore)
+            log.info("{}@{} on {} is not healthy before deploy", name, versionBefore, node);
+
         try {
             if (versionAfter.equals(versionBefore)) {
-                log.info("redeploy {} @ {} on {}", id.deploymentName(), versionBefore, node);
-                undeploy(id);
+                log.info("redeploy {} @ {} on {}", name, versionBefore, node);
+                undeploy(node, name);
             } else {
-                log.info("update {} on {} from {} to {}", id.deploymentName(), node, versionBefore, versionAfter);
-                loadBalancing.from(id.deploymentName(), node.getStage()).removeTarget(node.uri());
+                log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
+                loadBalancing.from(name, node.getStage()).removeTarget(node.uri());
             }
-            Audits audits = deployer.deploy(node, id.deploymentName(), versionAfter);
-            checkAudits(audits, "deploy", id.deploymentName(), versionAfter);
+
+            Audits audits = deployer.deploy(node, name, versionAfter);
+            checkAudits(audits, "deploy", name, versionAfter);
+
+            boolean healthyAfter = healthGateway.fetch(node, name);
+            if (!healthyAfter) {
+                log.error("{}@{} on {} is not healthy after deploy", name, versionBefore, node);
+                if (healthyBefore)
+                    throw new RuntimeException(name + "@" + versionAfter + " on " + node
+                            + " flipped from healthy to unhealthy");
+            }
         } catch (RuntimeException e) {
-            log.warn("rollback {} on {} to {} failed: {}", id.deploymentName(), node, versionBefore, e.getMessage());
-            deployer.undeploy(node, id.deploymentName());
-            deployer.deploy(node, id.deploymentName(), versionBefore);
+            log.warn("rollback {} on {} to {} failed: {}", name, node, versionBefore, e.getMessage());
+            deployer.undeploy(node, name);
+            deployer.deploy(node, name, versionBefore);
             throw e;
         } finally {
-            loadBalancing.to(id.deploymentName(), node.getStage()).addTarget(node.uri());
+            loadBalancing.to(name, node.getStage()).addTarget(node.uri());
         }
     }
 
     public void undeploy(DeploymentId id) {
         ClusterNode node = id.node(clusters());
-        loadBalancing.from(id.deploymentName(), node.getStage()).removeTarget(node.uri());
-        Audits audits = deployer.undeploy(node, id.deploymentName());
-        checkAudits(audits, "undeploy", id.deploymentName(), null);
+        String name = id.deploymentName();
+        undeploy(node, name);
+    }
+
+    private void undeploy(ClusterNode node, String name) {
+        loadBalancing.from(name, node.getStage()).removeTarget(node.uri());
+        Audits audits = deployer.undeploy(node, name);
+        checkAudits(audits, "undeploy", name, null);
     }
 
     private void checkAudits(Audits audits, String operation, String name, String version) {
@@ -163,11 +189,11 @@ public class Controller {
 
         Optional<Change> versionChange = audit.get().findChange("version");
         if (!versionChange.isPresent())
-            throw badRequest().detail(errorPrefix + " to change version to " + version).exception();
+            throw badRequest().detail(errorPrefix + " to change version.").exception();
 
         String newVersion = versionChange.get().getNewValue();
         if (!Objects.equals(newVersion, version)) {
-            String message = errorPrefix + " to change version to " + version + ", but changed to " + newVersion;
+            String message = errorPrefix + " to change version to " + version + ", but changed to " + newVersion + ".";
             throw badRequest().detail(message).exception();
         }
         log.debug("audit {} change {} {}", operation, name, versionChange.get());
