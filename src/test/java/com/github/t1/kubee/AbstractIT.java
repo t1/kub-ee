@@ -16,6 +16,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.Scanner;
 
+import static com.github.t1.kubee.control.ClusterConfig.FILE_NAME_PROPERTY;
 import static java.nio.charset.StandardCharsets.*;
 
 public abstract class AbstractIT {
@@ -32,7 +33,7 @@ public abstract class AbstractIT {
     protected static Cluster CLUSTER_2;
 
     @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
-            .withProperty(ClusterConfig.FILE_NAME_PROPERTY, CLUSTER_CONFIG_PATH);
+            .withProperty(FILE_NAME_PROPERTY, CLUSTER_CONFIG_PATH);
 
     @BeforeClass public static void setup() throws IOException {
         new Template(ClusterTest.class.getResourceAsStream("it-cluster-config.yaml"))

@@ -4,7 +4,6 @@ import com.github.t1.kubee.control.Controller;
 import com.github.t1.kubee.model.*;
 import com.github.t1.kubee.tools.html.*;
 import com.github.t1.kubee.tools.html.Table.TableRow;
-import org.jsoup.nodes.Element;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -14,8 +13,8 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.List;
 
+import static com.github.t1.kubee.tools.html.CustomComponent.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.MediaType.*;
@@ -71,8 +70,8 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         private Collection<Stage> mergedStages() {
             Map<String, Stage> map = new LinkedHashMap<>();
             controller.clusters().flatMap(Cluster::stages)
-                    .map(this::copyNameCountLength)
-                    .forEach(stage -> map.merge(stage.getName(), stage, Stage::largerCount));
+                      .map(this::copyNameCountLength)
+                      .forEach(stage -> map.merge(stage.getName(), stage, Stage::largerCount));
             return map.values();
         }
 
@@ -105,29 +104,24 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private void stagesHeader() {
             TableRow row = table.tr();
-            row.th().attr("rowspan", "2").text("Cluster");
-            row.th().attr("rowspan", "2").text("Application");
+            row.th("Cluster").attr("rowspan", "2");
+            row.th("Application").attr("rowspan", "2");
             mergedStages.forEach(stage -> row
-                    .th()
-                    .addClass("stage")
-                    .attr("colspan", Integer.toString(stage.getCount()))
-                    .text(stage.getName()));
+                    .th(stage.getName())
+                    .className("stage")
+                    .attr("colspan", stage.getCount()));
         }
 
         private void nodesHeader() {
             TableRow row = table.tr();
             mergedNodes.forEach(node -> row
-                    .th()
-                    .addClass("node")
-                    .attr("id", "node:" + node.getStage().getName() + ":" + node.getIndex())
-                    .html(htmlFor(node)));
+                    .th(htmlFor(node))
+                    .className("node")
+                    .attr("id", "node:" + node.getStage().getName() + ":" + node.getIndex()));
         }
 
         private String htmlFor(ClusterNode node) {
-            String text = node.getStage().formattedIndex(node.getIndex());
-            if (text.isEmpty())
-                text = "&nbsp;";
-            return text;
+            return node.getStage().formattedIndex(node.getIndex());
         }
 
         private void tableBody() {
@@ -136,11 +130,10 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                 deployableNames.forEach(deployableName -> {
                     TableRow row = table.tr();
                     if (deployableName.equals(deployableNames.get(0)))
-                        row.th()
+                        row.th(cluster.id())
                            .attr("id", "cluster:" + cluster.id())
-                           .attr("rowspan", Integer.toString(deployableNames.size()))
-                           .text(cluster.id());
-                    row.th().addClass("deployable-name").text(deployableName);
+                           .attr("rowspan", deployableNames.size());
+                    row.th(deployableName).className("deployable-name");
 
                     mergedNodes.stream()
                                .map(node -> deployments
@@ -155,21 +148,19 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                        .findAny()
                                        .map(this::cell)
                                        .orElse(notDeployed(cluster, node, deployableName)))
-                               .forEach(cell -> row.td()
+                               .forEach(cell -> row.td(cell)
                                                    .attr("ondragover", "drag_over(event);")
                                                    .attr("ondragleave", "drag_leave(event);")
-                                                   .attr("ondrop", "drop_handler(event);")
-                                                   .appendChild(cell));
+                                                   .attr("ondrop", "drop_handler(event);"));
                 });
             });
         }
 
-        private Element notDeployed(Cluster cluster, ClusterNode node, String deployableName) {
-            String id = cluster.id() + ":" + node.getStage().getName() + ":" + node.getIndex() + ":" + deployableName;
-            return new Element("div")
-                    .addClass(DEPLOYMENT)
-                    .addClass("not-deployed")
-                    .attr("id", id)
+        private CustomComponent notDeployed(Cluster cluster, ClusterNode node, String deployableName) {
+            return div()
+                    .className(DEPLOYMENT)
+                    .className("not-deployed")
+                    .id(cluster.id() + ":" + node.getStage().getName() + ":" + node.getIndex() + ":" + deployableName)
                     .html("-");
         }
 
@@ -185,26 +176,27 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             return deployableNames;
         }
 
-        private Element cell(Deployment deployment) {
-            Element cell = new Element("div")
-                    .addClass(DEPLOYMENT)
-                    .attr("id", deployment.id())
+        private CustomComponent cell(Deployment deployment) {
+            return div()
+                    .className(DEPLOYMENT)
+                    .id(deployment.id())
                     .attr("title", deployment.gav())
                     .attr("draggable", "true")
                     .attr("ondragstart", "drag_start(event);")
                     .attr("ondragend", "drag_end(event);")
-                    .attr("onclick", "click_handler(event);");
-            Element dropdown = cell.appendElement("span").addClass("dropdown");
-            Element toggle = dropdown.appendElement("span")
-                                     .addClass("dropdown-toggle")
-                                     .attr("data-toggle", "dropdown");
-            toggle.appendElement("span")
-                  .addClass("version-name")
-                  .text(deployment.hasError() ? deployment.getError() : deployment.getVersion());
-            toggle.appendElement("span")
-                  .addClass("caret");
-            dropdown.appendElement("div").addClass("dropdown-menu versions-menu");
-            return cell;
+                    .attr("onclick", "click_handler(event);")
+                    .with(span()
+                            .className("dropdown")
+                            .with(span()
+                                    .className("dropdown-toggle")
+                                    .attr("data-toggle", "dropdown")
+                                    .with(span()
+                                            .className("version-name")
+                                            .text(deployment.hasError()
+                                                    ? deployment.getError()
+                                                    : deployment.getVersion()))
+                                    .with(span().className("caret")))
+                            .with(div().className("dropdown-menu versions-menu")));
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {

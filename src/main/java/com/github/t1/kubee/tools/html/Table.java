@@ -26,13 +26,43 @@ public class Table extends Component {
     public static class TableRow {
         private final Element row;
 
-        public Element th() { return row.appendElement("th"); }
+        public TableCell th(String header) { return new TableCell("th", header); }
 
-        public Element td() { return row.appendElement("td"); }
+        public TableCell td(Component component) { return new TableCell("td", component); }
+
+        public TableCell td(String text) { return new TableCell("td", text); }
+
+        public TableCell td(Integer text) { return new TableCell("td", text.toString()); }
 
         public TableRow attr(String name, String value) {
             row.attr(name, value);
             return this;
+        }
+
+        public class TableCell {
+            private final Element element;
+
+            private TableCell(String tag, Component component) {
+                this(tag);
+                this.element.appendChild(component.element);
+            }
+
+            private TableCell(String tag, String header) {
+                this(tag);
+                this.element.html(((header == null) || header.isEmpty()) ? "&nbsp;" : header);
+            }
+
+            private TableCell(String tag) { this.element = TableRow.this.row.appendElement(tag); }
+
+            public TableCell attr(String key, Object value) {
+                element.attr(key, (value == null) ? null : value.toString());
+                return this;
+            }
+
+            public TableCell className(String className) {
+                element.addClass(className);
+                return this;
+            }
         }
     }
 }

@@ -54,16 +54,16 @@ public class SlotListHtmlMessageBodyWriter implements MessageBodyWriter<List<Slo
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("Slot");
-            row.th().text("http");
-            row.th().text("https");
+            row.th("Slot");
+            row.th("http");
+            row.th("https");
         }
 
         private void slotRow(Slot slot) {
             TableRow row = table.tr();
-            row.th().text(slot.getName());
-            row.td().text(Integer.toString(slot.getHttp()));
-            row.td().text(Integer.toString(slot.getHttps()));
+            row.th(slot.getName());
+            row.td(slot.getHttp());
+            row.td(slot.getHttps());
         }
     }
 }

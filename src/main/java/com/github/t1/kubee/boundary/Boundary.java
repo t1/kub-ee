@@ -92,10 +92,10 @@ public class Boundary {
 
 
     @GET @Path("/deployments") public List<Deployment> getDeployments() {
-        return controller.clusters().flatMap(this::fromCluster).sorted().collect(toList());
+        return controller.clusters().flatMap(this::deploymentsOnCluster).sorted().collect(toList());
     }
 
-    private Stream<Deployment> fromCluster(Cluster cluster) {
+    private Stream<Deployment> deploymentsOnCluster(Cluster cluster) {
         return cluster.stages().flatMap(stage -> stage.nodes(cluster)).flatMap(controller::fetchDeploymentsOn);
     }
 
@@ -135,6 +135,8 @@ public class Boundary {
             @PathParam("id") DeploymentId id,
             @FormParam("version") String version,
             @FormParam("mode") DeploymentMode mode) {
+        if (id == null)
+            throw badRequest().detail("id is a required parameter").exception();
         if (mode == null)
             throw badRequest().detail("mode is a required parameter").exception();
         switch (mode) {

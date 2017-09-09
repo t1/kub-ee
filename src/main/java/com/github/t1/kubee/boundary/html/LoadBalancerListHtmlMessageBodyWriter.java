@@ -54,16 +54,16 @@ public class LoadBalancerListHtmlMessageBodyWriter implements MessageBodyWriter<
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("Name");
-            row.th().text("Method");
-            row.th().text("Servers");
+            row.th("Name");
+            row.th("Method");
+            row.th("Servers");
         }
 
         private void loadBalancerRow(LoadBalancer loadBalancer) {
             TableRow row = table.tr();
-            row.td().text(loadBalancer.getName());
-            row.td().text(loadBalancer.getMethod());
-            row.td().html(String.join("<br>\n", loadBalancer.getServers()));
+            row.td(loadBalancer.getName());
+            row.td(loadBalancer.getMethod());
+            row.td(String.join("<br>\n", loadBalancer.getServers()));
         }
     }
 }

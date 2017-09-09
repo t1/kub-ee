@@ -58,9 +58,9 @@ public class ReverseProxyListHtmlMessageBodyWriter implements MessageBodyWriter<
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("From");
-            row.th().text("Path");
-            row.th().text("Target");
+            row.th("From");
+            row.th("Path");
+            row.th("Target");
         }
 
         private void row(ReverseProxy reverseProxy) {
@@ -71,10 +71,10 @@ public class ReverseProxyListHtmlMessageBodyWriter implements MessageBodyWriter<
             locations.forEach(location -> {
                 TableRow row = table.tr();
                 if (first.getAndSet(false))
-                    row.td().attr("rowspan", Integer.toString(reverseProxy.getLocations().size()))
-                       .text(reverseProxy.getFrom().toString());
-                row.td().text(location.getFromPath());
-                row.td().text(location.getTarget().toString());
+                    row.td(reverseProxy.getFrom().toString())
+                       .attr("rowspan", reverseProxy.getLocations().size());
+                row.td(location.getFromPath());
+                row.td(location.getTarget().toString());
             });
         }
     }

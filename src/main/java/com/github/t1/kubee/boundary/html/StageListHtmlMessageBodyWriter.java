@@ -55,22 +55,22 @@ public class StageListHtmlMessageBodyWriter implements MessageBodyWriter<List<St
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("Stage");
-            row.th().text("prefix");
-            row.th().text("suffix");
-            row.th().text("path");
-            row.th().text("count");
-            row.th().text("index-length");
+            row.th("Stage");
+            row.th("prefix");
+            row.th("suffix");
+            row.th("path");
+            row.th("count");
+            row.th("index-length");
         }
 
         private void stageRow(Stage stage) {
             TableRow row = table.tr();
-            row.th().text(stage.getName());
-            row.td().text(stage.getPrefix());
-            row.td().text(stage.getSuffix());
-            row.td().text(stage.getPath());
-            row.td().text(Integer.toString(stage.getCount()));
-            row.td().text(Integer.toString(stage.getIndexLength()));
+            row.th(stage.getName());
+            row.td(stage.getPrefix());
+            row.td(stage.getSuffix());
+            row.td(stage.getPath());
+            row.td(stage.getCount());
+            row.td(stage.getIndexLength());
         }
     }
 }

@@ -1,3 +1,6 @@
+/**
+ * Quickly hacked tools to build Bootstrap compliant HTML
+ */
 @DependsUpon(packagesOf = {
         org.jsoup.nodes.Document.class,
 })

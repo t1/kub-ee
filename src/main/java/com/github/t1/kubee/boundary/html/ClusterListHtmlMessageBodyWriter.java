@@ -64,14 +64,14 @@ public class ClusterListHtmlMessageBodyWriter implements MessageBodyWriter<List<
 
         private void tableHeader() {
             TableRow row = table.tr();
-            row.th().text("Cluster");
-            stageNames.forEach(text -> row.th().text(text));
+            row.th("Cluster");
+            stageNames.forEach(row::th);
         }
 
         private void clusterRow(Cluster cluster) {
             TableRow row = table.tr();
-            row.th().text(cluster.id());
-            stage(cluster).forEach(text -> row.td().append(text));
+            row.th(cluster.id());
+            stage(cluster).forEach(row::td);
         }
 
         private Stream<String> stage(Cluster cluster) {

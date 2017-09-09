@@ -16,7 +16,7 @@ public class HealthGateway {
 
     public boolean fetch(ClusterNode node, String name) {
         HealthConfig healthConfig = node.getCluster().getHealthConfig();
-        if (healthConfig == null) {
+        if (healthConfig == null || healthConfig.getPath() == null) {
             log.debug("no health config for {}", node);
             return true;
         }
