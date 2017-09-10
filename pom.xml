@@ -175,11 +175,6 @@
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>graph</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.10.3</version>

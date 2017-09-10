@@ -1,5 +1,7 @@
 package com.github.t1.kubee.web;
 
+import com.github.t1.testtools.AbstractPage;
+import lombok.extern.java.Log;
 import org.assertj.core.api.Condition;
 import org.openqa.selenium.*;
 
@@ -11,13 +13,16 @@ import static java.util.Objects.*;
 import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.*;
 
+@Log
 class VersionCell {
+    private final AbstractPage<?> page;
     private final WebElement deployment;
     private final WebElement dropdown;
     private final WebElement toggle;
     private final WebElement menu;
 
-    VersionCell(WebElement deployment) {
+    VersionCell(AbstractPage<?> page, WebElement deployment) {
+        this.page = page;
         this.deployment = deployment;
         this.dropdown = requireNonNull(this.deployment.findElement(By.className("dropdown")));
         this.toggle = requireNonNull(this.dropdown.findElement(By.className("dropdown-toggle")));
@@ -28,9 +33,7 @@ class VersionCell {
         return "VersionCell:" + deployment.getAttribute("id") + getCssClasses(dropdown);
     }
 
-    void clickToggle() {
-        this.toggle.click();
-    }
+    void clickToggle() { this.toggle.click(); }
 
     List<VersionMenuItem> menu() {
         WebElement ul = this.menu.findElement(By.tagName("ul"));
@@ -46,4 +49,20 @@ class VersionCell {
             map(displayed, cell -> cell.menu, "menu"));
 
     static final Condition<VersionCell> closed = not(open);
+
+    VersionMenuItem undeployMenuItem() {
+        return menu().stream()
+                     .filter(item -> item.getText().equals("undeploy"))
+                     .findFirst()
+                     .orElseThrow(RuntimeException::new);
+    }
+
+    void waitToBeUndeployed() {
+        page.webDriverWait()
+            .withMessage("waiting for " + this + " to be undeployed")
+            .until(driver -> {
+                log.info("- " + deployment.getText());
+                return deployment.getText().equals(" - ");
+            });
+    }
 }

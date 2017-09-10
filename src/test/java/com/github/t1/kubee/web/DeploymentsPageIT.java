@@ -3,6 +3,7 @@ package com.github.t1.kubee.web;
 import com.github.t1.kubee.AbstractIT;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.testtools.*;
+import lombok.extern.java.Log;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebElement;
@@ -12,6 +13,7 @@ import static com.github.t1.kubee.web.VersionCell.*;
 import static com.github.t1.kubee.web.VersionMenuItem.*;
 import static org.assertj.core.api.Assertions.*;
 
+@Log
 @RunWith(OrderedJUnitRunner.class)
 public class DeploymentsPageIT extends AbstractIT {
     @ClassRule public static final WebDriverRule DRIVER = new WebDriverRule(new FirefoxDriver());
@@ -24,23 +26,30 @@ public class DeploymentsPageIT extends AbstractIT {
     }
 
 
+    private VersionCell dummyCell() { return page.findDeploymentCell(node11(), "dummy"); }
+
+    private VersionCell deployerCell() { return page.findDeploymentCell(node11(), "deployer"); }
+
+    private ClusterNode node11() { return CLUSTER_1.node(PROD, 1); }
+
+
     @Test
     public void shouldGoToDeploymentsPage() throws Exception {
         page.navigateTo();
 
         page.assertOpen();
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(closed);
+        assertThat(deployerCell()).is(closed);
+        assertThat(dummyCell()).is(closed);
     }
 
     @Test
     public void shouldOpenDummyMenu() {
-        dummy().clickToggle();
+        dummyCell().clickToggle();
 
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(open);
+        assertThat(deployerCell()).is(closed);
+        assertThat(dummyCell()).is(open);
 
-        assertThat(dummy().menu())
+        assertThat(dummyCell().menu())
                 .hasSize(5)
                 .has(versionMenuItem("minus", "1.2.1", "undeployed"), atIndex(0))
                 .has(versionMenuItem("minus", "1.2.2", "undeployed"), atIndex(1))
@@ -51,26 +60,36 @@ public class DeploymentsPageIT extends AbstractIT {
 
     @Test
     public void shouldOpenDeployerMenu() {
-        deployer().clickToggle();
+        deployerCell().clickToggle();
 
-        assertThat(deployer()).is(open);
-        assertThat(dummy()).is(closed);
+        assertThat(deployerCell()).is(open);
+        assertThat(dummyCell()).is(closed);
 
-        assertThat(deployer().menu())
+        assertThat(deployerCell().menu())
                 .hasSize(5)
                 .has(versionMenuItem("minus", "2.9.1", "undeployed"), atIndex(0))
                 .has(versionMenuItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
                 .has(versionMenuItem("minus", "2.9.3", "undeployed"), atIndex(2))
                 .has(versionMenuItem(null, null, null), atIndex(3))
                 .has(versionMenuItem("ban-circle", null, null), atIndex(4));
-        assertThat(dummy().menu()).describedAs("still").hasSize(5);
+        assertThat(dummyCell().menu()).describedAs("still").hasSize(5);
     }
 
     @Test
     public void shouldCloseMenus() {
         page.findCluster(CLUSTER_1).click();
-        assertThat(deployer()).is(closed);
-        assertThat(dummy()).is(closed);
+        assertThat(deployerCell()).is(closed);
+        assertThat(dummyCell()).is(closed);
+    }
+
+    @Test
+    public void shouldUndeployDummyAppFrom2() throws Exception {
+        VersionCell dummy2 = page.findDeploymentCell(CLUSTER_2.node(PROD, 1), "dummy");
+        dummy2.clickToggle();
+
+        dummy2.undeployMenuItem().click();
+
+        // dummy2.waitToBeUndeployed();
     }
 
     @Test
@@ -82,10 +101,4 @@ public class DeploymentsPageIT extends AbstractIT {
               .release(to)
               .build().perform();
     }
-
-    private VersionCell dummy() { return page.findDeploymentCell(node11(), "dummy"); }
-
-    private VersionCell deployer() { return page.findDeploymentCell(node11(), "deployer"); }
-
-    private ClusterNode node11() { return CLUSTER_1.node(PROD, 1); }
 }

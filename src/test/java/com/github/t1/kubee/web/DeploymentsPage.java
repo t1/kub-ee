@@ -21,7 +21,7 @@ public class DeploymentsPage extends AbstractPage<DeploymentsPage> {
     WebElement deployablesTable;
 
     public VersionCell findDeploymentCell(ClusterNode node, String name) {
-        return new VersionCell(findDeployment(node, name));
+        return new VersionCell(this, findDeployment(node, name));
     }
 
     public WebElement findDeployment(ClusterNode node, String name) {

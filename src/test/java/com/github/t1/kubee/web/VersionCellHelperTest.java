@@ -11,7 +11,7 @@ import static com.github.t1.kubee.model.VersionStatus.*;
 import static com.github.t1.kubee.web.VersionCell.*;
 import static com.github.t1.kubee.web.VersionMenuItem.*;
 import static java.util.Arrays.*;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -25,8 +25,8 @@ public class VersionCellHelperTest {
         WebElement deployerElement = mockDeploymentElement("deployer");
         WebElement dummyElement = mockDeploymentElement("dummy");
 
-        VersionCell deployer = new VersionCell(deployerElement);
-        VersionCell dummy = new VersionCell(dummyElement);
+        VersionCell deployer = new VersionCell(null, deployerElement);
+        VersionCell dummy = new VersionCell(null, dummyElement);
         assertThat(deployer).is(closed);
         assertThat(dummy).is(closed);
 

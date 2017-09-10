@@ -1,5 +1,6 @@
 package com.github.t1.kubee.web;
 
+import lombok.Getter;
 import org.assertj.core.api.Condition;
 import org.openqa.selenium.*;
 
@@ -8,13 +9,18 @@ import java.util.List;
 import static com.github.t1.testtools.AbstractPage.*;
 import static com.github.t1.testtools.AssertJHelpers.*;
 
+@Getter
 class VersionMenuItem {
+    private final WebElement element;
     private final WebElement icon;
     private final WebElement label;
+    private final String text;
 
     VersionMenuItem(WebElement element) {
+        this.element = element;
         this.icon = optional(element, "span.version-icon");
         this.label = optional(element, "span.version");
+        this.text = element.getText();
     }
 
     private WebElement optional(WebElement parent, String selector) {
@@ -27,8 +33,10 @@ class VersionMenuItem {
     }
 
     @Override public String toString() {
-        return "VersionMenuItem:" + ((label == null) ? null : label.getText())
-                + "[icon:" + ((icon == null) ? null : icon.getAttribute("class")) + "]";
+        return "VersionMenuItem:"
+                + ((label == null) ? "" : "[label:" + label.getText() + "]")
+                + ((text == null) ? "" : "[text:" + text + "]")
+                + ((icon == null) ? "" : "[icon:" + icon.getAttribute("class") + "]");
     }
 
     static Condition<VersionMenuItem> versionMenuItem(String iconName, String versionName, String status) {
@@ -45,4 +53,6 @@ class VersionMenuItem {
                         item -> item.label, "label")
         );
     }
+
+    void click() { element.click(); }
 }
