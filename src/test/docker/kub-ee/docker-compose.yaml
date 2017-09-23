@@ -1,0 +1,22 @@
+version: "3.2"
+services:
+  worker01:
+    build: ../worker
+    ports: [8080]
+  worker02:
+    build: ../worker
+    ports: [8080]
+  artifactory:
+#    image: kubee-artifactory
+    image: artifactory-mock
+    ports: [8081]
+    volumes:
+      - type: bind
+        source: ~/.m2
+        target: /root/.m2
+        read_only: true
+  lb:
+    build: ../lb
+    ports:
+    - 8080:80
+# TODO kub-ee
