@@ -46,6 +46,7 @@ Manage the applications on multiple Java EE clusters.
 
    I.e. `Jolokia` is deployed in version `1.3.6` on `http://qa-worker-01:8080`, which is a node in the `QA` stage
    (the prefix `qa-` is part of the cluster config and not visible here). _(done)_
+
 5. If he doesn't have the rights to (un)deploy to a node, this is all he can do. _(todo)_
 1. He opens a menu in one matrix cell and picks `undeploy`: The version gets undeployed,
    after it's been removed from the LB nginx config (incl. reload and all current requests finishing). _(done)_
