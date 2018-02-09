@@ -1,0 +1,173 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: kub-ee
+
+
+
+---
+kind: Deployment
+apiVersion: apps/v1beta2
+metadata:
+  name: artifactory
+  namespace: kub-ee
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artifactory
+  template:
+    metadata:
+      labels:
+        app: artifactory
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: artifactory
+        image: rdohna/artifactory-mock:latest
+
+        ports:
+        - name: http
+          containerPort: 8081
+          protocol: TCP
+
+        livenessProbe:
+          httpGet:
+            port: 8081
+            path: /artifactory/liveness
+          initialDelaySeconds: 30
+
+#        readinessProbe:
+#          exec:
+#            command:
+#            - ls
+#            - /var/ready
+
+        resources:
+          limits:
+            memory: 512M
+            cpu: 0.4
+          requests:
+            memory: 250M
+            cpu: 0.2
+
+        volumeMounts:
+          - name: storage
+            mountPath: /root/.m2
+      volumes:
+        - name: storage
+          hostPath:
+            path: /Users/rdohna/.m2
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: artifactory
+  namespace: kub-ee
+spec:
+  type: NodePort
+  ports:
+  - port: 8081
+    targetPort: 8081
+  selector:
+    app: artifactory
+
+
+
+---
+kind: Deployment
+apiVersion: apps/v1beta2
+metadata:
+  name: deployer
+  namespace: kub-ee
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: deployer
+  revisionHistoryLimit: 5
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        app: deployer
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: deployer
+        image: rdohna/deployer-wildfly:latest
+
+        ports:
+        - name: http
+          containerPort: 8080
+
+#        livenessProbe:
+#          httpGet:
+#            port: 8081
+#            path: /deployer/liveness
+#          initialDelaySeconds: 10
+
+#        readinessProbe:
+#          exec:
+#            command:
+#            - ls
+#            - /var/ready
+
+        env:
+        - name: DEPLOYER_CONFIG_DIR
+          value: /var/local/deployer
+
+        resources:
+          limits:
+            memory: 1G
+            cpu: 0.4
+          requests:
+            memory: 250M
+            cpu: 0.2
+
+        volumeMounts:
+        - name: config
+          mountPath: /var/local/deployer
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: deployer-config
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: deployer
+  namespace: kub-ee
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: deployer
+
+
+
+---
+kind: Ingress
+apiVersion: extensions/v1beta1
+metadata:
+  name: kub-ee
+  namespace: kub-ee
+spec:
+  rules:
+  - host: kub-ee.minikube
+    http:
+      paths:
+      - path: /deployer
+        backend:
+          serviceName: deployer
+          servicePort: 8080
+
+# kubectl create configmap deployer-config -n kub-ee --from-file=config

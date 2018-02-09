@@ -1,0 +1,12 @@
+repository:
+    type: artifactory
+    uri: http://artifactory:8081/artifactory
+#    username:
+#    password:
+#    repositorySnapshots:
+#    repositoryReleases:
+vars:
+  default.log-encoding: UTF-8
+#  default.group-id: com.github.t1
+pin:
+  loggers: [com.arjuna, org.jboss.as.config, sun.rmi, jacorb, jacorb.config, org.apache.tomcat.util.modeler]
