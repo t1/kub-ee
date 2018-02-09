@@ -1,10 +1,10 @@
 version: "3.2"
 services:
   worker01:
-    build: ../worker
+    build: worker
     ports: [8080]
   worker02:
-    build: ../worker
+    build: worker
     ports: [8080]
   artifactory:
 #    image: kubee-artifactory
@@ -16,7 +16,7 @@ services:
         target: /root/.m2
         read_only: true
   lb:
-    build: ../lb
+    build: lb
     ports:
     - 8080:80
 # TODO kub-ee
