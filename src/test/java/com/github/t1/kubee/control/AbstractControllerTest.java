@@ -45,5 +45,5 @@ public abstract class AbstractControllerTest {
     }
 
     @After
-    public void tearDown() throws Exception { NginxLoadBalancerGatewayTest.setConfigDir(originalConfigFile); }
+    public void tearDown() { NginxLoadBalancerGatewayTest.setConfigDir(originalConfigFile); }
 }

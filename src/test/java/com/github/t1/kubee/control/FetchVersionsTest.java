@@ -14,14 +14,14 @@ import static org.mockito.Mockito.*;
 
 public class FetchVersionsTest extends AbstractControllerTest {
     @Test
-    public void shouldFetchNoVersion() throws Exception {
+    public void shouldFetchNoVersion() {
         List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
 
         assertThat(versions).isEmpty();
     }
 
     @Test
-    public void shouldFetchOneVersion() throws Exception {
+    public void shouldFetchOneVersion() {
         List<String> versionStrings = asList("1.0.0", "1.0.1", "1.0.2");
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenReturn(versionStrings);
@@ -36,7 +36,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchNotFoundVersionDummy() throws Exception {
+    public void shouldFetchNotFoundVersionDummy() {
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenThrow(new NotFoundException("foo not found"));
 
@@ -46,7 +46,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchUnknownHostVersionDummy() throws Exception {
+    public void shouldFetchUnknownHostVersionDummy() {
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenThrow(new ProcessingException(new UnknownHostException("dummy")));
 
@@ -56,7 +56,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFailToFetchVersion() throws Exception {
+    public void shouldFailToFetchVersion() {
         RuntimeException dummy = new RuntimeException("dummy");
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact")).thenThrow(dummy);
 
@@ -66,7 +66,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFailToFetchVersionFromProcessingException() throws Exception {
+    public void shouldFailToFetchVersionFromProcessingException() {
         ProcessingException dummy = new ProcessingException(new RuntimeException("dummy"));
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact")).thenThrow(dummy);
 

@@ -50,14 +50,14 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @After
-    public void assertNoMoreDeployments() throws Exception {
+    public void assertNoMoreDeployments() {
         verify(controller.deployer, atLeast(0)).fetchVersion("foo", DEV01);
         verifyNoMoreInteractions(controller.deployer);
     }
 
 
     @Test
-    public void shouldDeploy() throws Exception {
+    public void shouldDeploy() {
         givenHealthy(true);
         whenDeploying().thenReturn(audit("change", "1.0.0", "1.0.2"));
 
@@ -67,7 +67,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldReDeploy() throws Exception {
+    public void shouldReDeploy() {
         givenHealthy(true);
         whenUndeploying().thenReturn(audit("remove", "1.0.0", null));
         whenDeploying("1.0.0").thenReturn(audit("add", null, "1.0.0"));
@@ -79,7 +79,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldUnDeploy() throws Exception {
+    public void shouldUnDeploy() {
         givenHealthy(true);
         whenUndeploying().thenReturn(audit("remove", "1.0.0", null));
 
@@ -90,7 +90,7 @@ public class DeployTest extends AbstractControllerTest {
 
 
     @Test
-    public void shouldRollbackAfterDeployWithMissingAudit() throws Exception {
+    public void shouldRollbackAfterDeployWithMissingAudit() {
         givenHealthy(true);
         whenDeploying().thenReturn(Audits.parseYaml(""
                 + "audits:\n"
@@ -104,7 +104,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldRollbackAfterDeployWithWrongAuditOperation() throws Exception {
+    public void shouldRollbackAfterDeployWithWrongAuditOperation() {
         givenHealthy(true);
         whenDeploying().thenReturn(audit("remove", "1.0.0", "1.0.2"));
 
@@ -116,7 +116,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldRollbackAfterDeployWithoutAuditVersionChange() throws Exception {
+    public void shouldRollbackAfterDeployWithoutAuditVersionChange() {
         givenHealthy(true);
         whenDeploying().thenReturn(audit("change", null,null));
 
@@ -128,7 +128,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldRollbackAfterDeployWithWrongVersionChange() throws Exception {
+    public void shouldRollbackAfterDeployWithWrongVersionChange() {
         givenHealthy(true);
         whenDeploying().thenReturn(audit("change", "1.0.0","1.0.3"));
 
@@ -141,7 +141,7 @@ public class DeployTest extends AbstractControllerTest {
 
 
     @Test
-    public void shouldRollbackAfterDeployFlipsToUnhealthy() throws Exception {
+    public void shouldRollbackAfterDeployFlipsToUnhealthy() {
         givenHealthy(true, false);
         whenDeploying().thenReturn(audit("change", "1.0.0", "1.0.2"));
 
@@ -153,7 +153,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldNotRollbackWhenDeployStaysUnhealthy() throws Exception {
+    public void shouldNotRollbackWhenDeployStaysUnhealthy() {
         givenHealthy(false);
         whenDeploying().thenReturn(audit("change", "1.0.0", "1.0.2"));
 

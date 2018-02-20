@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
 @RunWith(OrderedJUnitRunner.class)
 public class BoundaryIT extends AbstractIT {
     @Test
-    public void shouldGetIndexAsJson() throws Exception {
+    public void shouldGetIndexAsJson() {
         String response = kubEE().request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("{"
@@ -43,7 +43,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetClustersAsJson() throws Exception {
+    public void shouldGetClustersAsJson() {
         String response = kubEE().path("clusters").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo(""
@@ -63,7 +63,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetOneClusterAsJson() throws Exception {
+    public void shouldGetOneClusterAsJson() {
         String response = kubEE().path("clusters").path("localhost")
                                  .request(APPLICATION_JSON_TYPE)
                                  .get(String.class);
@@ -79,7 +79,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetSlotsAsJson() throws Exception {
+    public void shouldGetSlotsAsJson() {
         String response = kubEE().path("slots").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("["
@@ -89,7 +89,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetOneSlotAsJson() throws Exception {
+    public void shouldGetOneSlotAsJson() {
         String response = kubEE().path("slots").path("1")
                                  .request(APPLICATION_JSON_TYPE)
                                  .get(String.class);
@@ -98,7 +98,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetStagesAsJson() throws Exception {
+    public void shouldGetStagesAsJson() {
         String response = kubEE().path("stages").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("[{"
@@ -113,7 +113,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetOneStageAsJson() throws Exception {
+    public void shouldGetOneStageAsJson() {
         String response = kubEE().path("stages").path("PROD")
                                  .request(APPLICATION_JSON_TYPE)
                                  .get(String.class);
@@ -152,7 +152,7 @@ public class BoundaryIT extends AbstractIT {
     }
 
     @Test
-    public void shouldGetDeploymentsAsHtml() throws Exception {
+    public void shouldGetDeploymentsAsHtml() {
         Response response = kubEE().path("deployments").request(TEXT_HTML_TYPE).get();
 
         assertThat(response.getStatusInfo()).isEqualTo(OK);

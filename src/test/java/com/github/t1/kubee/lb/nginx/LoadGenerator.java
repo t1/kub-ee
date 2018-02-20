@@ -10,10 +10,10 @@ import static java.util.stream.Collectors.*;
 import static javax.ws.rs.core.Response.Status.Family.*;
 
 public class LoadGenerator implements Runnable {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         LoadGenerator generator = new LoadGenerator();
-        System.out.println("warmup");
-        generator.warmup();
+        System.out.println("warm up");
+        generator.warmUp();
         Statistics statistics = new Statistics();
         System.out.println("start");
         Instant start = now();
@@ -33,7 +33,7 @@ public class LoadGenerator implements Runnable {
     private Duration time;
     private String result;
 
-    private void warmup() throws Exception {
+    private void warmUp() {
         for (int i = 0; i < 10; i++)
             run();
     }

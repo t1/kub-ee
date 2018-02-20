@@ -117,7 +117,7 @@ public class NginxLoadBalancerGatewayTest {
     private final LoadBalancerConfigAdapter nginxProd = mock(LoadBalancerConfigAdapter.class);
 
 
-    @Before public void setUp() throws Exception {
+    @Before public void setUp() {
         gateway.configAdapters = new LinkedHashMap<>();
         gateway.configAdapters.put(DEV.getName(), nginxDev);
         gateway.configAdapters.put(QA.getName(), nginxQa);
@@ -128,7 +128,7 @@ public class NginxLoadBalancerGatewayTest {
         return gateway.configAdapters.get(stage.getName());
     }
 
-    private void given(Stage stage, String contents) throws IOException {
+    private void given(Stage stage, String contents) {
         when(adapter(stage).read()).thenReturn(NginxConfig.readFrom(new StringReader(contents)));
     }
 
@@ -145,7 +145,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldGetProdLoadBalancers() throws Exception {
+    public void shouldGetProdLoadBalancers() {
         given(PROD, CONFIG_PROD);
 
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(PROD);
@@ -157,7 +157,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldGetQaLoadBalancers() throws Exception {
+    public void shouldGetQaLoadBalancers() {
         given(QA, CONFIG_QA);
 
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(QA);
@@ -169,7 +169,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldGetQaReverseProxies() throws Exception {
+    public void shouldGetQaReverseProxies() {
         given(QA, CONFIG_QA);
 
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(QA);
@@ -188,7 +188,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldGetProdReverseProxies() throws Exception {
+    public void shouldGetProdReverseProxies() {
         given(PROD, CONFIG_PROD);
 
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(PROD);
@@ -208,7 +208,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldRemoveFirstTargetFromLoadBalancerWithoutResolve() throws Exception {
+    public void shouldRemoveFirstTargetFromLoadBalancerWithoutResolve() {
         given(DEV, ""
                 + "http {\n"
                 + "    upstream ping-test-lb {\n"
@@ -254,7 +254,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() throws Exception {
+    public void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() {
         given(PROD, CONFIG_PROD);
 
         gateway.from("jolokia", PROD).removeTarget(URI.create("http://worker1:80"));
@@ -265,7 +265,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() throws Exception {
+    public void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() {
         given(QA, CONFIG_QA);
 
         gateway.from("jolokia", QA).removeTarget(URI.create("http://worker" + "qa1:80"));
@@ -294,7 +294,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldAddTargetToExistingLoadBalancer() throws Exception {
+    public void shouldAddTargetToExistingLoadBalancer() {
         given(QA, CONFIG_QA);
 
         gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
@@ -314,7 +314,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldAddTargetToEmptyLoadBalancer() throws Exception {
+    public void shouldAddTargetToEmptyLoadBalancer() {
         given(QA, CONFIG_QA.replace(""
                         + "    server {\n"
                         + "        server_name jolokia" + "qa;\n"
@@ -346,7 +346,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldAddTargetToNewLoadBalancer() throws Exception {
+    public void shouldAddTargetToNewLoadBalancer() {
         given(PROD, CONFIG_PROD);
 
         gateway.to("foo", PROD).addTarget(URI.create("http://worker1:80"));
@@ -383,7 +383,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateDefaultProdConfigAdapter() throws Exception {
+    public void shouldCreateDefaultProdConfigAdapter() {
         gateway.configAdapters.clear();
 
         gateway.loadBalancers(PROD);
@@ -396,7 +396,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateDefaultQaConfigAdapter() throws Exception {
+    public void shouldCreateDefaultQaConfigAdapter() {
         gateway.configAdapters.clear();
 
         gateway.config(QA);
@@ -409,7 +409,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateConfigAdapterWithPath() throws Exception {
+    public void shouldCreateConfigAdapterWithPath() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(CONFIG_PATH, "/tmp/nginx.conf").build();
         gateway.configAdapters.clear();
 
@@ -421,7 +421,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateConfigAdapterWithPort() throws Exception {
+    public void shouldCreateConfigAdapterWithPort() {
         Stage stage = Stage.builder().name("DUMMY").suffix("dummy").loadBalancerConfig(
                 ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
         gateway.configAdapters.clear();
@@ -436,7 +436,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateConfigAdapterWithUnknownReloadMode() throws Exception {
+    public void shouldCreateConfigAdapterWithUnknownReloadMode() {
         gateway.configAdapters.clear();
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "foo").build();
 
@@ -445,7 +445,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateConfigAdapterWithDirectReload() throws Exception {
+    public void shouldCreateConfigAdapterWithDirectReload() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "direct").build();
         gateway.configAdapters.clear();
 
@@ -458,7 +458,7 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     @Test
-    public void shouldCreateConfigAdapterWithScriptReload() throws Exception {
+    public void shouldCreateConfigAdapterWithScriptReload() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "set-user-id-script").build();
         gateway.configAdapters.clear();
 

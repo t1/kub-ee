@@ -21,7 +21,7 @@ public class DeployerGatewayIT {
     }
 
     @Test
-    public void shouldFetchDeployables() throws Exception {
+    public void shouldFetchDeployables() {
         List<Deployable> deployables = new DeployerGateway().fetchDeploymentsFrom(swarm.baseUri());
 
         assertThat(deployables).containsExactly(

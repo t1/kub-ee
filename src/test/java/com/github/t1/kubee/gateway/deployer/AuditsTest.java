@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.*;
 
 public class AuditsTest {
     @Test
-    public void shouldDeserialize() throws Exception {
+    public void shouldDeserialize() {
         Audits audits = Audits.parseYaml(""
                 + "audits:\n"
                 + "- !<deployable>\n"

@@ -12,7 +12,7 @@ import static org.mockito.Mockito.*;
 
 public class ConfigsTest extends AbstractControllerTest {
     @Test
-    public void shouldGetClusters() throws Exception {
+    public void shouldGetClusters() {
         Stream<Cluster> clusters = controller.clusters();
 
         assertThat(clusters).containsExactly(CLUSTERS);
@@ -20,14 +20,14 @@ public class ConfigsTest extends AbstractControllerTest {
 
 
     @Test
-    public void shouldGetNoLoadBalancers() throws Exception {
+    public void shouldGetNoLoadBalancers() {
         Stream<LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of());
 
         assertThat(loadBalancers).containsExactly();
     }
 
     @Test
-    public void shouldGetOneLoadBalancer() throws Exception {
+    public void shouldGetOneLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
         when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo));
 
@@ -37,7 +37,7 @@ public class ConfigsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldGetTwoLoadBalancer() throws Exception {
+    public void shouldGetTwoLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
         LoadBalancer bar = LoadBalancer.builder().name("bar").build();
         when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo, bar));
@@ -49,14 +49,14 @@ public class ConfigsTest extends AbstractControllerTest {
 
 
     @Test
-    public void shouldGetNoReverseProxies() throws Exception {
+    public void shouldGetNoReverseProxies() {
         Stream<ReverseProxy> reverseProxies = controller.reverseProxies(Stream.of());
 
         assertThat(reverseProxies).containsExactly();
     }
 
     @Test
-    public void shouldGetOneReverseProxy() throws Exception {
+    public void shouldGetOneReverseProxy() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
         when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo));
 
@@ -66,7 +66,7 @@ public class ConfigsTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldGetTwoReverseProxies() throws Exception {
+    public void shouldGetTwoReverseProxies() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
         ReverseProxy bar = ReverseProxy.builder().from(URI.create("bar")).build();
         when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo, bar));

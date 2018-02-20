@@ -16,14 +16,14 @@ import static org.mockito.Mockito.*;
 
 public class FetchDeployablesTest extends AbstractControllerTest {
     @Test
-    public void shouldFetchNoDeployables() throws Exception {
+    public void shouldFetchNoDeployables() {
         Stream<Deployment> deployments = controller.fetchDeploymentsOn(DEV01);
 
         assertThat(deployments).containsExactly();
     }
 
     @Test
-    public void shouldFetchOneDeployable() throws Exception {
+    public void shouldFetchOneDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01)).thenReturn(Stream.of(DEPLOYMENT));
 
         Stream<Deployment> deployments = controller.fetchDeploymentsOn(DEV01);
@@ -32,7 +32,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchTwoDeployables() throws Exception {
+    public void shouldFetchTwoDeployables() {
         Deployment foo = Deployment.builder().name("foo").node(DEV01).build();
         Deployment bar = Deployment.builder().name("bar").node(DEV01).build();
 
@@ -44,7 +44,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchErrorDummyDeployable() throws Exception {
+    public void shouldFetchErrorDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01)).thenThrow(new RuntimeException("dummy"));
 
         List<Deployment> deployments = controller.fetchDeploymentsOn(DEV01).collect(toList());
@@ -54,7 +54,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchErrorCauseDummyDeployable() throws Exception {
+    public void shouldFetchErrorCauseDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("outer", new RuntimeException("dummy")));
 
@@ -65,7 +65,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchExecutionExceptionDummyDeployable() throws Exception {
+    public void shouldFetchExecutionExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(ExecutionException.class.getName() + ": dummy"));
 
@@ -76,7 +76,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchConnectExceptionDummyDeployable() throws Exception {
+    public void shouldFetchConnectExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(ConnectException.class.getName() + ": dummy"));
 
@@ -87,7 +87,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchConnectRuntimeExceptionDummyDeployable() throws Exception {
+    public void shouldFetchConnectRuntimeExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(
                         RuntimeException.class.getName() + ": " + ConnectException.class.getName() + ": dummy"));
@@ -99,7 +99,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchUnknownHostSuffixDummyDeployable() throws Exception {
+    public void shouldFetchUnknownHostSuffixDummyDeployable() {
         //noinspection SpellCheckingInspection
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("dummy: nodename nor servname provided, or not known"));
@@ -111,7 +111,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchNotFoundDummyDeployable() throws Exception {
+    public void shouldFetchNotFoundDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(NotFoundException.class.getName() + ": dummy"));
 
@@ -122,7 +122,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchBadDeployerGatewayDummyDeployable() throws Exception {
+    public void shouldFetchBadDeployerGatewayDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(BadDeployerGatewayException.class.getName() + ": dummy"));
 
@@ -133,7 +133,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchUnknownHostDummyDeployable() throws Exception {
+    public void shouldFetchUnknownHostDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(UnknownHostException.class.getName() + ": dummy"));
 
@@ -144,7 +144,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     }
 
     @Test
-    public void shouldFetchConnectionRefusedDummyDummyDeployable() throws Exception {
+    public void shouldFetchConnectionRefusedDummyDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("Connection refused (Connection refused)"));
 

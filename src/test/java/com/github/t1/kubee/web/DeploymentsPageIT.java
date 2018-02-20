@@ -34,7 +34,7 @@ public class DeploymentsPageIT extends AbstractIT {
 
 
     @Test
-    public void shouldGoToDeploymentsPage() throws Exception {
+    public void shouldGoToDeploymentsPage() {
         page.navigateTo();
 
         page.assertOpen();
@@ -83,7 +83,7 @@ public class DeploymentsPageIT extends AbstractIT {
     }
 
     @Test
-    public void shouldUndeployDummyAppFrom2() throws Exception {
+    public void shouldUndeployDummyAppFrom2() {
         VersionCell dummy2 = page.findDeploymentCell(CLUSTER_2.node(PROD, 1), "dummy");
         dummy2.clickToggle();
 
@@ -93,7 +93,7 @@ public class DeploymentsPageIT extends AbstractIT {
     }
 
     @Test
-    public void shouldDragDeployment() throws Exception {
+    public void shouldDragDeployment() {
         WebElement to = page.findDeployment(CLUSTER_2.node(PROD, 1), "dummy");
         DRIVER.buildAction()
               .clickAndHold(page.findDeployment(node11(), "dummy"))

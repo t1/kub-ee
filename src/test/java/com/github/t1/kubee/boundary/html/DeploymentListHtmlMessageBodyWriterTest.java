@@ -18,7 +18,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
     private DeploymentListHtmlMessageBodyWriter writer = new DeploymentListHtmlMessageBodyWriter();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         writer.uriInfo = mock(UriInfo.class);
         when(writer.uriInfo.getBaseUri()).thenReturn(URI.create("http://localhost:8080/kub-ee/api/"));
     }

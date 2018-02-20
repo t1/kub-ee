@@ -57,14 +57,14 @@ public class ClusterTest {
 
 
     @Test
-    public void shouldReadYamlConfig() throws Exception {
+    public void shouldReadYamlConfig() {
         ClusterConfig clusterConfig = readClusterConfig();
 
         assertThat(clusterConfig.clusters()).containsExactly(CLUSTERS);
     }
 
     @Test
-    public void shouldProduceAllUris() throws Exception {
+    public void shouldProduceAllUris() {
         Cluster cluster = CLUSTERS[0];
         Stream<URI> uris = cluster.stages().flatMap(stage -> stage.nodes(cluster)).map(ClusterNode::uri);
         assertThat(uris).containsExactly(

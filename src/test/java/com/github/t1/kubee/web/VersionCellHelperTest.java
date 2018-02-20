@@ -21,7 +21,7 @@ public class VersionCellHelperTest {
     private static final String BY_CSS_SELECTOR = "By.cssSelector: ";
 
     @Test
-    public void dummy() throws Exception {
+    public void dummy() {
         WebElement deployerElement = mockDeploymentElement("deployer");
         WebElement dummyElement = mockDeploymentElement("dummy");
 
