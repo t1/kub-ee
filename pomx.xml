@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project xmlns="urn:xsd:maven:pomx:5.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="urn:xsd:maven:pomx:5.0.0 https://raw.githubusercontent.com/t1/pomx/master/src/main/resources/schemas/pomx-5.0.0.xsd">
-
+<project
+        xmlns="urn:xsd:maven:pomx:5.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:xsd:maven:pomx:5.0.0 https://raw.githubusercontent.com/t1/pomx/master/src/main/resources/schemas/pomx-5.0.0.xsd">
     <war>com.github.t1:kub-ee:1.0.0-SNAPSHOT</war>
     <name>Kub-EE</name>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <failOnMissingWebXml>false</failOnMissingWebXml>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
         <jackson.version>2.9.7</jackson.version>
         <wildfly.swarm.version>2018.5.0</wildfly.swarm.version>
     </properties>
@@ -20,39 +15,8 @@
     <profile>com.github.t1:profile-t1:1.0.0-SNAPSHOT</profile>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
-        <testResources>
-            <testResource>
-                <directory>src/test/java</directory>
-                <filtering>true</filtering>
-                <excludes>
-                    <exclude>**/*.java</exclude>
-                </excludes>
-            </testResource>
-        </testResources>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.16</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.19.1</version>
-                <executions>
-                    <execution>
-                        <id>perform-it</id>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.pitest</groupId>
-                <artifactId>pitest-maven</artifactId>
-                <version>1.2.2</version>
+            <plugin id="org.pitest:pitest-maven:1.4.3">
                 <configuration>
                     <timestampedReports>false</timestampedReports>
                 </configuration>
@@ -136,145 +100,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- provided scope -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.16.18</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-api</artifactId>
-            <version>7.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>test-tools</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- compile scope -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.11.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>logging-interceptor</artifactId>
-            <version>3.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>nginx-config-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- webjars -->
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>bootstrap</artifactId>
-            <version>4.1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>react</artifactId>
-            <version>16.5.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>babel-standalone</artifactId>
-            <version>6.26.0</version>
-        </dependency>
-
-        <!-- test scope -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>2.8.47</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>3.8.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>2.27</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>jaxrs</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>cdi</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>ejb</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
-            <version>3.1.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-testing</artifactId>
-            <version>1.3.7</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- pin newer version: used by dropwizard and shrinkwrap -->
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>26.0-jre</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-server</artifactId>
-            <version>3.14.0</version>
+            <version>3.141.59</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -283,5 +112,34 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <provided>
+            <jar>com.github.t1:test-tools:2.0.0-SNAPSHOT</jar>
+        </provided>
+
+        <compile>
+            <jar>com.fasterxml.jackson.core:jackson-databind:${jackson.version}</jar>
+            <jar>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson.version}</jar>
+            <jar>org.jsoup:jsoup:1.11.3</jar>
+            <jar>com.github.t1:logging-interceptor:3.2.3</jar>
+            <jar>com.github.t1: nginx-config-model:1.0.0-SNAPSHOT</jar>
+            <!-- webjars -->
+            <jar>org.webjars:bootstrap:4.1.3</jar>
+            <jar>org.webjars:react:16.5.2</jar>
+            <jar>org.webjars.npm:babel-standalone:6.26.0</jar>
+        </compile>
+
+        <test>
+            <jar>junit:junit:4.12</jar>
+            <jar>org.mockito:mockito-core:2.8.47</jar>
+            <jar>org.assertj:assertj-core:3.8.0</jar>
+            <jar>ch.qos.logback:logback-classic:1.2.3</jar>
+            <jar>org.glassfish.jersey.core:jersey-client:2.27</jar>
+            <jar>org.wildfly.swarm:jaxrs</jar>
+            <jar>org.wildfly.swarm:cdi</jar>
+            <jar>org.wildfly.swarm:ejb</jar>
+            <jar>org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven:3.1.3</jar>
+            <jar>io.dropwizard:dropwizard-testing:1.3.7</jar>
+        </test>
     </dependencies>
 </project>
