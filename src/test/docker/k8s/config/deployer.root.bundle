@@ -7,11 +7,16 @@ log-handlers:
 loggers:
   com.github.t1.deployer:
     handlers: [DEPLOYER,CONSOLE]
+  com.github.t1.kubee:
+    level: DEBUG
 deployables:
-  mockserver:
-    group-id: org.mock-server
-    artifact-id: mockserver-war
-    version: 5.3.0
+  kub-ee:
+    version: ${kubee.version}
+    state: ${kubee.state or «deployed»}
+#  mockserver:
+#    group-id: org.mock-server
+#    artifact-id: mockserver-war
+#    version: 5.3.0
 #  jolokia:
 #    group-id: org.jolokia
 #    artifact-id: jolokia-war

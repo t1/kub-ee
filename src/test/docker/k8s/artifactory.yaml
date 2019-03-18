@@ -1,0 +1,65 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: artifactory
+  namespace: kub-ee
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artifactory
+  template:
+    metadata:
+      labels:
+        app: artifactory
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: artifactory
+        image: rdohna/artifactory-mock:latest
+
+        ports:
+        - name: http
+          containerPort: 8081
+          protocol: TCP
+
+        livenessProbe:
+          httpGet:
+            port: 8081
+            path: /artifactory/liveness
+          initialDelaySeconds: 30
+
+#        readinessProbe:
+#          exec:
+#            command:
+#            - ls
+#            - /var/ready
+
+        resources:
+          limits:
+            memory: 512M
+            cpu: 0.4
+          requests:
+            memory: 250M
+            cpu: 0.2
+
+        volumeMounts:
+          - name: storage
+            mountPath: /root/.m2
+      volumes:
+        - name: storage
+          hostPath:
+            path: /Users/rdohna/.m2
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: artifactory
+  namespace: kub-ee
+spec:
+  type: NodePort
+  ports:
+  - port: 8081
+    targetPort: 8081
+  selector:
+    app: artifactory

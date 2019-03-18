@@ -1,0 +1,7 @@
+:slot:0:
+  http: 8080
+  https: 8443
+worker.kub-ee:0:
+  PROD:
+    count: 1
+    path: deployer/

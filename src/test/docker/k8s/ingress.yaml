@@ -1,0 +1,14 @@
+kind: Ingress
+apiVersion: extensions/v1beta1
+metadata:
+  name: kub-ee
+  namespace: kub-ee
+spec:
+  rules:
+  - host: kub-ee.minikube
+    http:
+      paths:
+      - path: /deployer
+        backend:
+          serviceName: deployer
+          servicePort: 8080

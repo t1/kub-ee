@@ -4,26 +4,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Audits;
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.Deployment;
 import com.github.t1.log.Logged;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.*;
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static com.github.t1.log.LogLevel.*;
-import static java.util.stream.Collectors.*;
-import static javax.ws.rs.core.Response.Status.*;
-import static javax.ws.rs.core.Response.Status.Family.*;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badGateway;
+import static com.github.t1.log.LogLevel.INFO;
+import static java.util.stream.Collectors.toList;
+import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
+import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @Logged(level = INFO)
 @Slf4j
@@ -41,6 +56,7 @@ public class DeployerGateway {
     }
 
     private String fetchYaml(URI uri, Function<Invocation.Builder, Response> method) {
+        log.debug("fetch yaml from {}", uri);
         Invocation.Builder invocation = httpClient
                 .target(uri)
                 .request()

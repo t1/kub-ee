@@ -1,0 +1,77 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: worker
+  namespace: kub-ee
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: worker
+  revisionHistoryLimit: 5
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: worker
+        image: rdohna/deployer-wildfly:latest
+
+        ports:
+        - name: http
+          containerPort: 8080
+
+#        livenessProbe:
+#          httpGet:
+#            port: 8081
+#            path: /deployer/liveness
+#          initialDelaySeconds: 10
+
+#        readinessProbe:
+#          exec:
+#            command:
+#            - ls
+#            - /var/ready
+
+        env:
+        - name: DEPLOYER_CONFIG_DIR
+          value: /var/local/deployer
+
+        resources:
+          limits:
+            memory: 1G
+            cpu: 0.4
+          requests:
+            memory: 250M
+            cpu: 0.2
+
+        volumeMounts:
+        - name: deployer-config
+          mountPath: /var/local/deployer
+          readOnly: true
+      volumes:
+      - name: deployer-config
+        configMap:
+          name: deployer-config
+# kubectl create configmap deployer-config -n kub-ee --from-file=deployer-config/
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: worker
+  namespace: kub-ee
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: worker

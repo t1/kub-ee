@@ -1,7 +1,7 @@
 .idea/
 kub-ee.iml
 target/
-cluster-config.yaml
+/cluster-config.yaml
 /nginx.conf
 nginxqa.conf
 nginx-mib.conf

@@ -3,20 +3,32 @@ services:
   worker01:
     build: worker
     ports: [8080]
+    networks:
+    - kub-ee
   worker02:
     build: worker
     ports: [8080]
+    networks:
+    - kub-ee
   artifactory:
 #    image: kubee-artifactory
-    image: artifactory-mock
+    image: rdohna/artifactory-mock
     ports: [8081]
+    networks:
+    - kub-ee
     volumes:
-      - type: bind
-        source: ~/.m2
-        target: /root/.m2
-        read_only: true
+    - type: bind
+      source: /Users/rdohna/.m2
+      target: /root/.m2
+      read_only: true
   lb:
     build: lb
     ports:
     - 8080:80
+    networks:
+    - kub-ee
 # TODO kub-ee
+
+networks:
+  kub-ee:
+    driver: overlay
