@@ -8,7 +8,8 @@ class DeploymentMenu extends React.Component {
     render() {
         const versions = (this.props.versions)
             ? this.props.versions.map(version => this.renderVersion(version))
-            : <span className="loading-indicator">Loading...</span>;
+            :
+            <span className="loading-indicator">Loading...</span>;
         return <ul className="list-unstyled deployment-menu">
             {versions}
             <li>
@@ -75,11 +76,13 @@ function click_handler(event) {
         return;
     console.debug('menu', menu, cellId);
 
-    ReactDOM.render(<DeploymentMenu group={cellId}/>, menu);
+    ReactDOM.render(
+        <DeploymentMenu group={cellId}/>, menu);
 
     fetchVersions(cellId)
         .then(versions => {
-            ReactDOM.render(<DeploymentMenu group={cellId} versions={versions.available}/>, menu);
+            ReactDOM.render(
+                <DeploymentMenu group={cellId} versions={versions.available}/>, menu);
         });
 }
 
@@ -164,7 +167,7 @@ function cellIcon(id, status) {
 
 function getOrCreateCellIcon(parent) {
     const iconNode = parent.find('.version-icon');
-    if (iconNode.size() !== 0)
+    if (iconNode.size && iconNode.size() !== 0)
         return iconNode[0];
     const icon = document.createElement('span');
     parent.append(icon);
@@ -274,12 +277,18 @@ function drop_handler(event) {
 
     switch (operation) {
         case 'copy':
-            deploy(targetId, {name: version, status: 'deploying'});
+            deploy(targetId, {
+                name: version,
+                status: 'deploying'
+            });
             break;
         case 'move':
             const id = sourceId;
             cellIcon(sourceId, 'undeployee');
-            deploy(targetId, {name: version, status: 'deploying'})
+            deploy(targetId, {
+                name: version,
+                status: 'deploying'
+            })
                 .then(() => {
                     undeploy(id)
                 });

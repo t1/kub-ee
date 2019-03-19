@@ -2,9 +2,10 @@ package com.github.t1.kubee.tools.html;
 
 import org.jsoup.nodes.Document;
 
-import java.nio.file.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Html {
     // private static final String BOOTSTRAP_VERSION = "3.3.7";
@@ -69,6 +70,7 @@ public class Html {
     public Container container() { return new Container(html.body()); }
 
     public void footer() {
+        script("popper.js/umd/popper.js");
         script(JQUERY_JS_URI);
         script(BOOTSTRAP_JS_URI);
     }

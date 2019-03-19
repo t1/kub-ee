@@ -8,6 +8,7 @@
 
     <properties>
         <jackson.version>2.9.8</jackson.version>
+        <react.version>16.8.3</react.version>
     </properties>
 
     <profile>com.github.t1:profile-javaee:7.0.0-SNAPSHOT</profile>
@@ -100,7 +101,8 @@
             <jar>com.github.t1: nginx-config-model:1.0.0-SNAPSHOT</jar>
             <!-- webjars -->
             <jar>org.webjars:bootstrap:4.3.1</jar>
-            <jar>org.webjars:react:16.5.2</jar>
+            <jar>org.webjars.npm:react:${react.version}</jar>
+            <jar>org.webjars.npm:react-dom:${react.version}</jar>
             <jar>org.webjars.npm:babel-standalone:6.26.0</jar>
         </compile>
 

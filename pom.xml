@@ -11,6 +11,7 @@
 
     <properties>
         <jackson.version>2.9.8</jackson.version>
+        <react.version>16.8.3</react.version>
     </properties>
 
     <build>
@@ -135,9 +136,15 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.webjars</groupId>
+            <groupId>org.webjars.npm</groupId>
             <artifactId>react</artifactId>
-            <version>16.5.2</version>
+            <version>${react.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>react-dom</artifactId>
+            <version>${react.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
