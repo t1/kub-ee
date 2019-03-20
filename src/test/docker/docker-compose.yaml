@@ -1,21 +1,21 @@
-version: "3.2"
+version: "3.7"
+networks:
+  kub-ee:
+    driver: overlay
 services:
   worker01:
     build: worker
     ports: [8080]
-    networks:
-    - kub-ee
+    networks: [kub-ee]
   worker02:
     build: worker
     ports: [8080]
-    networks:
-    - kub-ee
+    networks: [kub-ee]
   artifactory:
 #    image: kubee-artifactory
     image: rdohna/artifactory-mock
     ports: [8081]
-    networks:
-    - kub-ee
+    networks: [kub-ee]
     volumes:
     - type: bind
       source: /Users/rdohna/.m2
@@ -27,8 +27,4 @@ services:
     - 8080:80
     networks:
     - kub-ee
-# TODO kub-ee
-
-networks:
-  kub-ee:
-    driver: overlay
+# TODO add kub-ee to lb
