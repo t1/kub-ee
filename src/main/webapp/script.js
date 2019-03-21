@@ -219,8 +219,8 @@ function dragTargetId(event) {
 }
 
 function drag_over(event) {
-    const e = dropElement(event);
-    const ok = e.size() > 0 && e.hasClass('not-deployed');
+    const element = findElement(event);
+    const ok = element.hasClass('not-deployed');
 
     $id('cluster:' + targetClusterId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
     $id('node:' + targetNodeId(event)).addClass(ok ? 'drop-ok' : 'drop-not');
@@ -229,7 +229,7 @@ function drag_over(event) {
     }
 }
 
-function dropElement(event) {
+function findElement(event) {
     const dropClusterId = targetClusterId(event);
     const dropNodeId = targetNodeId(event);
     const appName = sourceId.split(':')[4];
@@ -263,7 +263,7 @@ function drop_handler(event) {
     removeDropZoneStyles(event);
     event.preventDefault();
 
-    const targetElement = dropElement(event);
+    const targetElement = findElement(event);
     const targetId = targetElement.attr('id');
     const targetCell = targetElement.parent();
     const operation = op(event);

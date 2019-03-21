@@ -2,16 +2,20 @@ package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Optional;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static java.lang.ProcessBuilder.Redirect.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.internalServerError;
+import static java.lang.ProcessBuilder.Redirect.INHERIT;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
 class LoadBalancerConfigAdapter {
@@ -34,24 +38,26 @@ class LoadBalancerConfigAdapter {
 
     private static Path configPath(Stage stage) {
         return NGINX_ETC.resolve(stage.getLoadBalancerConfig()
-                                      .getOrDefault(CONFIG_PATH,
-                                              stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
+            .getOrDefault(CONFIG_PATH,
+                stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
     }
 
     private Reload reloadMode(Stage stage) {
         Map<String, String> config = stage.getLoadBalancerConfig();
         String mode = config.getOrDefault(RELOAD_MODE, "service");
         switch (mode) {
-        case "service":
-            return new ServiceReload(stage);
-        case "direct":
-            return new DirectReload();
-        case "set-user-id-script":
-            return new SetUserIdScriptReload();
-        case "custom":
-            return customReload(config);
-        default:
-            throw new IllegalArgumentException("unknown reload mode: " + mode);
+            case "service":
+                return new ServiceReload(stage);
+            case "direct":
+                return new DirectReload();
+            case "set-user-id-script":
+                return new SetUserIdScriptReload();
+            case "docker-kill-hup":
+                return new DockerKillHupReload(config.getOrDefault("host", "localhost"));
+            case "custom":
+                return customReload(config);
+            default:
+                throw new IllegalArgumentException("unknown reload mode: " + mode);
         }
     }
 
@@ -96,7 +102,7 @@ class LoadBalancerConfigAdapter {
 
         private int reloadServicePort(Stage stage) {
             return Optional.ofNullable(stage.getLoadBalancerConfig().get(RELOAD_SERVICE_PORT))
-                           .map(Integer::parseInt).orElse(NginxReloadService.DEFAULT_PORT);
+                .map(Integer::parseInt).orElse(NginxReloadService.DEFAULT_PORT);
         }
 
         @Override public String reload() { return adapter.call(); }
@@ -108,6 +114,13 @@ class LoadBalancerConfigAdapter {
 
     static class SetUserIdScriptReload implements Reload {
         @Override public String reload() { return run("nginx-reload"); }
+    }
+
+    @RequiredArgsConstructor
+    static class DockerKillHupReload implements Reload {
+        public final String host;
+
+        @Override public String reload() { return run("docker", "kill", "--signal", "HUP", host); }
     }
 
     private static String run(String... command) {

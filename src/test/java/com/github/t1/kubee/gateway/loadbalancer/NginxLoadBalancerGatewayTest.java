@@ -1,21 +1,33 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;
+import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.io.*;
+import java.io.StringReader;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.*;
-import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.CONFIG_PATH;
+import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.RELOAD_MODE;
+import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.Reload;
+import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.ServiceReload;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class NginxLoadBalancerGatewayTest {
     public static Path setConfigDir(Path path) {
@@ -36,75 +48,75 @@ public class NginxLoadBalancerGatewayTest {
 
 
     private static final String CONFIG_QA = ""
-            + "http {\n"
-            + "    upstream jolokia" + "qa-lb {\n"
-            + "        server localhost:8180;\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name jolokia" + "qa;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
-            + "            proxy_set_header Host      $host;\n"
-            + "            proxy_set_header X-Real-IP $remote_addr;\n"
-            + "        }\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name worker" + "qa1;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://localhost:8180/;\n"
-            + "        }\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name worker" + "qa2;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://localhost:8280/;\n"
-            + "        }\n"
-            + "    }\n"
-            + "}\n";
+        + "http {\n"
+        + "    upstream jolokia" + "qa-lb {\n"
+        + "        server localhost:8180;\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name jolokia" + "qa;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+        + "            proxy_set_header Host      $host;\n"
+        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+        + "        }\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name worker" + "qa1;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://localhost:8180/;\n"
+        + "        }\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name worker" + "qa2;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://localhost:8280/;\n"
+        + "        }\n"
+        + "    }\n"
+        + "}\n";
     private static final String CONFIG_PROD = ""
-            + "http {\n"
-            + "    upstream jolokia-lb {\n"
-            + "        least_conn;\n"
-            + "\n"
-            + "        server localhost:8380;\n"
-            + "        server localhost:8480;\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name jolokia;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://jolokia-lb/jolokia;\n"
-            + "            proxy_set_header Host      $host;\n"
-            + "            proxy_set_header X-Real-IP $remote_addr;\n"
-            + "        }\n"
-            + "        location /service {\n"
-            + "            proxy_pass http://dummy/service;\n"
-            + "        }\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name worker1;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://localhost:8380/;\n"
-            + "        }\n"
-            + "    }\n"
-            + "\n"
-            + "    server {\n"
-            + "        server_name worker2;\n"
-            + "        listen 80;\n"
-            + "        location / {\n"
-            + "            proxy_pass http://localhost:8480/;\n"
-            + "        }\n"
-            + "    }\n"
-            + "}\n";
+        + "http {\n"
+        + "    upstream jolokia-lb {\n"
+        + "        least_conn;\n"
+        + "\n"
+        + "        server localhost:8380;\n"
+        + "        server localhost:8480;\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name jolokia;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://jolokia-lb/jolokia;\n"
+        + "            proxy_set_header Host      $host;\n"
+        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+        + "        }\n"
+        + "        location /service {\n"
+        + "            proxy_pass http://dummy/service;\n"
+        + "        }\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name worker1;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://localhost:8380/;\n"
+        + "        }\n"
+        + "    }\n"
+        + "\n"
+        + "    server {\n"
+        + "        server_name worker2;\n"
+        + "        listen 80;\n"
+        + "        location / {\n"
+        + "            proxy_pass http://localhost:8480/;\n"
+        + "        }\n"
+        + "    }\n"
+        + "}\n";
 
     private static final Stage DEV = Stage.builder().name("DEV").suffix("-test").count(2).indexLength(2).build();
     private static final Stage QA = Stage.builder().name("QA").suffix("qa").build();
@@ -151,8 +163,8 @@ public class NginxLoadBalancerGatewayTest {
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(PROD);
 
         assertThat(loadBalancers).containsExactly(
-                LoadBalancer.builder().name("jolokia-lb").method("least_conn")
-                            .server("localhost:8380").server("localhost:8480").build());
+            LoadBalancer.builder().name("jolokia-lb").method("least_conn")
+                .server("localhost:8380").server("localhost:8480").build());
         verifyUpdated(NOTHING);
     }
 
@@ -163,8 +175,8 @@ public class NginxLoadBalancerGatewayTest {
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(QA);
 
         assertThat(loadBalancers).containsExactly(
-                LoadBalancer.builder().name("jolokia" + "qa-lb")
-                            .server("localhost:8180").build());
+            LoadBalancer.builder().name("jolokia" + "qa-lb")
+                .server("localhost:8180").build());
         verifyUpdated(NOTHING);
     }
 
@@ -175,15 +187,15 @@ public class NginxLoadBalancerGatewayTest {
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(QA);
 
         assertThat(reverseProxies).containsExactly(
-                ReverseProxy.builder().from(URI.create("http://jolokia" + "qa:80"))
-                            .location(Location.from("/").to("http://jolokia" + "qa-lb/jolokia"))
-                            .build(),
-                ReverseProxy.builder().from(URI.create("http://worker" + "qa1:80"))
-                            .location(Location.from("/").to("http://localhost:8180/"))
-                            .build(),
-                ReverseProxy.builder().from(URI.create("http://worker" + "qa2:80"))
-                            .location(Location.from("/").to("http://localhost:8280/"))
-                            .build());
+            ReverseProxy.builder().from(URI.create("http://jolokia" + "qa:80"))
+                .location(Location.from("/").to("http://jolokia" + "qa-lb/jolokia"))
+                .build(),
+            ReverseProxy.builder().from(URI.create("http://worker" + "qa1:80"))
+                .location(Location.from("/").to("http://localhost:8180/"))
+                .build(),
+            ReverseProxy.builder().from(URI.create("http://worker" + "qa2:80"))
+                .location(Location.from("/").to("http://localhost:8280/"))
+                .build());
         verifyUpdated(NOTHING);
     }
 
@@ -194,62 +206,62 @@ public class NginxLoadBalancerGatewayTest {
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(PROD);
 
         assertThat(reverseProxies).containsExactly(
-                ReverseProxy.builder().from(URI.create("http://jolokia:80"))
-                            .location(Location.from("/").to("http://jolokia-lb/jolokia"))
-                            .location(Location.from("/service").to("http://dummy/service"))
-                            .build(),
-                ReverseProxy.builder().from(URI.create("http://worker1:80"))
-                            .location(Location.from("/").to("http://localhost:8380/"))
-                            .build(),
-                ReverseProxy.builder().from(URI.create("http://worker2:80"))
-                            .location(Location.from("/").to("http://localhost:8480/"))
-                            .build());
+            ReverseProxy.builder().from(URI.create("http://jolokia:80"))
+                .location(Location.from("/").to("http://jolokia-lb/jolokia"))
+                .location(Location.from("/service").to("http://dummy/service"))
+                .build(),
+            ReverseProxy.builder().from(URI.create("http://worker1:80"))
+                .location(Location.from("/").to("http://localhost:8380/"))
+                .build(),
+            ReverseProxy.builder().from(URI.create("http://worker2:80"))
+                .location(Location.from("/").to("http://localhost:8480/"))
+                .build());
         verifyUpdated(NOTHING);
     }
 
     @Test
     public void shouldRemoveFirstTargetFromLoadBalancerWithoutResolve() {
         given(DEV, ""
-                + "http {\n"
-                + "    upstream ping-test-lb {\n"
-                + "        least_conn;\n"
-                + "\n"
-                + "        server srv-test01.server.lan:8280;\n"
-                + "        server srv-test02.server.lan:8280;\n"
-                + "    }\n"
-                + "\n"
-                + "    server {\n"
-                + "        server_name ping-test;\n"
-                + "        listen 80;\n"
-                + "        location / {\n"
-                + "            proxy_pass http://ping-test-lb/ping/;\n"
-                + "            proxy_set_header Host      $host;\n"
-                + "            proxy_set_header X-Real-IP $remote_addr;\n"
-                + "        }\n"
-                + "    }\n"
-                + "}\n");
+            + "http {\n"
+            + "    upstream ping-test-lb {\n"
+            + "        least_conn;\n"
+            + "\n"
+            + "        server srv-test01.server.lan:8280;\n"
+            + "        server srv-test02.server.lan:8280;\n"
+            + "    }\n"
+            + "\n"
+            + "    server {\n"
+            + "        server_name ping-test;\n"
+            + "        listen 80;\n"
+            + "        location / {\n"
+            + "            proxy_pass http://ping-test-lb/ping/;\n"
+            + "            proxy_set_header Host      $host;\n"
+            + "            proxy_set_header X-Real-IP $remote_addr;\n"
+            + "        }\n"
+            + "    }\n"
+            + "}\n");
 
 
         gateway.from("ping", DEV).removeTarget(URI.create("http://srv-test01.server.lan:8280"));
 
         assertThat(updatedConfig(DEV)).isEqualTo(""
-                + "http {\n"
-                + "    upstream ping-test-lb {\n"
-                + "        least_conn;\n"
-                + "\n"
-                + "        server srv-test02.server.lan:8280;\n"
-                + "    }\n"
-                + "\n"
-                + "    server {\n"
-                + "        server_name ping-test;\n"
-                + "        listen 80;\n"
-                + "        location / {\n"
-                + "            proxy_pass http://ping-test-lb/ping/;\n"
-                + "            proxy_set_header Host      $host;\n"
-                + "            proxy_set_header X-Real-IP $remote_addr;\n"
-                + "        }\n"
-                + "    }\n"
-                + "}\n");
+            + "http {\n"
+            + "    upstream ping-test-lb {\n"
+            + "        least_conn;\n"
+            + "\n"
+            + "        server srv-test02.server.lan:8280;\n"
+            + "    }\n"
+            + "\n"
+            + "    server {\n"
+            + "        server_name ping-test;\n"
+            + "        listen 80;\n"
+            + "        location / {\n"
+            + "            proxy_pass http://ping-test-lb/ping/;\n"
+            + "            proxy_set_header Host      $host;\n"
+            + "            proxy_set_header X-Real-IP $remote_addr;\n"
+            + "        }\n"
+            + "    }\n"
+            + "}\n");
         verifyUpdated(DEV);
     }
 
@@ -260,7 +272,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.from("jolokia", PROD).removeTarget(URI.create("http://worker1:80"));
 
         assertThat(updatedConfig(PROD))
-                .isEqualTo(CONFIG_PROD.replace("        server localhost:8380;\n", ""));
+            .isEqualTo(CONFIG_PROD.replace("        server localhost:8380;\n", ""));
         verifyUpdated(PROD);
     }
 
@@ -271,25 +283,25 @@ public class NginxLoadBalancerGatewayTest {
         gateway.from("jolokia", QA).removeTarget(URI.create("http://worker" + "qa1:80"));
 
         assertThat(updatedConfig(QA))
-                .isEqualTo(CONFIG_QA
-                        .replace(""
-                                + "    upstream jolokia" + "qa-lb {\n"
-                                + "        server localhost:8180;\n"
-                                + "    }\n"
-                                + "\n", "")
-                        .replace("http {\n", "http {\n    \n")
-                        .replace(""
-                                        + "    server {\n"
-                                        + "        server_name jolokia" + "qa;\n"
-                                        + "        listen 80;\n"
-                                        + "        location / {\n"
-                                        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
-                                        + "            proxy_set_header Host      $host;\n"
-                                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
-                                        + "        }\n"
-                                        + "    }\n"
-                                        + "\n",
-                                ""));
+            .isEqualTo(CONFIG_QA
+                .replace(""
+                    + "    upstream jolokia" + "qa-lb {\n"
+                    + "        server localhost:8180;\n"
+                    + "    }\n"
+                    + "\n", "")
+                .replace("http {\n", "http {\n    \n")
+                .replace(""
+                        + "    server {\n"
+                        + "        server_name jolokia" + "qa;\n"
+                        + "        listen 80;\n"
+                        + "        location / {\n"
+                        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+                        + "            proxy_set_header Host      $host;\n"
+                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "\n",
+                    ""));
         verifyUpdated(QA);
     }
 
@@ -300,48 +312,48 @@ public class NginxLoadBalancerGatewayTest {
         gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
 
         assertThat(updatedConfig(QA))
-                .isEqualTo(CONFIG_QA
-                        .replace(""
-                                        + "    upstream jolokia" + "qa-lb {\n"
-                                        + "        server localhost:8180;\n"
-                                        + "    }\n",
-                                ""
-                                        + "    upstream jolokia" + "qa-lb {\n"
-                                        + "        server localhost:8180;\n"
-                                        + "        server localhost:8280;\n"
-                                        + "    }\n"));
+            .isEqualTo(CONFIG_QA
+                .replace(""
+                        + "    upstream jolokia" + "qa-lb {\n"
+                        + "        server localhost:8180;\n"
+                        + "    }\n",
+                    ""
+                        + "    upstream jolokia" + "qa-lb {\n"
+                        + "        server localhost:8180;\n"
+                        + "        server localhost:8280;\n"
+                        + "    }\n"));
         verifyUpdated(QA);
     }
 
     @Test
     public void shouldAddTargetToEmptyLoadBalancer() {
         given(QA, CONFIG_QA.replace(""
-                        + "    server {\n"
-                        + "        server_name jolokia" + "qa;\n"
-                        + "        listen 80;\n"
-                        + "        location / {\n"
-                        + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
-                        + "        }\n"
-                        + "    }\n"
-                , ""
-                        + "    server {\n"
-                        + "        server_name jolokia" + "qa;\n"
-                        + "        listen 80;\n"
-                        + "    }\n"));
+                + "    server {\n"
+                + "        server_name jolokia" + "qa;\n"
+                + "        listen 80;\n"
+                + "        location / {\n"
+                + "            proxy_pass http://jolokiaqa-lb/jolokia;\n"
+                + "        }\n"
+                + "    }\n"
+            , ""
+                + "    server {\n"
+                + "        server_name jolokia" + "qa;\n"
+                + "        listen 80;\n"
+                + "    }\n"));
 
         gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
 
         assertThat(updatedConfig(QA))
-                .isEqualTo(CONFIG_QA
-                        .replace(""
-                                        + "    upstream jolokia" + "qa-lb {\n"
-                                        + "        server localhost:8180;\n"
-                                        + "    }\n",
-                                ""
-                                        + "    upstream jolokia" + "qa-lb {\n"
-                                        + "        server localhost:8180;\n"
-                                        + "        server localhost:8280;\n"
-                                        + "    }\n"));
+            .isEqualTo(CONFIG_QA
+                .replace(""
+                        + "    upstream jolokia" + "qa-lb {\n"
+                        + "        server localhost:8180;\n"
+                        + "    }\n",
+                    ""
+                        + "    upstream jolokia" + "qa-lb {\n"
+                        + "        server localhost:8180;\n"
+                        + "        server localhost:8280;\n"
+                        + "    }\n"));
         verifyUpdated(QA);
     }
 
@@ -352,33 +364,33 @@ public class NginxLoadBalancerGatewayTest {
         gateway.to("foo", PROD).addTarget(URI.create("http://worker1:80"));
 
         assertThat(updatedConfig(PROD))
-                .isEqualTo(CONFIG_PROD
-                        .replace(""
-                                        + "http {\n",
-                                ""
-                                        + "http {\n"
-                                        + "    upstream foo-lb {\n"
-                                        + "        least_conn;\n"
-                                        + "\n"
-                                        + "        server localhost:8380;\n"
-                                        + "    }\n"
-                                        + "\n")
-                        .replace(""
-                                        + "    server {\n"
-                                        + "        server_name jolokia;\n",
-                                ""
-                                        + "    server {\n"
-                                        + "        server_name foo;\n"
-                                        + "        listen 80;\n"
-                                        + "        location / {\n"
-                                        + "            proxy_pass http://foo-lb/foo/;\n"
-                                        + "            proxy_set_header Host      $host;\n"
-                                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
-                                        + "        }\n"
-                                        + "    }\n"
-                                        + "\n"
-                                        + "    server {\n"
-                                        + "        server_name jolokia;\n"));
+            .isEqualTo(CONFIG_PROD
+                .replace(""
+                        + "http {\n",
+                    ""
+                        + "http {\n"
+                        + "    upstream foo-lb {\n"
+                        + "        least_conn;\n"
+                        + "\n"
+                        + "        server localhost:8380;\n"
+                        + "    }\n"
+                        + "\n")
+                .replace(""
+                        + "    server {\n"
+                        + "        server_name jolokia;\n",
+                    ""
+                        + "    server {\n"
+                        + "        server_name foo;\n"
+                        + "        listen 80;\n"
+                        + "        location / {\n"
+                        + "            proxy_pass http://foo-lb/foo/;\n"
+                        + "            proxy_set_header Host      $host;\n"
+                        + "            proxy_set_header X-Real-IP $remote_addr;\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    server {\n"
+                        + "        server_name jolokia;\n"));
         verifyUpdated(PROD);
     }
 
@@ -423,7 +435,7 @@ public class NginxLoadBalancerGatewayTest {
     @Test
     public void shouldCreateConfigAdapterWithPort() {
         Stage stage = Stage.builder().name("DUMMY").suffix("dummy").loadBalancerConfig(
-                ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
+            ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
         gateway.configAdapters.clear();
 
         gateway.config(stage);
@@ -441,7 +453,7 @@ public class NginxLoadBalancerGatewayTest {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "foo").build();
 
         assertThatThrownBy(() -> gateway.config(stage))
-                .hasMessage("unknown reload mode: foo");
+            .hasMessage("unknown reload mode: foo");
     }
 
     @Test
@@ -468,5 +480,56 @@ public class NginxLoadBalancerGatewayTest {
         LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
         assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.SetUserIdScriptReload.class);
+    }
+
+    @Test
+    public void shouldCreateConfigAdapterWithDockerKillHupReloadWithDefaultHost() {
+        Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "docker-kill-hup").build();
+        gateway.configAdapters.clear();
+
+        gateway.config(stage);
+
+        assertThat(gateway.configAdapters).containsKey(stage.getName());
+        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
+        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DockerKillHupReload.class);
+        assertThat(((LoadBalancerConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("localhost");
+    }
+
+    @Test
+    public void shouldCreateConfigAdapterWithDockerKillHupReloadWithExplicitHost() {
+        Stage stage = Stage.builder().name("DUMMY")
+            .loadBalancerConfig(RELOAD_MODE, "docker-kill-hup")
+            .loadBalancerConfig("host", "dummy-host")
+            .build();
+        gateway.configAdapters.clear();
+
+        gateway.config(stage);
+
+        assertThat(gateway.configAdapters).containsKey(stage.getName());
+        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
+        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DockerKillHupReload.class);
+        assertThat(((LoadBalancerConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("dummy-host");
+    }
+
+    public static class DummyReload implements Reload {
+        @Override public String reload() { return null; }
+    }
+
+    @Test
+    public void shouldCreateConfigAdapterWithCustomReload() {
+        Stage stage = Stage.builder().name("DUMMY")
+            .loadBalancerConfig(RELOAD_MODE, "custom")
+            .loadBalancerConfig("class", DummyReload.class.getName())
+            .build();
+        gateway.configAdapters.clear();
+
+        gateway.config(stage);
+
+        assertThat(gateway.configAdapters).containsKey(stage.getName());
+        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
+        assertThat(adapter.reload).isInstanceOf(DummyReload.class);
     }
 }

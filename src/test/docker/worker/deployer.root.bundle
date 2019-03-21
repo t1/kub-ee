@@ -1,4 +1,6 @@
 deployables:
-  ping:
-    version: ${ping.version}
-    state: ${ping.state or «deployed»}
+  jolokia:
+    group-id: org.jolokia
+    artifact-id: jolokia-war
+    version: ${jolokia.version}
+    state: ${jolokia.state or «deployed»}

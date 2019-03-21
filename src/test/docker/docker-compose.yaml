@@ -3,28 +3,27 @@ networks:
   kub-ee:
     driver: overlay
 services:
-  worker01:
-    build: worker
-    ports: [8080]
-    networks: [kub-ee]
-  worker02:
+  worker:
     build: worker
     ports: [8080]
     networks: [kub-ee]
   artifactory:
-#    image: kubee-artifactory
     image: rdohna/artifactory-mock
     ports: [8081]
     networks: [kub-ee]
     volumes:
-    - type: bind
-      source: /Users/rdohna/.m2
-      target: /root/.m2
-      read_only: true
+      - type: bind
+        source: /Users/rdohna/.m2
+        target: /root/.m2
+        read_only: true
   lb:
-    build: lb
+    image: nginx
     ports:
-    - 8080:80
+      - 18080:80
     networks:
-    - kub-ee
-# TODO add kub-ee to lb
+      - kub-ee
+    volumes:
+      - type: bind
+        source: /Users/rdohna/workspace/t1/kub-ee/src/test/docker/lb/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
