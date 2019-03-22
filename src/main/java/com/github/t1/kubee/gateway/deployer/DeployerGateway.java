@@ -44,23 +44,46 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 @Slf4j
 public class DeployerGateway {
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory())
-            .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .findAndRegisterModules();
+        .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .findAndRegisterModules();
 
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
     private final Client httpClient = ClientBuilder.newClient();
 
-    private String fetchYaml(URI uri) {
-        return fetchYaml(uri, Invocation.Builder::get);
+    public String fetchVersion(String deployableName, ClusterNode node) {
+        return fetchDeploymentsFrom(node.deployerUri())
+            .stream()
+            .filter(deployable -> deployable.getName().equals(deployableName))
+            .findAny()
+            .map(Deployable::getVersion)
+            .orElse(null);
     }
 
-    private String fetchYaml(URI uri, Function<Invocation.Builder, Response> method) {
-        log.debug("fetch yaml from {}", uri);
+    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
+        URI uri = UriBuilder.fromUri(deployerUri)
+            .path("/repository/versions")
+            .queryParam("artifactId", artifactId)
+            .queryParam("groupId", groupId)
+            .build();
+        log.debug("fetch versions from {}", uri);
+        return toVersionList(fetchYaml(uri));
+    }
+
+    @SneakyThrows(IOException.class)
+    private List<String> toVersionList(String string) {
+        return YAML.readValue(string, new TypeReference<List<String>>() {});
+    }
+
+    private String fetchYaml(URI uri) {
+        return requestWithYaml(uri, Invocation.Builder::get);
+    }
+
+    private String requestWithYaml(URI uri, Function<Invocation.Builder, Response> method) {
         Invocation.Builder invocation = httpClient
-                .target(uri)
-                .request()
-                .accept(APPLICATION_YAML_TYPE);
+            .target(uri)
+            .request()
+            .accept(APPLICATION_YAML_TYPE);
         Response response = method.apply(invocation);
         try {
             String contentType = response.getHeaderString("Content-Type");
@@ -77,21 +100,12 @@ public class DeployerGateway {
                 throw badGateway().detail("got " + statusInfo(response) + " from " + uri + ": " + string).exception();
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
                 throw badGateway()
-                        .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
-                        .exception();
+                    .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
+                    .exception();
             return string;
         } finally {
             response.close();
         }
-    }
-
-    public String fetchVersion(String deployableName, ClusterNode node) {
-        return fetchDeploymentsFrom(node.deployerUri())
-                .stream()
-                .filter(deployable -> deployable.getName().equals(deployableName))
-                .findAny()
-                .map(Deployable::getVersion)
-                .orElse(null);
     }
 
     public static class BadDeployerGatewayException extends ServerErrorException {
@@ -99,21 +113,6 @@ public class DeployerGateway {
     }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
-
-
-    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
-        URI uri = UriBuilder.fromUri(deployerUri)
-                            .path("/repository/versions")
-                            .queryParam("artifactId", artifactId)
-                            .queryParam("groupId", groupId)
-                            .build();
-        return toVersionList(fetchYaml(uri));
-    }
-
-    @SneakyThrows(IOException.class)
-    private List<String> toVersionList(String string) {
-        return YAML.readValue(string, new TypeReference<List<String>>() {});
-    }
 
 
     @Data
@@ -143,31 +142,34 @@ public class DeployerGateway {
 
     public Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
         return fetchDeploymentsFrom(node.deployerUri())
-                .stream()
-                .map(deployable ->
-                        Deployment.builder()
-                                  .node(node)
-                                  .name(deployable.getName())
-                                  .groupId(orUnknown(deployable.getGroupId()))
-                                  .artifactId(orUnknown(deployable.getArtifactId()))
-                                  .version(orUnknown(deployable.getVersion()))
-                                  .type(orUnknown(deployable.getType()))
-                                  .error(deployable.getError())
-                                  .build());
+            .stream()
+            .map(deployable ->
+                Deployment.builder()
+                    .node(node)
+                    .name(deployable.getName())
+                    .groupId(orUnknown(deployable.getGroupId()))
+                    .artifactId(orUnknown(deployable.getArtifactId()))
+                    .version(orUnknown(deployable.getVersion()))
+                    .type(orUnknown(deployable.getType()))
+                    .error(deployable.getError())
+                    .build());
     }
 
-    List<Deployable> fetchDeploymentsFrom(URI uri) { return toDeployableList(fetchYaml(uri)); }
+    List<Deployable> fetchDeploymentsFrom(URI uri) {
+        log.debug("get deployments from {}", uri);
+        return toDeployableList(fetchYaml(uri));
+    }
 
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 
     @SneakyThrows(IOException.class)
     private List<Deployable> toDeployableList(String string) {
         return YAML.readValue(string, Deployables.class)
-                   .getDeployables()
-                   .entrySet()
-                   .stream()
-                   .map(this::flatten)
-                   .collect(toList());
+            .getDeployables()
+            .entrySet()
+            .stream()
+            .map(this::flatten)
+            .collect(toList());
     }
 
 
@@ -187,7 +189,9 @@ public class DeployerGateway {
     }
 
     private Audits postDeployer(ClusterNode node, String deploymentName, String key, String value) {
-        return Audits.parseYaml(fetchYaml(node.deployerUri(),
-                i -> i.post(Entity.form(new Form(deploymentName + "." + key, value)))));
+        URI uri = node.deployerUri();
+        String parameterName = deploymentName + "." + key;
+        log.debug("post yaml to {}: {}={}", uri, parameterName, value);
+        return Audits.parseYaml(requestWithYaml(uri, i -> i.post(Entity.form(new Form(parameterName, value)))));
     }
 }

@@ -1,16 +1,23 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.model.*;
-import com.github.t1.kubee.model.ReverseProxy.*;
-import com.github.t1.nginx.*;
-import com.github.t1.nginx.NginxConfig.*;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.model.ReverseProxy.Location;
+import com.github.t1.kubee.model.ReverseProxy.ReverseProxyBuilder;
+import com.github.t1.kubee.model.Stage;
+import com.github.t1.nginx.HostPort;
+import com.github.t1.nginx.NginxConfig;
+import com.github.t1.nginx.NginxConfig.NginxServer;
+import com.github.t1.nginx.NginxConfig.NginxServerLocation;
+import com.github.t1.nginx.NginxConfig.NginxUpstream;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Controls the load balancer. The public interface is generic, the implementation is NGINX specific.
@@ -18,11 +25,9 @@ import static java.util.stream.Collectors.*;
  */
 @Slf4j
 public class LoadBalancerGateway {
-    Map<String, LoadBalancerConfigAdapter> configAdapters;
+    Map<String, LoadBalancerConfigAdapter> configAdapters = new LinkedHashMap<>();
 
     public LoadBalancerConfigAdapter config(Stage stage) {
-        if (configAdapters == null) // not directly in field, so Mockito thenCallRealMethod works
-            configAdapters = new LinkedHashMap<>();
         return configAdapters.computeIfAbsent(stage.getName(), name -> new LoadBalancerConfigAdapter(stage));
     }
 

@@ -148,7 +148,7 @@ public class Controller {
             if (versionAfter.equals(versionBefore)) {
                 log.info("redeploy {} @ {} on {}", name, versionBefore, node);
                 undeploy(node, name);
-            } else {
+            } else if (versionBefore != null) {
                 log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
                 loadBalancing.from(name, node.getStage()).removeTarget(node.uri());
             }
