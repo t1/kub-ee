@@ -13,7 +13,7 @@ services:
     networks: [kub-ee]
     volumes:
       - type: bind
-        source: /Users/rdohna/.m2
+        source: $HOME/.m2
         target: /root/.m2
         read_only: true
   lb:
@@ -24,6 +24,6 @@ services:
       - kub-ee
     volumes:
       - type: bind
-        source: /Users/rdohna/workspace/t1/kub-ee/src/test/docker/lb/nginx.conf
+        source: $PWD/lb/nginx.conf
         target: /etc/nginx/nginx.conf
         read_only: true
