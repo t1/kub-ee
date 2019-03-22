@@ -4,30 +4,42 @@ import com.github.t1.kubee.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
 import com.github.t1.kubee.gateway.health.HealthGateway;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Audits;
 import com.github.t1.kubee.model.Audits.Audit;
 import com.github.t1.kubee.model.Audits.Audit.Change;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.model.DeploymentId;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.model.Version;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import java.net.*;
-import java.util.*;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ProcessingException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.model.VersionStatus.*;
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static com.github.t1.kubee.model.VersionStatus.deployed;
+import static com.github.t1.kubee.model.VersionStatus.undeployed;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Stateless
 public class Controller {
     @SuppressWarnings("SpellCheckingInspection") private static final String UNKNOWN_HOST_SUFFIX
-            = ": nodename nor servname provided, or not known";
+        = ": nodename nor servname provided, or not known";
 
     @Inject List<Cluster> clusters;
     @Inject LoadBalancerGateway loadBalancing;
@@ -49,7 +61,7 @@ public class Controller {
     public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {
         log.debug("fetch deployments from {}:", node);
         return fetchDeployablesFrom(node)
-                .peek(deployable -> log.debug("  - {}", deployable.getName()));
+            .peek(deployable -> log.debug("  - {}", deployable.getName()));
     }
 
     private Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
@@ -59,15 +71,15 @@ public class Controller {
             String error = errorString(e);
             log.debug("deployer not found on {}: {}", node, error);
             return Stream.of(Deployment
-                    .builder()
-                    .name("-")
-                    .groupId("-")
-                    .artifactId("-")
-                    .type("-")
-                    .version("-")
-                    .error(error)
-                    .node(node)
-                    .build());
+                .builder()
+                .name("-")
+                .groupId("-")
+                .artifactId("-")
+                .type("-")
+                .version("-")
+                .error(error)
+                .node(node)
+                .build());
         }
     }
 
@@ -76,8 +88,8 @@ public class Controller {
             e = e.getCause();
         String out = e.toString();
         while (out.startsWith(ExecutionException.class.getName() + ": ")
-                || out.startsWith(ConnectException.class.getName() + ": ")
-                || out.startsWith(RuntimeException.class.getName() + ": "))
+            || out.startsWith(ConnectException.class.getName() + ": ")
+            || out.startsWith(RuntimeException.class.getName() + ": "))
             out = out.substring(out.indexOf(": ") + 2);
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
@@ -149,7 +161,7 @@ public class Controller {
                 log.error("{}@{} on {} is not healthy after deploy", name, versionBefore, node);
                 if (healthyBefore)
                     throw new RuntimeException(name + "@" + versionAfter + " on " + node
-                            + " flipped from healthy to unhealthy");
+                        + " flipped from healthy to unhealthy");
             }
         } catch (RuntimeException e) {
             log.warn("rollback {} on {} to {} failed: {}", name, node, versionBefore, e.getMessage());
@@ -176,26 +188,21 @@ public class Controller {
     private void checkAudits(Audits audits, String operation, String name, String version) {
         String errorPrefix = "expected " + operation + " audit for " + name;
 
-        Optional<Audit> audit = audits.findDeployment(name);
-        if (!audit.isPresent())
-            throw badRequest().detail(errorPrefix).exception();
+        Audit audit = audits.findDeployment(name)
+            .orElseThrow(() -> badRequest().detail(errorPrefix).exception());
 
-        String actualOperation = audit.get().getOperation();
+        String actualOperation = audit.getOperation();
         List<String> expectedOperations = ("deploy".equals(operation))
-                ? asList("add", "change") : singletonList("remove");
+            ? asList("add", "change") : singletonList("remove");
         if (!expectedOperations.contains(actualOperation))
-            throw badRequest().detail(errorPrefix + " to be in " + expectedOperations + " but is a " + actualOperation)
-                              .exception();
+            throw badRequest().detail(errorPrefix + " to be in " + expectedOperations + " but is a " + actualOperation).exception();
 
-        Optional<Change> versionChange = audit.get().findChange("version");
-        if (!versionChange.isPresent())
-            throw badRequest().detail(errorPrefix + " to change version.").exception();
+        Change versionChange = audit.findChange("version")
+            .orElseThrow(() -> badRequest().detail(errorPrefix + " to change version.").exception());
 
-        String newVersion = versionChange.get().getNewValue();
-        if (!Objects.equals(newVersion, version)) {
-            String message = errorPrefix + " to change version to " + version + ", but changed to " + newVersion + ".";
-            throw badRequest().detail(message).exception();
-        }
-        log.debug("audit {} change {} {}", operation, name, versionChange.get());
+        String newVersion = versionChange.getNewValue();
+        if (!Objects.equals(newVersion, version))
+            throw badRequest().detail(errorPrefix + " to change version to " + version + ", but changed to " + newVersion + ".").exception();
+        log.debug("audit {} change {} {}", operation, name, versionChange);
     }
 }
