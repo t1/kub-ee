@@ -1,7 +1,6 @@
 version: "3.7"
 networks:
   kub-ee:
-    driver: overlay
 services:
   worker:
     build: worker
@@ -16,14 +15,15 @@ services:
         source: $HOME/.m2
         target: /root/.m2
         read_only: true
-  lb:
-    image: nginx
-    ports:
-      - 18080:80
-    networks:
-      - kub-ee
-    volumes:
-      - type: bind
-        source: $PWD/lb/nginx.conf
-        target: /etc/nginx/nginx.conf
-        read_only: true
+#  lb:
+#    image: nginx
+#    ports:
+#      - 1080:80
+#      - 8080:8080
+#    networks:
+#      - kub-ee
+#    volumes:
+#      - type: bind
+#        source: $PWD/lb/nginx.conf
+#        target: /etc/nginx/nginx.conf
+#        read_only: true
