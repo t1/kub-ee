@@ -1,15 +1,21 @@
 package com.github.t1.kubee.tools.http;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.*;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.StatusType;
 import java.net.URI;
 import java.util.UUID;
 
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @Slf4j
 @Value
@@ -28,8 +34,22 @@ public class ProblemDetail {
 
     public static class ProblemDetailBuilder {
         public WebApplicationException exception() {
-            WebApplicationApplicationException exception = new WebApplicationApplicationException(build());
-            log.debug("problem detail", exception);
+            ProblemDetail problemDetail = build();
+            WebApplicationApplicationException exception = new WebApplicationApplicationException(problemDetail);
+            switch (problemDetail.status.getFamily()) {
+                case INFORMATIONAL:
+                case SUCCESSFUL:
+                    log.warn(problemDetail.status.getFamily() + " problem details should not be handled as exceptions\n", exception);
+                    break;
+                case REDIRECTION:
+                case CLIENT_ERROR:
+                    log.debug("problem detail\n", exception);
+                    break;
+                case SERVER_ERROR:
+                case OTHER:
+                    log.error("problem detail\n", exception);
+                    break;
+            }
             return exception;
         }
     }
@@ -66,9 +86,15 @@ public class ProblemDetail {
     public Response response() {
         ResponseBuilder response = Response.status(this.status).entity(this);
         response.header("X-Problem-Instance", instance);
-        if (type != null) { response.header("X-Problem-Type", type); }
-        if (title != null) { response.header("X-Problem-Title", title); }
-        if (detail != null) { response.header("X-Problem-Detail", detail); }
+        if (type != null) {
+            response.header("X-Problem-Type", type);
+        }
+        if (title != null) {
+            response.header("X-Problem-Title", title);
+        }
+        if (detail != null) {
+            response.header("X-Problem-Detail", detail);
+        }
         return response.build();
     }
 
