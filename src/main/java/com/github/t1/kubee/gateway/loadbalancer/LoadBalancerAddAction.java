@@ -1,15 +1,19 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.Stage;
-import com.github.t1.nginx.*;
+import com.github.t1.nginx.HostPort;
+import com.github.t1.nginx.NginxConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static com.github.t1.nginx.NginxConfig.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static com.github.t1.kubee.tools.http.ProblemDetail.internalServerError;
+import static com.github.t1.nginx.NginxConfig.NginxServer;
+import static com.github.t1.nginx.NginxConfig.NginxServerLocation;
+import static com.github.t1.nginx.NginxConfig.NginxUpstream;
 
 @Slf4j
 public class LoadBalancerAddAction extends LoadBalancerAction {
@@ -25,7 +29,6 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
 
         induceProxyLocation();
 
-        hostPort = resolveProxy(hostPort);
         NginxUpstream with = withUpstreamServer(upstream, hostPort);
         config(config -> config.withUpstream(with));
         done();
