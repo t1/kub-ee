@@ -2,54 +2,34 @@ package com.github.t1.kubee.gateway.deployer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.t1.kubee.model.Audits;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.tools.http.YamlHttpClient;
 import com.github.t1.log.Logged;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.ServerErrorException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
+import javax.inject.Inject;
 import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.github.t1.kubee.tools.http.ProblemDetail.badGateway;
 import static com.github.t1.log.LogLevel.INFO;
 import static java.util.stream.Collectors.toList;
-import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
-import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @Logged(level = INFO)
 @Slf4j
 public class DeployerGateway {
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory())
-        .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .findAndRegisterModules();
+    private static final TypeReference<List<String>> STRING_LIST = new TypeReference<List<String>>() {};
 
-    private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
-
-    private final Client httpClient = ClientBuilder.newClient();
+    @Inject YamlHttpClient client;
 
     public String fetchVersion(String deployableName, ClusterNode node) {
         return fetchDeploymentsFrom(node.deployerUri())
@@ -66,54 +46,9 @@ public class DeployerGateway {
             .queryParam("artifactId", artifactId)
             .queryParam("groupId", groupId)
             .build();
-        log.debug("fetch versions from {}", uri);
-        return toVersionList(fetchYaml(uri));
+        log.debug("GET versions from {}", uri);
+        return client.GET(uri, STRING_LIST);
     }
-
-    @SneakyThrows(IOException.class)
-    private List<String> toVersionList(String string) {
-        return YAML.readValue(string, new TypeReference<List<String>>() {});
-    }
-
-    private String fetchYaml(URI uri) {
-        return requestWithYaml(uri, Invocation.Builder::get);
-    }
-
-    private String requestWithYaml(URI uri, Function<Invocation.Builder, Response> method) {
-        Invocation.Builder invocation = httpClient
-            .target(uri)
-            .request()
-            .accept(APPLICATION_YAML_TYPE);
-        Response response = method.apply(invocation);
-        try {
-            String contentType = response.getHeaderString("Content-Type");
-            String string = response.readEntity(String.class);
-            if (NOT_FOUND.getStatusCode() == response.getStatus()) {
-                log.info("{} returns 404 Not Found: {}", uri, string);
-                throw new NotFoundException();
-            }
-            if (BAD_GATEWAY.getStatusCode() == response.getStatus()) {
-                log.info("{} returns 502 Bad Gateway: {}", uri, string);
-                throw new BadDeployerGatewayException(string);
-            }
-            if (response.getStatusInfo().getFamily() != SUCCESSFUL)
-                throw badGateway().detail("got " + statusInfo(response) + " from " + uri + ": " + string).exception();
-            if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
-                throw badGateway()
-                    .detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + string)
-                    .exception();
-            return string;
-        } finally {
-            response.close();
-        }
-    }
-
-    public static class BadDeployerGatewayException extends ServerErrorException {
-        private BadDeployerGatewayException(String message) { super(message, BAD_GATEWAY); }
-    }
-
-    private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
-
 
     @Data
     private static class Deployables {
@@ -155,16 +90,16 @@ public class DeployerGateway {
                     .build());
     }
 
-    List<Deployable> fetchDeploymentsFrom(URI uri) {
-        log.debug("get deployments from {}", uri);
-        return toDeployableList(fetchYaml(uri));
-    }
-
     private String orUnknown(String value) { return (value == null || value.isEmpty()) ? "unknown" : value; }
 
-    @SneakyThrows(IOException.class)
-    private List<Deployable> toDeployableList(String string) {
-        return YAML.readValue(string, Deployables.class)
+    List<Deployable> fetchDeploymentsFrom(URI uri) {
+        log.debug("GET deployments from {}", uri);
+        Deployables deployables = client.GET(uri, Deployables.class);
+        return toDeployableList(deployables);
+    }
+
+    private List<Deployable> toDeployableList(Deployables deployables) {
+        return deployables
             .getDeployables()
             .entrySet()
             .stream()
@@ -191,7 +126,7 @@ public class DeployerGateway {
     private Audits postDeployer(ClusterNode node, String deploymentName, String key, String value) {
         URI uri = node.deployerUri();
         String parameterName = deploymentName + "." + key;
-        log.debug("post yaml to {}: {}={}", uri, parameterName, value);
-        return Audits.parseYaml(requestWithYaml(uri, i -> i.post(Entity.form(new Form(parameterName, value)))));
+        log.debug("POST {}={} to {}", parameterName, value, uri);
+        return client.POST(uri, new Form(parameterName, value), Audits::parseYaml);
     }
 }

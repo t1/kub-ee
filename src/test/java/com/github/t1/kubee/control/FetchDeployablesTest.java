@@ -1,18 +1,19 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
 import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import org.junit.Test;
 
 import javax.ws.rs.NotFoundException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 public class FetchDeployablesTest extends AbstractControllerTest {
     @Test
@@ -124,7 +125,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
     @Test
     public void shouldFetchBadDeployerGatewayDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
-                .thenThrow(new RuntimeException(BadDeployerGatewayException.class.getName() + ": dummy"));
+                .thenThrow(new RuntimeException(BadGatewayException.class.getName() + ": dummy"));
 
         List<Deployment> deployments = controller.fetchDeploymentsOn(DEV01).collect(toList());
 

@@ -1,7 +1,6 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
-import com.github.t1.kubee.gateway.deployer.DeployerGateway.BadDeployerGatewayException;
 import com.github.t1.kubee.gateway.health.HealthGateway;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
 import com.github.t1.kubee.model.Audits;
@@ -15,6 +14,7 @@ import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.kubee.model.Version;
+import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
@@ -95,7 +95,7 @@ public class Controller {
             out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
         if (out.startsWith(NotFoundException.class.getName() + ": "))
             out = "deployer not found";
-        if (out.startsWith(BadDeployerGatewayException.class.getName() + ": "))
+        if (out.startsWith(BadGatewayException.class.getName() + ": "))
             out = "bad deployer gateway";
         if (out.startsWith(UnknownHostException.class.getName() + ": "))
             out = "unknown host";
