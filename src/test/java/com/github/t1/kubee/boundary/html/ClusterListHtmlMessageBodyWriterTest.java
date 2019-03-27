@@ -1,16 +1,19 @@
 package com.github.t1.kubee.boundary.html;
 
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterTest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.List;
 
-import static com.github.t1.kubee.tools.html.Html.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.github.t1.kubee.tools.html.Html.BOOTSTRAP_CSS;
+import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClusterListHtmlMessageBodyWriterTest {
     private ClusterListHtmlMessageBodyWriter writer = new ClusterListHtmlMessageBodyWriter();
@@ -27,7 +30,7 @@ public class ClusterListHtmlMessageBodyWriterTest {
         assertThat(html.charset()).isEqualTo(UTF_8);
         assertThat(html.getElementsByAttributeValue("rel", "stylesheet"))
                 .extracting(element -> element.attr("href"))
-                .containsOnly(BOOTSTRAP_BASE + "/css/bootstrap.min.css", "../style.css");
+                .containsOnly(BOOTSTRAP_CSS, ICONS_CSS, "../style.css");
         assertThat(html.body().html()).isEqualTo(""
                 + "<div class=\"container-fluid\"> \n"
                 + " <div class=\"table-responsive\"> \n"

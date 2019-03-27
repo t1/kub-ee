@@ -3,17 +3,23 @@ package com.github.t1.kubee.web;
 import com.github.t1.kubee.model.VersionStatus;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
-import static com.github.t1.kubee.model.VersionStatus.*;
-import static com.github.t1.kubee.web.VersionCell.*;
-import static com.github.t1.kubee.web.VersionMenuItem.*;
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.github.t1.kubee.model.VersionStatus.deployed;
+import static com.github.t1.kubee.model.VersionStatus.undeployed;
+import static com.github.t1.kubee.model.VersionStatus.undeploying;
+import static com.github.t1.kubee.web.VersionCell.closed;
+import static com.github.t1.kubee.web.VersionMenuItem.versionMenuItem;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.atIndex;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VersionCellHelperTest {
     private static final String BY_CLASS_PREFIX = "By.className: ";
@@ -80,8 +86,7 @@ public class VersionCellHelperTest {
 
     private WebElement mockVersionItem(String iconName, VersionStatus status, String versionName) {
         WebElement li = mockWebElement(null, null);
-        WebElement icon = mockWebElement(null, "glyphicon glyphicon-" + iconName +
-                " version-icon version-icon-" + status);
+        WebElement icon = mockWebElement(null, "icon ion-md-" + iconName + " version-icon version-icon-" + status);
         when(li.findElements(argThat(byCssSelector("span.version-icon")))).thenReturn(singletonList(icon));
         WebElement label = mockWebElement(null, null);
         when(li.findElements(argThat(byCssSelector("span.version")))).thenReturn(singletonList(label));

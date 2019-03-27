@@ -4,21 +4,26 @@ import com.github.t1.log.Logged;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
-import static com.github.t1.log.LogLevel.*;
-import static com.github.t1.kubee.boundary.StaticFilesLoader.*;
-import static javax.ws.rs.core.MediaType.*;
-import static javax.ws.rs.core.Response.Status.*;
+import static com.github.t1.kubee.boundary.StaticFilesLoader.classLoader;
+import static com.github.t1.log.LogLevel.TRACE;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
  * Serve [Webjars](http://www.webjars.org). This class is not suitable for heavy load. Really heavy load should be
  * fulfilled by serving static resources from e.g. Apache or even a CDN.
- *
+ * <p>
  * But the performance of this class could also be improved by letting the clients cache, by adding etags
  * (e.g. the version number), modified-since (from the pom.properties comment), and cache control headers.
  */
@@ -101,6 +106,10 @@ public class WebJarsResource {
         URL resource = classLoader().getResource(path);
         if (resource == null) {
             path = "/META-INF/maven/org.webjars.npm/" + artifact + "/pom.properties";
+            resource = classLoader().getResource(path);
+        }
+        if (resource == null) {
+            path = "/META-INF/maven/org.webjars.bower/" + artifact + "/pom.properties";
             resource = classLoader().getResource(path);
         }
         return resource;

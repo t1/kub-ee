@@ -16,7 +16,7 @@ class DeploymentMenu extends React.Component {
                 <hr/>
             </li>
             <li onClick={() => undeploy(this.props.group)}>
-                <span className='glyphicon glyphicon-ban-circle version-icon'/>
+                <span className='icon ion-md-remove-circle version-icon'/>
                 undeploy
             </li>
         </ul>
@@ -43,26 +43,26 @@ class DeploymentMenu extends React.Component {
 }
 
 function versionIconClasses(version, state) {
-    const icon = ((state && state.hover === version.name) ? 'ok-sign' : statusIcon(version.status));
-    return 'glyphicon glyphicon-' + icon + ' version-icon version-icon-' + version.status;
+    const icon = ((state && state.hover === version.name) ? 'add-circle-outline' : statusIcon(version.status));
+    return 'icon ion-md-' + icon + ' version-icon version-icon-' + version.status;
 }
 
 function statusIcon(state) {
     switch (state) {
         case 'undeployed':
-            return 'minus';
+            return 'remove';
         case 'deployee':
-            return 'refresh';
+            return 'add-circle-outline';
         case 'deployed':
-            return 'ok-circle';
+            return 'checkmark-circle';
         case 'deploying':
             return 'refresh';
         case 'undeployee':
-            return 'refresh';
+            return 'close-circle-outline';
         case 'undeploying':
-            return 'refresh';
+            return 'undo';
         case 'removed':
-            return 'remove-circle';
+            return 'remove-circle-outline';
     }
 }
 

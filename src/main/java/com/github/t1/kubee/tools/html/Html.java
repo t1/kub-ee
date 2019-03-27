@@ -8,11 +8,13 @@ import java.nio.file.Paths;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Html {
-    // private static final String BOOTSTRAP_VERSION = "3.3.7";
-    // private static final String BOOTSTRAP_BASE = "http://maxcdn.bootstrapcdn.com/bootstrap/" + BOOTSTRAP_VERSION;
-    public static final String BOOTSTRAP_BASE = "bootstrap";
-    public static final String BOOTSTRAP_CSS_URI = BOOTSTRAP_BASE + "/css/bootstrap.min.css";
-    public static final String BOOTSTRAP_JS_URI = BOOTSTRAP_BASE + "/js/bootstrap.min.js";
+    // private static final String BOOTSTRAP_VERSION = "4.3.1";
+    // public static final String BOOTSTRAP_BASE = "http://maxcdn.bootstrapcdn.com/bootstrap/" + BOOTSTRAP_VERSION;
+    private static final String BOOTSTRAP_BASE = "bootstrap";
+    public static final String BOOTSTRAP_CSS = BOOTSTRAP_BASE + "/css/bootstrap.min.css";
+    private static final String BOOTSTRAP_JS = BOOTSTRAP_BASE + "/js/bootstrap.min.js";
+
+    public static final String ICONS_CSS = "ionicons/dist/css/ionicons.css";
 
     // private static final String JQUERY_VERSION = "1.12.4";
     // private static final String JQUERY_BASE = "https://ajax.googleapis.com/ajax/libs/jquery/" + JQUERY_VERSION;
@@ -42,7 +44,11 @@ public class Html {
 
     public void title(String title) { html.title(title); }
 
-    public void stylesheets() { stylesheet(BOOTSTRAP_CSS_URI).stylesheet("../style.css"); }
+    public void stylesheets() {
+        stylesheet(BOOTSTRAP_CSS)
+            .stylesheet(ICONS_CSS)
+            .stylesheet("../style.css");
+    }
 
     public Html stylesheet(String href) {
         if (baseUri != null)
@@ -72,6 +78,6 @@ public class Html {
     public void footer() {
         script("popper.js/umd/popper.js");
         script(JQUERY_JS_URI);
-        script(BOOTSTRAP_JS_URI);
+        script(BOOTSTRAP_JS);
     }
 }
