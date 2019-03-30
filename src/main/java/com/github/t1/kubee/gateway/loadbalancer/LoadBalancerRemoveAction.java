@@ -23,7 +23,7 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
         Optional<NginxUpstream> upstreamOptional = upstream(loadBalancerName());
         if (upstreamOptional.isPresent()) {
             NginxUpstream upstream = upstreamOptional.get();
-            if (upstream.getServers().contains(hostPort)) {
+            if (upstream.getHostPorts().contains(hostPort)) {
                 removeLocation(loadBalancerName(), upstream, hostPort);
             } else {
                 log.debug("server {} not in upstream {}", hostPort, loadBalancerName());
@@ -35,8 +35,8 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
 
     private void removeLocation(String name, NginxUpstream upstream, HostPort hostPort) {
         config(config -> config.withoutUpstream(name));
-        config(config -> (upstream.getServers().size() > 1)
-                ? config.withUpstream(upstream.withoutServer(hostPort))
+        config(config -> (upstream.getHostPorts().size() > 1)
+                ? config.withUpstream(upstream.withoutHostPort(hostPort))
                 : config.withoutServer(serverName()));
         done();
     }

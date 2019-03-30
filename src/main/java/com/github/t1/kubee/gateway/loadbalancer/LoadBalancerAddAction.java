@@ -65,8 +65,8 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
     }
 
     private NginxUpstream withUpstreamServer(NginxUpstream upstream, HostPort hostPort) {
-        if (upstream.getServers().contains(hostPort))
+        if (upstream.getHostPorts().contains(hostPort))
             throw badRequest().detail("server " + hostPort + " already in lb: " + upstream.getName()).exception();
-        return upstream.withServer(hostPort);
+        return upstream.withHostPort(hostPort);
     }
 }

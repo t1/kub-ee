@@ -1,5 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
+import com.github.t1.kubee.gateway.loadbalancer.tools.NginxReloadService;
 import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;
@@ -37,8 +38,8 @@ public class NginxLoadBalancerGatewayTest {
     }
 
     public static class ReloadMock implements Reload {
-        public static int calls = 0;
-        public static String error = null;
+        static int calls = 0;
+        static String error = null;
 
         @Override public String reload() {
             calls++;

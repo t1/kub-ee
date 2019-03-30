@@ -1,5 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
+import com.github.t1.kubee.gateway.loadbalancer.tools.NginxReloadService;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +8,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -76,13 +76,9 @@ class LoadBalancerConfigAdapter {
     NginxConfig read() { return NginxConfig.readFrom(configPath.toUri()); }
 
     void update(NginxConfig config) {
-        writeNginxConfig(config);
-        nginxReload();
-    }
-
-    @SneakyThrows(IOException.class) private void writeNginxConfig(NginxConfig config) {
         log.debug("write config");
-        Files.write(configPath, config.toString().getBytes());
+        config.writeTo(configPath);
+        nginxReload();
     }
 
     @SneakyThrows(Exception.class) private void nginxReload() {

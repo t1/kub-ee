@@ -1,13 +1,18 @@
-package com.github.t1.kubee.gateway.loadbalancer;
+package com.github.t1.kubee.gateway.loadbalancer.tools;
 
-import lombok.*;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.Callable;
 
-import static java.lang.ProcessBuilder.Redirect.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.lang.ProcessBuilder.Redirect.INHERIT;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Helper class to reload an nginx running as root, as a simple script `nginx -s reload` with the
@@ -16,7 +21,7 @@ import static java.util.concurrent.TimeUnit.*;
  */
 @RequiredArgsConstructor
 public class NginxReloadService {
-    static final int DEFAULT_PORT = 6060;
+    public static final int DEFAULT_PORT = 6060;
 
     public static void main(String[] args) {
         int port = DEFAULT_PORT;
@@ -35,10 +40,10 @@ public class NginxReloadService {
         reconnect:
         while (true)
             try (
-                    ServerSocket serverSocket = new ServerSocket(port);
-                    Socket clientSocket = serverSocket.accept();
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+                ServerSocket serverSocket = new ServerSocket(port);
+                Socket clientSocket = serverSocket.accept();
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
             ) {
                 if (clientSocket.getInetAddress().isLoopbackAddress()) {
                     System.out.println("connected " + clientSocket.getInetAddress());
@@ -48,17 +53,17 @@ public class NginxReloadService {
                         if (command == null)
                             continue reconnect;
                         switch (command) {
-                        case "stop":
-                            out.println("stopping");
-                            return;
-                        case "exit":
-                            out.println("exiting");
-                            continue reconnect;
-                        case "reload":
-                            out.println(reload());
-                            break;
-                        default:
-                            out.println("unknown command: " + command);
+                            case "stop":
+                                out.println("stopping");
+                                return;
+                            case "exit":
+                                out.println("exiting");
+                                continue reconnect;
+                            case "reload":
+                                out.println(reload());
+                                break;
+                            default:
+                                out.println("unknown command: " + command);
                         }
                     }
                 } else
@@ -68,10 +73,10 @@ public class NginxReloadService {
             }
     }
 
-    @SneakyThrows({ IOException.class, InterruptedException.class })
+    @SneakyThrows({IOException.class, InterruptedException.class})
     private String reload() {
         ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/nginx", "-s", "reload")
-                .redirectErrorStream(true).redirectOutput(INHERIT);
+            .redirectErrorStream(true).redirectOutput(INHERIT);
         Process process = builder.start();
         boolean inTime = process.waitFor(10, SECONDS);
         if (!inTime)
@@ -83,13 +88,13 @@ public class NginxReloadService {
 
     @RequiredArgsConstructor
     public static class Adapter implements Callable<String> {
-        final int port;
+        public final int port;
 
         @Override public String call() {
             try (
-                    Socket socket = new Socket("localhost", port);
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+                Socket socket = new Socket("localhost", port);
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
             ) {
                 out.println("reload");
                 String response = in.readLine();

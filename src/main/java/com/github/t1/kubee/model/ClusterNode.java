@@ -1,11 +1,10 @@
 package com.github.t1.kubee.model;
 
+import com.github.t1.nginx.HostPort;
 import lombok.Value;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-
-import static java.lang.String.*;
 
 /**
  * A JVM, i.e. one node of one stage of a cluster
@@ -20,16 +19,24 @@ public class ClusterNode {
 
     public URI deployerUri() { return UriBuilder.fromUri(uri()).path("/" + stage.getPath()).build(); }
 
-    public URI uri() {
-        return URI.create(format("http://%s%s%s%s%s:%d",
-                stage.getPrefix(), cluster.getSimpleName(), stage.getSuffix(), stage.formattedIndex(index),
-                (cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName(),
-                cluster.getSlot().getHttp()));
+    public URI uri() { return URI.create("http://" + host() + ":" + port()); }
+
+    public String host() {
+        return ""
+            + stage.getPrefix()
+            + cluster.getSimpleName()
+            + stage.getSuffix()
+            + stage.formattedIndex(index)
+            + ((cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName());
     }
+
+    private int port() { return cluster.getSlot().getHttp(); }
+
+    public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
+
+    public HostPort hostPort() { return new HostPort(host(), port()); }
 
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;
     }
-
-    public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
 }

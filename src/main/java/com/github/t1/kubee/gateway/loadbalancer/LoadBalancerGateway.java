@@ -43,7 +43,7 @@ public class LoadBalancerGateway {
                 .builder()
                 .name(server.getName())
                 .method(server.getMethod())
-                .servers(server.servers().map(HostPort::toString).collect(toList()))
+                .servers(server.hostPorts().map(HostPort::toString).collect(toList()))
                 .build();
     }
 

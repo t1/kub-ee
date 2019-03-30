@@ -3,18 +3,25 @@ package com.github.t1.kubee.control;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static java.util.stream.Collectors.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static java.util.stream.Collectors.joining;
 
+@Slf4j
 @ApplicationScoped
 @EqualsAndHashCode
 public class ClusterConfig {
@@ -51,7 +58,7 @@ public class ClusterConfig {
 
     public ClusterConfig readFrom(InputStream stream) {
         YamlDocument document = YamlDocument.from(new InputStreamReader(stream));
-        clusters.addAll(Cluster.readAllFrom(document));
+        clusters.addAll(Cluster.readAllFrom(document, log::warn));
         return this;
     }
 }

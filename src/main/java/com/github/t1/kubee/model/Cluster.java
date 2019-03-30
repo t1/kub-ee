@@ -3,20 +3,27 @@ package com.github.t1.kubee.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.t1.kubee.model.Cluster.HealthConfig.HealthConfigBuilder;
 import com.github.t1.kubee.model.Stage.StageBuilder;
-import com.github.t1.kubee.tools.yaml.*;
-import lombok.*;
-import lombok.extern.slf4j.Slf4j;
+import com.github.t1.kubee.tools.yaml.YamlDocument;
+import com.github.t1.kubee.tools.yaml.YamlEntry;
+import com.github.t1.kubee.tools.yaml.YamlNode;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.model.Slot.*;
-import static java.util.stream.Collectors.*;
+import static com.github.t1.kubee.model.Slot.DEFAULT_SLOT;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A set of slots on slots and machines, forming one physical cluster per stage.
  */
-@Slf4j
 @Value
 @Builder(toBuilder = true)
 public class Cluster {
@@ -35,14 +42,14 @@ public class Cluster {
 
     public ClusterNode node(Stage stage, int index) {
         return stage.nodes(this)
-                    .filter(node -> node.getIndex() == index)
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
+            .filter(node -> node.getIndex() == index)
+            .findAny()
+            .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
     }
 
 
-    public static List<Cluster> readAllFrom(YamlDocument document) {
-        ClusterBuilderContext context = new ClusterBuilderContext();
+    public static List<Cluster> readAllFrom(YamlDocument document, Consumer<String> warnings) {
+        ClusterBuilderContext context = new ClusterBuilderContext(warnings);
         return document.mapping().flatMap(context::from).collect(toList());
     }
 
@@ -56,9 +63,11 @@ public class Cluster {
 
     public String id() { return getSimpleName() + ":" + ((slot.getName() == null) ? "" : slot.getName()); }
 
+    @RequiredArgsConstructor
     private static class ClusterBuilderContext {
-        private Map<String, Slot> slots = new HashMap<>();
-        private HealthConfigBuilder health = HealthConfig.builder();
+        private final Consumer<String> warnings;
+        private final Map<String, Slot> slots = new HashMap<>();
+        private final HealthConfigBuilder health = HealthConfig.builder();
         private int indexLength = 0;
 
         public Stream<Cluster> from(YamlEntry entry) {
@@ -73,35 +82,35 @@ public class Cluster {
                     key = split[0];
                     slot = slots.get(split[1]);
                     if (slot == null) {
-                        log.warn("undefined slot: {}", split[1]);
+                        warnings.accept("undefined slot: " + split[1]);
                         slot = DEFAULT_SLOT;
                     }
                 } else
                     slot = DEFAULT_SLOT;
                 return Stream.of(builder()
-                        .host(key)
-                        .slot(slot)
-                        .readStages(entry.value(), indexLength)
-                        .healthConfig(health.build())
-                        .build());
+                    .host(key)
+                    .slot(slot)
+                    .readStages(entry.value(), indexLength)
+                    .healthConfig(health.build())
+                    .build());
             }
         }
 
         private void readConfig(String key, YamlNode value) {
             String[] split = key.split(":", 2);
             switch (split[0]) {
-            case "slot":
-                String name = split[1];
-                slots.put(name, Slot.from(name, value.asMapping()));
-                break;
-            case "index-length":
-                indexLength = value.asInt();
-                break;
-            case "health":
-                health.path(value.asMapping().get("path").asStringOr(""));
-                break;
-            default:
-                log.warn("unknown config key '{}'", key);
+                case "slot":
+                    String name = split[1];
+                    slots.put(name, Slot.from(name, value.asMapping()));
+                    break;
+                case "index-length":
+                    indexLength = value.asInt();
+                    break;
+                case "health":
+                    health.path(value.asMapping().get("path").asStringOr(""));
+                    break;
+                default:
+                    warnings.accept("unknown config key: " + key);
             }
         }
     }

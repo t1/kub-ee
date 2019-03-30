@@ -6,9 +6,8 @@ const FADE_OUT_TIME = 1000;
 
 class DeploymentMenu extends React.Component {
     render() {
-        const versions = (this.props.versions)
-            ? this.props.versions.map(version => this.renderVersion(version))
-            :
+        const versions = (this.props.versions) ?
+            this.props.versions.map(version => this.renderVersion(version)) :
             <span className="loading-indicator">Loading...</span>;
         return <ul className="list-unstyled deployment-menu">
             {versions}
@@ -87,7 +86,7 @@ function click_handler(event) {
 }
 
 function fetchVersions(where) {
-    console.debug('fetchVersion', where);
+    console.debug('fetchVersions', where);
 
     return fetch(DEPLOYMENTS_RESOURCE + where, {
         method: 'get',
