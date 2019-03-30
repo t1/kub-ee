@@ -121,13 +121,14 @@ class ClusterScaleServiceTest {
     @Test void shouldUpdatePortOfWorker01() {
         givenClusterConfig(1);
         NginxConfig nginxConfig = givenNginx(WORKER01);
-        HostPort actualWorker = WORKER01.withPort(20000);
-        givenDocker(actualWorker);
+        HostPort actualWorker1 = WORKER01.withPort(20000);
+        givenDocker(actualWorker1);
 
         service.run();
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig
-            .withUpstream("worker01", upstream -> upstream.withHostPort(0, actualWorker))
+            .withUpstream("worker01", upstream -> upstream.withHostPort(0, actualWorker1))
+            .withUpstream("worker_nodes", upstream -> upstream.withHostPort(0, actualWorker1))
         );
     }
 
@@ -141,6 +142,7 @@ class ClusterScaleServiceTest {
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig
             .withUpstream("worker02", upstream -> upstream.withHostPort(0, actualWorker2))
+            .withUpstream("worker_nodes", upstream -> upstream.withHostPort(1, actualWorker2))
         );
     }
 

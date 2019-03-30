@@ -21,40 +21,59 @@ import java.util.List;
     @Override public void run() {
         nginxConfig = NginxConfig.readFrom(nginxConfigPath.toUri());
         NginxConfig originalNginxConfig = nginxConfig;
-        clusterConfig.stream()
-            .flatMap(Cluster::nodes)
-            .map(this::upstreamFor)
-            .forEach(this::handleUpstream);
+        handleLoadBalancer();
         if (!nginxConfig.equals(originalNginxConfig)) {
             nginxConfig.writeTo(nginxConfigPath);
         }
     }
 
-    private void handleUpstream(NginxUpstream upstream) {
-        upstream.getHostPorts().forEach(expected -> {
-            int actualPort = getActualPort(expected);
-            if (expected.getPort() != actualPort) {
-                updatePort(expected, actualPort);
-            }
-        });
+    private void handleLoadBalancer() {
+        handleNodeUpstreams();
+        handleBalancedUpstream();
     }
 
-    private NginxUpstream upstreamFor(ClusterNode node) {
+    private void handleNodeUpstreams() {
+        clusterConfig.stream()
+            .flatMap(Cluster::nodes)
+            .map(this::nodeUpstreamFor)
+            .forEach(this::handleUpstream);
+    }
+
+    private NginxUpstream nodeUpstreamFor(ClusterNode node) {
         NginxServer server = nginxConfig.server(node.hostPort()).orElseThrow(IllegalStateException::new);
         NginxServerLocation location = server.location("/").orElseThrow(IllegalStateException::new);
         return nginxConfig.upstream(location.getProxyPass().getHost()).orElseThrow(IllegalStateException::new);
     }
 
-    private int getActualPort(HostPort expected) {
+    private void handleBalancedUpstream() {
+        clusterConfig.stream()
+            .map(this::balancedUpstreamFor)
+            .forEach(this::handleUpstream);
+    }
+
+    private NginxUpstream balancedUpstreamFor(Cluster cluster) {
+        return nginxConfig.upstream(cluster.getSimpleName() + "_nodes").orElseThrow(IllegalStateException::new);
+    }
+
+    private void handleUpstream(NginxUpstream upstream) {
+        upstream.getHostPorts().forEach(expected -> {
+            int actualPort = getActualPort(expected.getHost());
+            if (expected.getPort() != actualPort) {
+                updatePort(upstream.getName(), expected, actualPort);
+            }
+        });
+    }
+
+    private int getActualPort(String host) {
         return dockerStatus.stream()
-            .filter(hostPort -> hostPort.getHost().equals(expected.getHost()))
+            .filter(hostPort -> hostPort.getHost().equals(host))
             .findFirst().orElseThrow(IllegalStateException::new)
             .getPort();
     }
 
-    private void updatePort(HostPort expected, int actualPort) {
+    private void updatePort(String upstreamName, HostPort expected, int actualPort) {
         System.out.println("Inconsistent port: " + expected.getHost() + ": " + expected.getPort() + " -> " + actualPort);
-        nginxConfig = nginxConfig.withUpstream(expected.getHost(), upstream -> upstream.withHostPortses(hostPort ->
+        nginxConfig = nginxConfig.withUpstream(upstreamName, upstream -> upstream.with(hostPort ->
             (hostPort.getHost().equals(expected.getHost())) ? hostPort.withPort(actualPort) : hostPort));
     }
 }
