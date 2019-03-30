@@ -1,6 +1,5 @@
 package com.github.t1.kubee.model;
 
-import com.github.t1.nginx.HostPort;
 import lombok.Value;
 
 import javax.ws.rs.core.UriBuilder;
@@ -34,7 +33,7 @@ public class ClusterNode {
 
     public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
 
-    public HostPort hostPort() { return new HostPort(host(), port()); }
+    public Server hostPort() { return new Server(host(), port()); }
 
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;

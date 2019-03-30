@@ -40,7 +40,7 @@ import java.util.List;
     }
 
     private NginxUpstream nodeUpstreamFor(ClusterNode node) {
-        NginxServer server = nginxConfig.server(node.hostPort()).orElseThrow(IllegalStateException::new);
+        NginxServer server = nginxConfig.server(node.hostPort().toHostPort()).orElseThrow(IllegalStateException::new);
         NginxServerLocation location = server.location("/").orElseThrow(IllegalStateException::new);
         return nginxConfig.upstream(location.getProxyPass().getHost()).orElseThrow(IllegalStateException::new);
     }
