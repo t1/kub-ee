@@ -73,7 +73,7 @@ import java.util.List;
 
     private void updatePort(String upstreamName, HostPort expected, int actualPort) {
         System.out.println("Inconsistent port: " + expected.getHost() + ": " + expected.getPort() + " -> " + actualPort);
-        nginxConfig = nginxConfig.withUpstream(upstreamName, upstream -> upstream.with(hostPort ->
+        nginxConfig = nginxConfig.withUpstream(upstreamName, upstream -> upstream.map(hostPort ->
             (hostPort.getHost().equals(expected.getHost())) ? hostPort.withPort(actualPort) : hostPort));
     }
 }
