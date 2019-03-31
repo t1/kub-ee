@@ -77,18 +77,18 @@ class ClusterScaleServiceTest {
 
     private NginxConfig nginxConfig(HostPort... workers) {
         NginxConfig nginxConfig = NginxConfig.create()
-            .withUpstream(NginxUpstream.named("worker_nodes").withMethod("least_conn").withHostPorts(asList(workers)))
-            .withServer(NginxServer.named("~^(?<app>.+).kub-ee$").withListen(8080)
-                .withLocation(NginxServerLocation.named("/").withProxyPass(URI.create("http://worker_nodes/$app"))
-                    .withAfter("proxy_set_header Host      $host;\n" +
+            .addUpstream(NginxUpstream.named("worker_nodes").setMethod("least_conn").setHostPorts(asList(workers)))
+            .addServer(NginxServer.named("~^(?<app>.+).kub-ee$").setListen(8080)
+                .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://worker_nodes/$app"))
+                    .setAfter("proxy_set_header Host      $host;\n" +
                         "            proxy_set_header X-Real-IP $remote_addr;")));
         for (int i = 0; i < workers.length; i++) {
             String upstreamName = "worker0" + (i + 1);
-            nginxConfig = nginxConfig
-                .withUpstream(NginxUpstream.named(upstreamName).withMethod("least_conn").withHostPort(workers[i]))
-                .withServer(NginxServer.named(upstreamName).withListen(8080)
-                    .withLocation(NginxServerLocation.named("/").withProxyPass(URI.create("http://" + upstreamName + "/"))
-                        .withAfter("proxy_set_header Host      $host;\n" +
+            nginxConfig
+                .addUpstream(NginxUpstream.named(upstreamName).setMethod("least_conn").addHostPort(workers[i]))
+                .addServer(NginxServer.named(upstreamName).setListen(8080)
+                    .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://" + upstreamName + "/"))
+                        .setAfter("proxy_set_header Host      $host;\n" +
                             "            proxy_set_header X-Real-IP $remote_addr;")));
         }
         return nginxConfig;

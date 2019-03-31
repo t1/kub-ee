@@ -30,7 +30,7 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
         induceProxyLocation();
 
         NginxUpstream with = withUpstreamServer(upstream, hostPort);
-        config(config -> config.withUpstream(with));
+        config.addUpstream(with);
         done();
     }
 
@@ -38,35 +38,36 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
         Optional<NginxUpstream> upstream = upstream(loadBalancerName());
         if (!upstream.isPresent())
             return createUpstream(loadBalancerName());
-        config(config -> config.withoutUpstream(loadBalancerName()));
+        config.removeUpstream(loadBalancerName());
         return upstream.get();
     }
 
     private NginxUpstream createUpstream(String name) {
         log.debug("create upstream {}", name);
-        return NginxUpstream.named(name).withMethod("least_conn");
+        return NginxUpstream.named(name).setMethod("least_conn");
     }
 
     private void induceProxyLocation() {
         if (!server(serverName()).isPresent())
-            config(config -> config.withServer(NginxServer.named(serverName())));
+            config.addServer(NginxServer.named(serverName()));
         NginxServer server = server(serverName()).orElseThrow(()
-                -> internalServerError().detail("proxy '" + serverName() + "' still not created").exception());
+            -> internalServerError().detail("proxy '" + serverName() + "' still not created").exception());
         if (!server.location("/").isPresent())
-            config(config -> config.withoutServer(serverName()).withServer(server.withLocation(createLocation())));
+            config.removeServer(serverName()).addServer(server.addLocation(createLocation()));
     }
 
     private NginxServerLocation createLocation() {
         URI proxyPass = URI.create("http://" + loadBalancerName() + "/" + deployableName() + "/");
         return NginxServerLocation
-                .named("/").withProxyPass(proxyPass)
-                .withAfter("proxy_set_header Host      $host;\n"
-                        + "            proxy_set_header X-Real-IP $remote_addr;");
+            .named("/")
+            .setProxyPass(proxyPass)
+            .setAfter("proxy_set_header Host      $host;\n"
+                + "            proxy_set_header X-Real-IP $remote_addr;");
     }
 
     private NginxUpstream withUpstreamServer(NginxUpstream upstream, HostPort hostPort) {
         if (upstream.getHostPorts().contains(hostPort))
             throw badRequest().detail("server " + hostPort + " already in lb: " + upstream.getName()).exception();
-        return upstream.withHostPort(hostPort);
+        return upstream.addHostPort(hostPort);
     }
 }

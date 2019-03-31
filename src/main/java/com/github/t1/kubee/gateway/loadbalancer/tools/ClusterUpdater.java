@@ -28,9 +28,9 @@ import java.util.function.Consumer;
 
     @Override public void run() {
         nginxConfig = NginxConfig.readFrom(nginxConfigPath.toUri());
-        NginxConfig originalNginxConfig = nginxConfig;
+        String originalNginxConfig = nginxConfig.toString();
         handleLoadBalancer();
-        if (!nginxConfig.equals(originalNginxConfig)) {
+        if (!nginxConfig.toString().equals(originalNginxConfig)) {
             nginxConfig.writeTo(nginxConfigPath);
         }
     }
@@ -50,26 +50,26 @@ import java.util.function.Consumer;
     private NginxUpstream nodeUpstreamFor(ClusterNode node) {
         NginxServer server = nginxConfig.server(node.hostPort().toHostPort()).orElseGet(() -> {
             note.accept("Create missing nginx server: " + node.host());
-            NginxServer newServer = NginxServer.named(node.host()).withListen(node.port());
-            nginxConfig = nginxConfig.withServer(newServer);
+            NginxServer newServer = NginxServer.named(node.host()).setListen(node.port());
+            nginxConfig.addServer(newServer);
             return newServer;
         });
         NginxServerLocation location = server.location("/").orElseGet(() -> {
             note.accept("Create missing nginx location '/' in server: " + node.host());
             NginxServerLocation newLocation = NginxServerLocation.named("/")
-                .withProxyPass(URI.create("http://" + node.host() + "/"))
-                .withAfter("proxy_set_header Host      $host;\n" +
+                .setProxyPass(URI.create("http://" + node.host() + "/"))
+                .setAfter("proxy_set_header Host      $host;\n" +
                     "            proxy_set_header X-Real-IP $remote_addr;");
-            nginxConfig = nginxConfig.withoutServer(server.getName()).withServer(server.withLocation(newLocation));
+            nginxConfig.removeServer(server.getName()).addServer(server.addLocation(newLocation));
             return newLocation;
         });
         return nginxConfig.upstream(location.getProxyPass().getHost()).orElseGet(() -> {
             note.accept("Create missing nginx upstream: " + node.host());
             NginxUpstream newUpstream = NginxUpstream
                 .named(node.host())
-                .withMethod("least_conn")
-                .withHostPort(node.hostPort().toHostPort());
-            nginxConfig = nginxConfig.withUpstream(newUpstream);
+                .setMethod("least_conn")
+                .addHostPort(node.hostPort().toHostPort());
+            nginxConfig.addUpstream(newUpstream);
             return newUpstream;
         });
     }
@@ -81,9 +81,9 @@ import java.util.function.Consumer;
                 NginxUpstream upstream = balancedUpstreamFor(cluster);
                 if (!upstream.getHostPorts().contains(missing)) {
                     note.accept("Add missing server " + missing + " to upstream " + upstream.getName());
-                    nginxConfig = nginxConfig
-                        .withoutUpstream(upstream.getName())
-                        .withUpstream(upstream.withHostPort(missing));
+                    nginxConfig
+                        .removeUpstream(upstream.getName())
+                        .addUpstream(upstream.addHostPort(missing));
                 }
             });
         }
@@ -95,12 +95,14 @@ import java.util.function.Consumer;
     }
 
     private void handleUpstream(NginxUpstream upstream) {
-        upstream.getHostPorts().forEach(expected -> {
+        // no enhanced for loop or stream, as we change the port, which would cause ConcurrentModification
+        for (int i = 0; i < upstream.getHostPorts().size(); i++) {
+            HostPort expected = upstream.getHostPorts().get(i);
             int actualPort = getActualPort(expected.getHost());
             if (expected.getPort() != actualPort) {
-                updatePort(upstream.getName(), expected, actualPort);
+                updatePort(upstream, expected, actualPort);
             }
-        });
+        }
     }
 
     private int getActualPort(String host) {
@@ -110,9 +112,8 @@ import java.util.function.Consumer;
             .getPort();
     }
 
-    private void updatePort(String upstreamName, HostPort expected, int actualPort) {
-        note.accept("Inconsistent port: " + expected.getHost() + ": " + expected.getPort() + " -> " + actualPort);
-        nginxConfig = nginxConfig.withUpstream(upstreamName, upstream -> upstream.map(hostPort ->
-            (hostPort.getHost().equals(expected.getHost())) ? hostPort.withPort(actualPort) : hostPort));
+    private void updatePort(NginxUpstream upstream, HostPort hostPort, int actualPort) {
+        note.accept("Inconsistent port: " + hostPort.getHost() + ": " + hostPort.getPort() + " -> " + actualPort);
+        upstream.setPort(hostPort, actualPort);
     }
 }
