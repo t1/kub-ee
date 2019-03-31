@@ -71,7 +71,11 @@ class ClusterScaleServiceTest {
     }
 
     @SneakyThrows(IOException.class)
-    private NginxConfig givenNginx(HostPort... workers) {
+    private void givenNginx(HostPort... workers) {
+        Files.write(nginxConfigPath, singletonList(nginxConfig(workers).toString()));
+    }
+
+    private NginxConfig nginxConfig(HostPort... workers) {
         NginxConfig nginxConfig = NginxConfig.create()
             .withUpstream(NginxUpstream.named("worker_nodes").withMethod("least_conn").withHostPorts(asList(workers)))
             .withServer(NginxServer.named("~^(?<app>.+).kub-ee$").withListen(8080)
@@ -87,9 +91,6 @@ class ClusterScaleServiceTest {
                         .withAfter("proxy_set_header Host      $host;\n" +
                             "            proxy_set_header X-Real-IP $remote_addr;")));
         }
-
-        Files.write(nginxConfigPath, singletonList(nginxConfig.toString()));
-
         return nginxConfig;
     }
 
@@ -110,40 +111,44 @@ class ClusterScaleServiceTest {
 
     @Test void shouldRunEmpty() {
         givenClusterConfig(1);
-        NginxConfig nginxConfig = givenNginx(WORKER01);
+        givenNginx(WORKER01);
         givenDocker(WORKER01);
 
         service.run();
 
-        assertThat(actualNginxConfig()).isEqualTo(nginxConfig);
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
     @Test void shouldUpdatePortOfWorker01() {
         givenClusterConfig(1);
-        NginxConfig nginxConfig = givenNginx(WORKER01);
+        givenNginx(WORKER01);
         HostPort actualWorker1 = WORKER01.withPort(20000);
         givenDocker(actualWorker1);
 
         service.run();
 
-        assertThat(actualNginxConfig()).isEqualTo(nginxConfig
-            .withUpstream("worker01", upstream -> upstream.withHostPort(0, actualWorker1))
-            .withUpstream("worker_nodes", upstream -> upstream.withHostPort(0, actualWorker1))
-        );
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(actualWorker1));
     }
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
         givenClusterConfig(3);
-        NginxConfig nginxConfig = givenNginx(WORKER01, WORKER02, WORKER03);
+        givenNginx(WORKER01, WORKER02, WORKER03);
         HostPort actualWorker2 = WORKER02.withPort(20000);
         givenDocker(WORKER01, actualWorker2, WORKER03);
 
         service.run();
 
-        assertThat(actualNginxConfig()).isEqualTo(nginxConfig
-            .withUpstream("worker02", upstream -> upstream.withHostPort(0, actualWorker2))
-            .withUpstream("worker_nodes", upstream -> upstream.withHostPort(1, actualWorker2))
-        );
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, actualWorker2, WORKER03));
+    }
+
+    @Test void shouldAddUpstreamToNginx() {
+        givenClusterConfig(2);
+        givenNginx(WORKER01);
+        givenDocker(WORKER01, WORKER02);
+
+        service.run();
+
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
     }
 
     // FIXME multiple stages

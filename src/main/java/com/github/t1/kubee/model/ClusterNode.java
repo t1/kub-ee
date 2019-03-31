@@ -29,7 +29,7 @@ public class ClusterNode {
             + ((cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName());
     }
 
-    private int port() { return cluster.getSlot().getHttp(); }
+    public int port() { return cluster.getSlot().getHttp(); }
 
     public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
 
