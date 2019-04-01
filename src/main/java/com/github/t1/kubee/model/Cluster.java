@@ -9,8 +9,10 @@ import com.github.t1.kubee.tools.yaml.YamlNode;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ import static java.util.stream.Collectors.toList;
  */
 @Value
 @Builder(toBuilder = true)
-public class Cluster {
+public class Cluster implements Comparable<Cluster> {
     private final String host;
     private final Slot slot;
     private final List<Stage> stages;
@@ -48,6 +50,11 @@ public class Cluster {
     }
 
 
+    public Stream<ClusterNode> lastNodes() {
+        return stages()
+            .map(stage -> stage.lastNodeIn(this));
+    }
+
     public static List<Cluster> readAllFrom(YamlDocument document, Consumer<String> warnings) {
         ClusterBuilderContext context = new ClusterBuilderContext(warnings);
         return document.mapping().flatMap(context::from).collect(toList());
@@ -62,6 +69,10 @@ public class Cluster {
     private String[] hostSplit() { return host.split("\\.", 2); }
 
     public String id() { return getSimpleName() + ":" + ((slot.getName() == null) ? "" : slot.getName()); }
+
+    @Override public int compareTo(@NotNull Cluster that) {
+        return Comparator.comparing(Cluster::getHost).thenComparing(Cluster::getSlot).compare(this, that);
+    }
 
     @RequiredArgsConstructor
     private static class ClusterBuilderContext {

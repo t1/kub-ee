@@ -2,13 +2,18 @@ package com.github.t1.kubee.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.t1.kubee.model.Cluster.ClusterBuilder;
-import com.github.t1.kubee.tools.yaml.*;
-import lombok.*;
+import com.github.t1.kubee.tools.yaml.YamlEntry;
+import com.github.t1.kubee.tools.yaml.YamlMapping;
+import lombok.Builder;
+import lombok.Singular;
+import lombok.Value;
 
-import java.util.*;
-import java.util.stream.*;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 @Value
 @Builder
@@ -61,6 +66,10 @@ public class Stage implements Comparable<Stage> {
                          .thenComparing(Stage::getPrefix)
                          .thenComparing(Stage::getSuffix)
                          .compare(this, that);
+    }
+
+    public ClusterNode lastNodeIn(Cluster cluster) {
+        return nodes(cluster).max(Comparator.naturalOrder()).orElseThrow(IllegalStateException::new);
     }
 
 

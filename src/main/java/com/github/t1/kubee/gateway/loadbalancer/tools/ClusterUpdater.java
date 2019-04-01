@@ -16,104 +16,142 @@ import java.util.function.Consumer;
 
 /**
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale up or down as specified.
- * Then look at the nginx config, and update it as specified in the (updated) docker-compose file.
+ * Then look at the load balancer config, and update it as specified in the (updated) docker-compose file.
  */
 @RequiredArgsConstructor class ClusterUpdater implements Runnable {
     private final List<Cluster> clusterConfig;
-    private final List<HostPort> dockerStatus;
-    private final Path nginxConfigPath;
-    private NginxConfig nginxConfig;
+    private final List<HostPort> containerStatus;
+    private final Path lbConfigPath;
+    private NginxConfig lbConfig;
 
     private final Consumer<String> note = System.out::println;
 
     @Override public void run() {
-        nginxConfig = NginxConfig.readFrom(nginxConfigPath.toUri());
-        String originalNginxConfig = nginxConfig.toString();
+        lbConfig = NginxConfig.readFrom(lbConfigPath.toUri());
+        String originalLbConfig = lbConfig.toString();
         handleLoadBalancer();
-        if (!nginxConfig.toString().equals(originalNginxConfig)) {
-            nginxConfig.writeTo(nginxConfigPath);
+        if (!lbConfig.toString().equals(originalLbConfig)) {
+            lbConfig.writeTo(lbConfigPath);
         }
     }
 
     private void handleLoadBalancer() {
-        handleNodeUpstreams();
-        handleBalancedUpstream();
+        clusterConfig.forEach(this::handleCluster);
     }
 
-    private void handleNodeUpstreams() {
-        clusterConfig.stream()
-            .flatMap(Cluster::nodes)
-            .map(this::nodeUpstreamFor)
-            .forEach(this::handleUpstream);
+    private void handleCluster(Cluster cluster) {
+        cluster.nodes().forEach(this::handleNode);
+        cluster.lastNodes().forEach(node -> checkExcessNodes(node.next()));
+        handleBalancedUpstream(cluster);
+    }
+
+    private void handleNode(ClusterNode node) {
+        Integer actualPort = actualPort(node.hostPort().getHost());
+        if (actualPort == null) {
+            note.accept("Start missing container " + node.hostPort());
+            containerStatus.add(node.hostPort().toHostPort()); // TODO also start
+        }
+        handleUpstream(nodeUpstreamFor(node));
     }
 
     private NginxUpstream nodeUpstreamFor(ClusterNode node) {
-        NginxServer server = nginxConfig.server(node.hostPort().toHostPort()).orElseGet(() -> {
-            note.accept("Create missing nginx server: " + node.host());
+        NginxServer server = lbConfig.server(node.hostPort().toHostPort()).orElseGet(() -> {
+            note.accept("Create missing LB server: " + node.host());
             NginxServer newServer = NginxServer.named(node.host()).setListen(node.port());
-            nginxConfig.addServer(newServer);
+            lbConfig.addServer(newServer);
             return newServer;
         });
         NginxServerLocation location = server.location("/").orElseGet(() -> {
-            note.accept("Create missing nginx location '/' in server: " + node.host());
+            note.accept("Create missing LB location '/' in server: " + node.host());
             NginxServerLocation newLocation = NginxServerLocation.named("/")
                 .setProxyPass(URI.create("http://" + node.host() + "/"))
                 .setAfter("proxy_set_header Host      $host;\n" +
                     "            proxy_set_header X-Real-IP $remote_addr;");
-            nginxConfig.removeServer(server.getName()).addServer(server.addLocation(newLocation));
+            server.addLocation(newLocation);
             return newLocation;
         });
-        return nginxConfig.upstream(location.getProxyPass().getHost()).orElseGet(() -> {
-            note.accept("Create missing nginx upstream: " + node.host());
+        return lbConfig.upstream(location.getProxyPass().getHost()).orElseGet(() -> {
+            note.accept("Create missing LB upstream: " + node.host());
             NginxUpstream newUpstream = NginxUpstream
                 .named(node.host())
                 .setMethod("least_conn")
                 .addHostPort(node.hostPort().toHostPort());
-            nginxConfig.addUpstream(newUpstream);
+            lbConfig.addUpstream(newUpstream);
             return newUpstream;
         });
     }
 
-    private void handleBalancedUpstream() {
-        for (Cluster cluster : clusterConfig) {
-            handleUpstream(balancedUpstreamFor(cluster));
-            dockerStatus.forEach(missing -> {
-                NginxUpstream upstream = balancedUpstreamFor(cluster);
-                if (!upstream.getHostPorts().contains(missing)) {
-                    note.accept("Add missing server " + missing + " to upstream " + upstream.getName());
-                    nginxConfig
-                        .removeUpstream(upstream.getName())
-                        .addUpstream(upstream.addHostPort(missing));
-                }
-            });
+    private void checkExcessNodes(ClusterNode node) {
+        boolean[] lookForMore = {false};
+        Integer port = actualPort(node.host());
+        if (port != null) {
+            stopContainer(node.hostPort().toHostPort().withPort(port));
+            lookForMore[0] = true;
+        }
+        lbConfig.upstream(node.host()).ifPresent(upstream -> {
+            lookForMore[0] = true;
+            lbConfig.removeUpstream(node.host());
+        });
+        HostPort hostPort = node.hostPort().toHostPort();
+        lbConfig.server(hostPort).ifPresent(server -> {
+            lookForMore[0] = true;
+            lbConfig.removeServer(hostPort);
+        });
+        if (balancedUpstreamFor(node.getCluster()).hasHost(hostPort.getHost())) {
+            lookForMore[0] = true;
+            balancedUpstreamFor(node.getCluster()).removeHost(hostPort.getHost());
+        }
+
+        if (lookForMore[0]) {
+            checkExcessNodes(node.next());
         }
     }
 
+    private void stopContainer(HostPort hostPort) {
+        note.accept("Stopping excess container " + hostPort);
+    }
+
+    private void handleBalancedUpstream(Cluster cluster) {
+        handleUpstream(balancedUpstreamFor(cluster));
+        containerStatus.forEach(missing -> {
+            NginxUpstream upstream = balancedUpstreamFor(cluster);
+            if (!upstream.getHostPorts().contains(missing)) {
+                note.accept("Add missing LB server " + missing + " to upstream " + upstream.getName());
+                lbConfig
+                    .removeUpstream(upstream.getName())
+                    .addUpstream(upstream.addHostPort(missing));
+            }
+        });
+    }
+
     private NginxUpstream balancedUpstreamFor(Cluster cluster) {
-        return nginxConfig.upstream(cluster.getSimpleName() + "_nodes")
+        return lbConfig.upstream(cluster.getSimpleName() + "_nodes")
             .orElseThrow(IllegalStateException::new);
     }
 
     private void handleUpstream(NginxUpstream upstream) {
-        // no enhanced for loop or stream, as we change the port, which would cause ConcurrentModification
+        // no enhanced for loop or stream, as we change the HostPort, which would cause ConcurrentModification
         for (int i = 0; i < upstream.getHostPorts().size(); i++) {
-            HostPort expected = upstream.getHostPorts().get(i);
-            int actualPort = getActualPort(expected.getHost());
-            if (expected.getPort() != actualPort) {
-                updatePort(upstream, expected, actualPort);
+            HostPort hostPort = upstream.getHostPorts().get(i);
+            Integer actualPort = actualPort(hostPort.getHost());
+            if (actualPort == null)
+                continue; // TODO
+            if (hostPort.getPort() != actualPort) {
+                updatePort(upstream, hostPort, actualPort);
             }
         }
     }
 
-    private int getActualPort(String host) {
-        return dockerStatus.stream()
+    private Integer actualPort(String host) {
+        return containerStatus.stream()
             .filter(hostPort -> hostPort.getHost().equals(host))
-            .findFirst().orElseThrow(IllegalStateException::new)
-            .getPort();
+            .findFirst()
+            .map(HostPort::getPort)
+            .orElse(null);
     }
 
     private void updatePort(NginxUpstream upstream, HostPort hostPort, int actualPort) {
-        note.accept("Inconsistent port: " + hostPort.getHost() + ": " + hostPort.getPort() + " -> " + actualPort);
+        note.accept("LB port doesn't match actual: " + hostPort.getHost() + ": " + hostPort.getPort() + " -> " + actualPort);
         upstream.setPort(hostPort, actualPort);
     }
 }

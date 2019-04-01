@@ -34,12 +34,12 @@ import static java.util.stream.Collectors.toList;
  * Helper service to scale a docker-compose cluster of worker nodes whenever the <code>cluster-config.yaml</code>
  * file changes, which includes updating the config for and restarting <code>nginx</code>.<br>
  * Start it like this:<br>
- * <code>java -cp target/classes com.github.t1.kubee.gateway.loadbalancer.ClusterScaleService --cluster-config=&lt;path&gt;</code><br>
+ * <code>java -cp target/classes com.github.t1.kubee.gateway.loadbalancer.ClusterConfigService --cluster-config=&lt;path&gt;</code><br>
  * where &lt;path&gt; is the path to the <code>cluster-config.yaml</code> file to watch.
  */
 @Log
 @Setter @Accessors(chain = true)
-public class ClusterScaleService {
+public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
     private static final String CLUSTER_CONFIG_ARG = "--cluster-config=";
     private static final String NGINX_CONFIG_ARG = "--nginx-config=";
@@ -67,8 +67,8 @@ public class ClusterScaleService {
             System.err.println("Usage: `--cluster-config=<path>`: with the <path> to the `cluster-config.yaml`");
             System.exit(1);
         }
-        System.out.println("Start ClusterScaleService for " + clusterConfigPath);
-        new ClusterScaleService()
+        System.out.println("Start ClusterConfigService for " + clusterConfigPath);
+        new ClusterConfigService()
             .setProc(new ProcessInvoker())
             .setDockerComposeConfigPath(dockerComposeConfigPath)
             .setClusterConfigPath(clusterConfigPath)

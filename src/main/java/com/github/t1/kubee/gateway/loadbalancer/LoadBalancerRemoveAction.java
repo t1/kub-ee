@@ -23,7 +23,7 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
                 if (upstream.getHostPorts().size() > 1) {
                     upstream.removeHostPort(hostPort);
                 } else {
-                    config.removeServer(serverName());
+                    config.removeServer(hostPort);
                 }
                 done();
             } else {

@@ -29,7 +29,9 @@ abstract class LoadBalancerAction {
     String serverName() { return stage.getPrefix() + deployableName + stage.getSuffix(); }
 
 
-    Optional<NginxServer> server(String name) { return config.server(name); }
+    Optional<NginxServer> server(String name) {
+        return config.servers().filter(server -> server.getName().equals(name)).findAny();
+    }
 
     Optional<NginxUpstream> upstream(String name) { return config.upstream(name); }
 

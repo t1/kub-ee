@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-class ClusterScaleServiceTest {
+class ClusterConfigServiceTest {
     private static final HostPort WORKER01 = HostPort.valueOf("worker01:10001");
     private static final HostPort WORKER02 = HostPort.valueOf("worker02:10002");
     private static final HostPort WORKER03 = HostPort.valueOf("worker03:10003");
@@ -39,13 +39,13 @@ class ClusterScaleServiceTest {
 
     private final ProcessInvoker proc = mock(ProcessInvoker.class);
 
-    private ClusterScaleService service;
+    private ClusterConfigService service;
 
     @BeforeEach
     void setUp() {
         nginxConfigPath = tmp.resolve("nginx.conf");
         clusterConfigPath = tmp.resolve("cluster-config.yaml");
-        service = new ClusterScaleService()
+        service = new ClusterConfigService()
             .setProc(proc)
             .setDockerComposeConfigPath(dockerComposeConfigPath)
             .setClusterConfigPath(clusterConfigPath)
@@ -111,8 +111,8 @@ class ClusterScaleServiceTest {
 
     @Test void shouldRunEmpty() {
         givenClusterConfig(1);
-        givenNginx(WORKER01);
         givenDocker(WORKER01);
+        givenNginx(WORKER01);
 
         service.run();
 
@@ -121,9 +121,9 @@ class ClusterScaleServiceTest {
 
     @Test void shouldUpdatePortOfWorker01() {
         givenClusterConfig(1);
-        givenNginx(WORKER01);
         HostPort actualWorker1 = WORKER01.withPort(20000);
         givenDocker(actualWorker1);
+        givenNginx(WORKER01);
 
         service.run();
 
@@ -132,23 +132,43 @@ class ClusterScaleServiceTest {
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
         givenClusterConfig(3);
-        givenNginx(WORKER01, WORKER02, WORKER03);
         HostPort actualWorker2 = WORKER02.withPort(20000);
         givenDocker(WORKER01, actualWorker2, WORKER03);
+        givenNginx(WORKER01, WORKER02, WORKER03);
 
         service.run();
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, actualWorker2, WORKER03));
     }
 
-    @Test void shouldAddUpstreamToNginx() {
+    @Test void shouldAddUpstream() {
         givenClusterConfig(2);
-        givenNginx(WORKER01);
         givenDocker(WORKER01, WORKER02);
+        givenNginx(WORKER01);
 
         service.run();
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
+    }
+
+    @Test void shouldRemoveUpstream() {
+        givenClusterConfig(1);
+        givenDocker(WORKER01);
+        givenNginx(WORKER01, WORKER02);
+
+        service.run();
+
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
+    }
+
+    @Test void shouldRemoveTwoUpstreams() {
+        givenClusterConfig(1);
+        givenDocker(WORKER01);
+        givenNginx(WORKER01, WORKER02, WORKER03);
+
+        service.run();
+
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
     // FIXME multiple stages
