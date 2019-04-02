@@ -19,6 +19,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.Collections.unmodifiableList;
@@ -71,6 +72,7 @@ public class ClusterConfigService {
             .run();
     }
 
+    private Consumer<String> note = System.out::println;
     private ProcessInvoker proc;
     private Path dockerComposeConfigPath;
     private Path clusterConfigPath;
@@ -115,7 +117,7 @@ public class ClusterConfigService {
 
     private void handleChange() {
         List<Cluster> clusterConfig = readClusterConfig();
-        new ClusterReconditioner(clusterConfig, new ContainerStatus(proc, clusterConfig.get(0), dockerComposeConfigPath), nginxConfigPath).run();
+        new ClusterReconditioner(note, clusterConfig, new ContainerStatus(note, proc, clusterConfig.get(0), dockerComposeConfigPath), nginxConfigPath).run();
     }
 
     @SneakyThrows(IOException.class)

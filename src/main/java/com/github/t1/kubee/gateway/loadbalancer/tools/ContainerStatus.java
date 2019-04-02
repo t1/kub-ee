@@ -17,11 +17,18 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.toList;
 
 class ContainerStatus {
+    private final Consumer<String> note;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;
     private final List<HostPort> actualContainers;
 
-    ContainerStatus(@NonNull ProcessInvoker proc, @NonNull Cluster cluster, @NonNull Path dockerComposeConfigPath) {
+    ContainerStatus(
+        @NonNull Consumer<String> note,
+        @NonNull ProcessInvoker proc,
+        @NonNull Cluster cluster,
+        @NonNull Path dockerComposeConfigPath
+    ) {
+        this.note = note;
         this.proc = proc;
         this.dockerComposeConfigPath = dockerComposeConfigPath;
         this.actualContainers = readDockerStatus(cluster);
@@ -60,6 +67,7 @@ class ContainerStatus {
 
 
     void start(ClusterNode node) {
+        note.accept("Start missing container " + node.hostPort());
         actualContainers.add(node.hostPort().toHostPort());
     }
 
@@ -72,4 +80,9 @@ class ContainerStatus {
     }
 
     void forEach(Consumer<HostPort> consumer) { actualContainers.forEach(consumer); }
+
+    void stop(HostPort hostPort) {
+        note.accept("Stopping excess container " + hostPort);
+        actualContainers.remove(hostPort);
+    }
 }
