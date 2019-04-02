@@ -171,6 +171,7 @@ class ClusterConfigServiceTest {
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
+    // TODO create worker_nodes server
     // TODO scale containers up
     // TODO scale containers down
 
