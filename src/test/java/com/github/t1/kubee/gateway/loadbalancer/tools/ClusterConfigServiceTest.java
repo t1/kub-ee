@@ -70,9 +70,13 @@ class ClusterConfigServiceTest {
         Files.write(clusterConfigPath, singletonList(clusterConfig));
     }
 
-    @SneakyThrows(IOException.class)
     private void givenNginx(HostPort... workers) {
-        Files.write(nginxConfigPath, singletonList(nginxConfig(workers).toString()));
+        givenNginx(nginxConfig(workers));
+    }
+
+    @SneakyThrows(IOException.class)
+    private void givenNginx(NginxConfig nginxConfig) {
+        Files.write(nginxConfigPath, singletonList(nginxConfig.toString()));
     }
 
     private NginxConfig nginxConfig(HostPort... workers) {
@@ -139,6 +143,21 @@ class ClusterConfigServiceTest {
         service.run();
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, actualWorker2, WORKER03));
+    }
+
+    @Test void shouldAddWorkerNodesServer() {
+        givenClusterConfig(1);
+        givenDocker(WORKER01);
+        givenNginx(NginxConfig.create()
+            .addUpstream(NginxUpstream.named("worker01").setMethod("least_conn").addHostPort(WORKER01))
+            .addServer(NginxServer.named("worker01").setListen(8080)
+                .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://worker01/"))
+                    .setAfter("proxy_set_header Host      $host;\n" +
+                        "            proxy_set_header X-Real-IP $remote_addr;"))));
+
+        service.run();
+
+        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
     @Test void shouldAddUpstream() {

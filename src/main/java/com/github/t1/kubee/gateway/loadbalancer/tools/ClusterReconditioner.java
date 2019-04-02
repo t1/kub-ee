@@ -45,8 +45,8 @@ import java.util.function.Consumer;
             note.accept("Start missing container " + node.hostPort());
             containerStatus.start(node);
         }
-        LoadBalancer upstream = loadBalancerConfig.getOrCreateLoadBalancerFor(node);
-        reconditionLoadBalancer(upstream.upstream);
+        LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(node);
+        reconditionLoadBalancer(loadBalancer.upstream());
     }
 
     private void removeExcessNodes(ClusterNode node) {
@@ -93,8 +93,7 @@ import java.util.function.Consumer;
     }
 
     private NginxUpstream balancedUpstreamFor(Cluster cluster) {
-        return loadBalancerConfig.upstream(cluster.getSimpleName() + "_nodes")
-            .orElseThrow(IllegalStateException::new);
+        return loadBalancerConfig.getOrCreateLoadBalancerFor(cluster).upstream();
     }
 
     private void reconditionLoadBalancer(NginxUpstream upstream) {
