@@ -1,6 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.gateway.loadbalancer.tools.NginxReloadService;
+import com.github.t1.kubee.gateway.loadbalancer.tools.lb.NginxReloadService;
 import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;

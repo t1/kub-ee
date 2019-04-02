@@ -1,10 +1,10 @@
 package com.github.t1.kubee.gateway.loadbalancer.tools;
 
-import com.github.t1.kubee.gateway.loadbalancer.tools.LoadBalancerConfig.LoadBalancer;
+import com.github.t1.kubee.gateway.loadbalancer.tools.lb.LoadBalancerConfig;
+import com.github.t1.kubee.gateway.loadbalancer.tools.lb.LoadBalancerConfig.LoadBalancer;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.nginx.HostPort;
-import com.github.t1.nginx.NginxConfig.NginxUpstream;
+import com.github.t1.kubee.model.Endpoint;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
@@ -40,7 +40,7 @@ import java.util.function.Consumer;
     }
 
     private void reconditionNode(ClusterNode node) {
-        Integer actualPort = containerStatus.actualPort(node.hostPort().getHost());
+        Integer actualPort = containerStatus.actualPort(node.endpoint().getHost());
         if (actualPort == null) {
             containerStatus.start(node);
         }
@@ -51,12 +51,9 @@ import java.util.function.Consumer;
     private void reconditionBalancedUpstream(Cluster cluster) {
         reconditionLoadBalancer(balancedUpstreamFor(cluster));
         containerStatus.forEach(missing -> {
-            NginxUpstream upstream = balancedUpstreamFor(cluster).upstream();
-            if (!upstream.getHostPorts().contains(missing)) {
-                note.accept("Add missing LB server " + missing + " to upstream " + upstream.getName());
-                loadBalancerConfig
-                    .removeUpstream(upstream.getName())
-                    .addUpstream(upstream.addHostPort(missing));
+            LoadBalancer loadBalancer = balancedUpstreamFor(cluster);
+            if (!loadBalancer.endpoints().contains(missing)) {
+                loadBalancer.addEndpoint(missing);
             }
         });
     }
@@ -67,19 +64,14 @@ import java.util.function.Consumer;
 
     private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
         // copy, as we change the HostPort, which would cause ConcurrentModification
-        for (HostPort hostPort : new ArrayList<>(loadBalancer.upstream().getHostPorts())) {
+        for (Endpoint hostPort : new ArrayList<>(loadBalancer.endpoints())) {
             Integer actualPort = containerStatus.actualPort(hostPort.getHost());
             if (actualPort == null)
                 continue; // TODO
             if (hostPort.getPort() != actualPort) {
-                updatePort(loadBalancer, hostPort, actualPort);
+                loadBalancer.updatePort(hostPort, actualPort);
             }
         }
-    }
-
-    private void updatePort(LoadBalancer loadBalancer, HostPort hostPort, int actualPort) {
-        note.accept("LB port doesn't match actual: " + hostPort.getHost() + ": " + hostPort.getPort() + " -> " + actualPort);
-        loadBalancer.upstream().setPort(hostPort, actualPort);
     }
 
     @RequiredArgsConstructor
@@ -90,21 +82,16 @@ import java.util.function.Consumer;
         @Override public void run() {
             Integer port = containerStatus.actualPort(node.host());
             if (port != null) {
-                containerStatus.stop(node.hostPort().toHostPort().withPort(port));
+                containerStatus.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
-            loadBalancerConfig.upstream(node.host()).ifPresent(upstream -> {
+            if (loadBalancerConfig.hasLoadBalancerFor(node)) {
                 lookForMore = true;
-                loadBalancerConfig.removeUpstream(node.host());
-            });
-            HostPort hostPort = node.hostPort().toHostPort();
-            loadBalancerConfig.server(hostPort).ifPresent(server -> {
+                loadBalancerConfig.removeUpstream(node.endpoint());
+            }
+            if (balancedUpstreamFor(node.getCluster()).hasHost(node.endpoint().getHost())) {
                 lookForMore = true;
-                loadBalancerConfig.removeServer(hostPort);
-            });
-            if (balancedUpstreamFor(node.getCluster()).upstream().hasHost(hostPort.getHost())) {
-                lookForMore = true;
-                balancedUpstreamFor(node.getCluster()).upstream().removeHost(hostPort.getHost());
+                balancedUpstreamFor(node.getCluster()).removeHost(node.endpoint().getHost());
             }
 
             if (lookForMore) {

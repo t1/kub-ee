@@ -42,7 +42,7 @@ public class ClusterNode implements Comparable<ClusterNode> {
 
     public String id() { return cluster.id() + ":" + stage.getName() + ":" + index; }
 
-    public Server hostPort() { return new Server(host(), port()); }
+    public Endpoint endpoint() { return new Endpoint(host(), port()); }
 
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;

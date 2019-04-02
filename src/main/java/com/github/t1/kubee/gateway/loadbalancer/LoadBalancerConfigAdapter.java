@@ -1,6 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.gateway.loadbalancer.tools.NginxReloadService;
+import com.github.t1.kubee.gateway.loadbalancer.tools.lb.NginxReloadService;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
 import lombok.RequiredArgsConstructor;

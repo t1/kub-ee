@@ -2,8 +2,8 @@ package com.github.t1.kubee.gateway.loadbalancer.tools;
 
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
-import com.github.t1.nginx.HostPort;
 import lombok.NonNull;
 
 import java.nio.file.Path;
@@ -20,7 +20,7 @@ class ContainerStatus {
     private final Consumer<String> note;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;
-    private final List<HostPort> actualContainers;
+    private final List<Endpoint> actualContainers;
 
     ContainerStatus(
         @NonNull Consumer<String> note,
@@ -34,10 +34,10 @@ class ContainerStatus {
         this.actualContainers = readDockerStatus(cluster);
     }
 
-    private List<HostPort> readDockerStatus(Cluster cluster) {
+    private List<Endpoint> readDockerStatus(Cluster cluster) {
         List<String> containerIds = readDockerComposeProcessIdsFor(cluster.getSimpleName());
         return containerIds.stream()
-            .map(containerId -> getHostPortFor(cluster, containerId))
+            .map(containerId -> getEndpointFor(cluster, containerId))
             .collect(toList());
     }
 
@@ -46,12 +46,11 @@ class ContainerStatus {
         return Arrays.asList(output.split("\n"));
     }
 
-    private HostPort getHostPortFor(Cluster cluster, String containerId) {
+    private Endpoint getEndpointFor(Cluster cluster, String containerId) {
         SimpleEntry<Integer, Integer> indexToPort = readExposedPortFor(containerId, cluster.getSlot().getHttp(), cluster.getSimpleName());
         int index = indexToPort.getKey();
         int port = indexToPort.getValue();
-        String host = cluster.node(cluster.getStages().get(0), index).host();
-        return new HostPort(host, port);
+        return cluster.node(cluster.getStages().get(0), index).endpoint().withPort(port);
     }
 
     private SimpleEntry<Integer, Integer> readExposedPortFor(String containerId, int publishPort, String clusterName) {
@@ -67,21 +66,21 @@ class ContainerStatus {
 
 
     void start(ClusterNode node) {
-        note.accept("Start missing container " + node.hostPort());
-        actualContainers.add(node.hostPort().toHostPort());
+        note.accept("Start missing container " + node.endpoint());
+        actualContainers.add(node.endpoint());
     }
 
     Integer actualPort(String host) {
         return actualContainers.stream()
             .filter(hostPort -> hostPort.getHost().equals(host))
             .findFirst()
-            .map(HostPort::getPort)
+            .map(Endpoint::getPort)
             .orElse(null);
     }
 
-    void forEach(Consumer<HostPort> consumer) { actualContainers.forEach(consumer); }
+    void forEach(Consumer<Endpoint> consumer) { actualContainers.forEach(consumer); }
 
-    void stop(HostPort hostPort) {
+    void stop(Endpoint hostPort) {
         note.accept("Stopping excess container " + hostPort);
         actualContainers.remove(hostPort);
     }
