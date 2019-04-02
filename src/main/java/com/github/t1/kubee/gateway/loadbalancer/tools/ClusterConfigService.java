@@ -3,7 +3,6 @@ package com.github.t1.kubee.gateway.loadbalancer.tools;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
-import com.github.t1.nginx.HostPort;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -19,16 +18,11 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Helper service to scale a docker-compose cluster of worker nodes whenever the <code>cluster-config.yaml</code>
@@ -121,44 +115,12 @@ public class ClusterConfigService {
 
     private void handleChange() {
         List<Cluster> clusterConfig = readClusterConfig();
-        new ClusterUpdater(clusterConfig, readDockerStatus(clusterConfig.get(0)), nginxConfigPath).run();
+        new ClusterUpdater(clusterConfig, new ContainerStatus(proc, clusterConfig.get(0), dockerComposeConfigPath), nginxConfigPath).run();
     }
 
     @SneakyThrows(IOException.class)
     private List<Cluster> readClusterConfig() {
         YamlDocument document = YamlDocument.from(new InputStreamReader(Files.newInputStream(clusterConfigPath)));
         return unmodifiableList(Cluster.readAllFrom(document, System.out::println));
-    }
-
-
-    private List<HostPort> readDockerStatus(Cluster cluster) {
-        List<String> containerIds = readDockerComposeProcessIdsFor(cluster.getSimpleName());
-        return containerIds.stream()
-            .map(containerId -> getHostPortFor(cluster, containerId))
-            .collect(toList());
-    }
-
-    private List<String> readDockerComposeProcessIdsFor(String name) {
-        String output = proc.invoke(dockerComposeConfigPath.getParent(), "docker-compose", "ps", "-q", name);
-        return Arrays.asList(output.split("\n"));
-    }
-
-    private HostPort getHostPortFor(Cluster cluster, String containerId) {
-        SimpleEntry<Integer, Integer> indexToPort = readExposedPortFor(containerId, cluster.getSlot().getHttp(), cluster.getSimpleName());
-        int index = indexToPort.getKey();
-        int port = indexToPort.getValue();
-        String host = cluster.node(cluster.getStages().get(0), index).host();
-        return new HostPort(host, port);
-    }
-
-    private SimpleEntry<Integer, Integer> readExposedPortFor(String containerId, int publishPort, String clusterName) {
-        String ports = proc.invoke("docker", "ps", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + publishPort);
-        Pattern pattern = Pattern.compile("0\\.0\\.0\\.0:(?<port>\\d+)->" + publishPort + "/tcp\tdocker_" + clusterName + "_(?<index>\\d+)");
-        Matcher matcher = pattern.matcher(ports);
-        if (!matcher.matches())
-            throw new RuntimeException("can't parse port in `" + ports + "`");
-        int port = Integer.parseInt(matcher.group("port"));
-        int index = Integer.parseInt(matcher.group("index"));
-        return new SimpleEntry<>(index, port);
     }
 }

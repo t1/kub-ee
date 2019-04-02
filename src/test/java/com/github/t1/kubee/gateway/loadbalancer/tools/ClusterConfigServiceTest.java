@@ -171,6 +171,9 @@ class ClusterConfigServiceTest {
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
-    // FIXME multiple stages
-    // FIXME multiple clusters
+    // TODO scale containers up
+    // TODO scale containers down
+
+    // TODO multiple stages
+    // TODO multiple clusters
 }

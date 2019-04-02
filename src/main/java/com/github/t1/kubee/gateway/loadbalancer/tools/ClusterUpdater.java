@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  */
 @RequiredArgsConstructor class ClusterUpdater implements Runnable {
     private final List<Cluster> clusterConfig;
-    private final List<HostPort> containerStatus;
+    private final ContainerStatus containerStatus;
     private final Path lbConfigPath;
     private NginxConfig lbConfig;
 
@@ -46,10 +46,10 @@ import java.util.function.Consumer;
     }
 
     private void handleNode(ClusterNode node) {
-        Integer actualPort = actualPort(node.hostPort().getHost());
+        Integer actualPort = containerStatus.actualPort(node.hostPort().getHost());
         if (actualPort == null) {
             note.accept("Start missing container " + node.hostPort());
-            containerStatus.add(node.hostPort().toHostPort()); // TODO also start
+            containerStatus.start(node);
         }
         handleUpstream(nodeUpstreamFor(node));
     }
@@ -83,7 +83,7 @@ import java.util.function.Consumer;
 
     private void checkExcessNodes(ClusterNode node) {
         boolean[] lookForMore = {false};
-        Integer port = actualPort(node.host());
+        Integer port = containerStatus.actualPort(node.host());
         if (port != null) {
             stopContainer(node.hostPort().toHostPort().withPort(port));
             lookForMore[0] = true;
@@ -133,21 +133,13 @@ import java.util.function.Consumer;
         // no enhanced for loop or stream, as we change the HostPort, which would cause ConcurrentModification
         for (int i = 0; i < upstream.getHostPorts().size(); i++) {
             HostPort hostPort = upstream.getHostPorts().get(i);
-            Integer actualPort = actualPort(hostPort.getHost());
+            Integer actualPort = containerStatus.actualPort(hostPort.getHost());
             if (actualPort == null)
                 continue; // TODO
             if (hostPort.getPort() != actualPort) {
                 updatePort(upstream, hostPort, actualPort);
             }
         }
-    }
-
-    private Integer actualPort(String host) {
-        return containerStatus.stream()
-            .filter(hostPort -> hostPort.getHost().equals(host))
-            .findFirst()
-            .map(HostPort::getPort)
-            .orElse(null);
     }
 
     private void updatePort(NginxUpstream upstream, HostPort hostPort, int actualPort) {
