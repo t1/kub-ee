@@ -117,7 +117,8 @@ public class ClusterConfigService {
 
     private void handleChange() {
         List<Cluster> clusterConfig = readClusterConfig();
-        new ClusterReconditioner(note, clusterConfig, new ContainerStatus(note, proc, clusterConfig.get(0), dockerComposeConfigPath), nginxConfigPath).run();
+        ContainerStatus containerStatus = new ContainerStatus(note, proc, clusterConfig.get(0), dockerComposeConfigPath);
+        new ClusterReconditioner(note, clusterConfig, containerStatus, nginxConfigPath).run();
     }
 
     @SneakyThrows(IOException.class)

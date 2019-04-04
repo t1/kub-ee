@@ -15,7 +15,7 @@ public class LoadBalancerAddAction extends LoadBalancerAction {
 
     public void addTarget(ClusterNode node) {
         log.debug("add {} to lb {}", node.endpoint(), loadBalancerName());
-        new LoadBalancerConfig(config, log::info).getOrCreateLoadBalancerFor(node);
+        new LoadBalancerConfig(config, log::info).getOrCreateReverseProxyFor(node);
         done();
     }
 }

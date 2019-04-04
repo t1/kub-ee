@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -65,9 +66,10 @@ class ContainerStatus {
     }
 
 
-    void start(ClusterNode node) {
+    int start(ClusterNode node) {
         note.accept("Start missing container " + node.endpoint());
-        actualContainers.add(node.endpoint());
+        actualContainers.add(node.endpoint()); // TODO actually start
+        return -1;
     }
 
     Integer actualPort(String host) {
@@ -78,10 +80,10 @@ class ContainerStatus {
             .orElse(null);
     }
 
-    void forEach(Consumer<Endpoint> consumer) { actualContainers.forEach(consumer); }
+    Stream<Endpoint> actual() { return actualContainers.stream(); }
 
     void stop(Endpoint hostPort) {
         note.accept("Stopping excess container " + hostPort);
-        actualContainers.remove(hostPort);
+        actualContainers.remove(hostPort); // TODO actually stop
     }
 }

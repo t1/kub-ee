@@ -18,7 +18,15 @@ import java.util.function.Consumer;
 import static com.github.t1.kubee.tools.Tools.toHostPort;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * We have two use cases:
+ * <ul>
+ * <li><b>Load Balancer</b>: a set of nodes acting as a cluster for an application.</li>
+ * <li><b>Reverse Proxy</b>: a single node in a cluster exposed to the exterior.</li>
+ * </ul>
+ */
 public class LoadBalancerConfig {
+    private static final String LOAD_BALANCER_SERVER_PATTERN = "~^(?<app>.+).kub-ee$";
     private final NginxConfig nginxConfig;
     private final Consumer<String> note;
 
@@ -44,23 +52,53 @@ public class LoadBalancerConfig {
 
     public void apply() { nginxConfig.writeTo(configPath); }
 
-    public void removeUpstream(Endpoint endpoint) {
-        nginxConfig.removeServer(toHostPort(endpoint));
-        nginxConfig.removeUpstream(endpoint.getHost());
+    public void removeReverseProxyFor(ClusterNode node) {
+        nginxConfig.removeServer(new HostPort(node.host(), node.port()));
+        nginxConfig.removeUpstream(node.host());
     }
 
-    public boolean hasLoadBalancerFor(ClusterNode node) {
+    public boolean hasReverseProxyFor(ClusterNode node) {
         return nginxConfig.upstream(node.host()).isPresent();
     }
 
-    public LoadBalancer getOrCreateLoadBalancerFor(ClusterNode node) {
-        LoadBalancer loadBalancer = new LoadBalancer(node.host(), node.port(), node.host(), "");
-        loadBalancer.upstream.updateHostPort(toHostPort(node.endpoint()));
-        return loadBalancer;
+    public ReverseProxy getOrCreateReverseProxyFor(ClusterNode node) {
+        ReverseProxy reverseProxy = new ReverseProxy(node.host(), node.port());
+        reverseProxy.upstream.updateHostPort(toHostPort(node.endpoint()));
+        return reverseProxy;
     }
 
-    public LoadBalancer getOrCreateLoadBalancerFor(Cluster cluster) {
-        return new LoadBalancer("~^(?<app>.+).kub-ee$", cluster.getSlot().getHttp(), cluster.getSimpleName() + "_nodes", "$app");
+    public class ReverseProxy {
+        private final NginxServer server;
+        private final NginxUpstream upstream;
+
+        ReverseProxy(String name, int fromPort) {
+            this.server = getOrCreateServer(name, fromPort, name, "");
+            this.upstream = getOrCreateUpstream(name);
+        }
+
+        public int getPort() {
+            List<HostPort> hostPorts = upstream.getHostPorts();
+            if (hostPorts.size() != 1)
+                throw new IllegalStateException("expected exactly one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
+            return hostPorts.get(0).getPort();
+        }
+
+        public void setPort(int port) {
+            note.accept("Add port of ReverseProxy " + upstream.getName() + " to " + port);
+            List<HostPort> hostPorts = upstream.getHostPorts();
+            if (hostPorts.size() != 1)
+                throw new IllegalStateException("expected exactly one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
+            hostPorts.set(0, hostPorts.get(0).withPort(port));
+        }
+    }
+
+
+    public boolean hasLoadBalancerFor(Cluster cluster) {
+        return nginxConfig.server(LOAD_BALANCER_SERVER_PATTERN, cluster.getSlot().getHttp()).isPresent();
+    }
+
+    public LoadBalancer getOrCreateLoadBalancerFor(Cluster cluster) { // TODO and application name
+        return new LoadBalancer(LOAD_BALANCER_SERVER_PATTERN, cluster.getSlot().getHttp(), cluster.getSimpleName() + "_nodes", "$app");
     }
 
     public class LoadBalancer {
@@ -68,29 +106,8 @@ public class LoadBalancerConfig {
         private final NginxUpstream upstream;
 
         LoadBalancer(String fromPattern, int fromListen, String upstreamName, String upstreamPath) {
-            this.server = nginxConfig.server(toHostPort(new Endpoint(fromPattern, fromListen))).orElseGet(() -> {
-                note.accept("Create missing LB server: " + fromPattern);
-                NginxServer newServer = NginxServer.named(fromPattern).setListen(fromListen);
-                nginxConfig.addServer(newServer);
-                return newServer;
-            });
-            server.location("/").orElseGet(() -> {
-                note.accept("Create missing LB location '/' in server: " + upstreamName);
-                NginxServerLocation newLocation = NginxServerLocation.named("/")
-                    .setProxyPass(URI.create("http://" + upstreamName + "/" + upstreamPath))
-                    .setAfter("proxy_set_header Host      $host;\n" +
-                        "            proxy_set_header X-Real-IP $remote_addr;");
-                server.addLocation(newLocation);
-                return newLocation;
-            });
-            this.upstream = nginxConfig.upstream(upstreamName).orElseGet(() -> {
-                note.accept("Create missing LB upstream: " + upstreamName);
-                NginxUpstream newUpstream = NginxUpstream
-                    .named(upstreamName)
-                    .setMethod("least_conn");
-                nginxConfig.addUpstream(newUpstream);
-                return newUpstream;
-            });
+            this.server = getOrCreateServer(fromPattern, fromListen, upstreamName, upstreamPath);
+            this.upstream = getOrCreateUpstream(upstreamName);
         }
 
         public void updatePort(Endpoint endpoint, Integer newPort) {
@@ -98,17 +115,51 @@ public class LoadBalancerConfig {
             upstream.setPort(toHostPort(endpoint), newPort);
         }
 
-        public List<Endpoint> endpoints() {
-            return upstream.getHostPorts().stream().map(it -> new Endpoint(it.getHost(), it.getPort())).collect(toList());
-        }
-
-        public void addEndpoint(Endpoint endpoint) {
-            note.accept("Add missing LB server " + endpoint + " to upstream " + upstream.getName());
-            upstream.addHostPort(toHostPort(endpoint));
-        }
-
         public boolean hasHost(String host) { return upstream.hasHost(host); }
 
         public void removeHost(String host) { upstream.removeHost(host); }
+
+
+        public boolean hasEndpoint(Endpoint endpoint) { return getEndpoints().contains(endpoint); }
+
+        public List<Endpoint> getEndpoints() {
+            return upstream.hostPorts().map(Tools::toEndpoint).collect(toList());
+        }
+
+        public void addEndpoint(Endpoint endpoint) {
+            note.accept("Add missing endpoint " + endpoint + " to LB " + upstream.getName());
+            upstream.addHostPort(toHostPort(endpoint));
+        }
+    }
+
+
+    private NginxServer getOrCreateServer(String fromPattern, int fromListen, String upstreamName, String upstreamPath) {
+        NginxServer server = nginxConfig.server(fromPattern, fromListen).orElseGet(() -> {
+            note.accept("Create missing LB server: " + fromPattern);
+            NginxServer newServer = NginxServer.named(fromPattern).setListen(fromListen);
+            nginxConfig.addServer(newServer);
+            return newServer;
+        });
+        server.location("/").orElseGet(() -> {
+            note.accept("Create missing LB location '/' in server: " + upstreamName);
+            NginxServerLocation newLocation = NginxServerLocation.named("/")
+                .setProxyPass(URI.create("http://" + upstreamName + "/" + upstreamPath))
+                .setAfter("proxy_set_header Host      $host;\n" +
+                    "            proxy_set_header X-Real-IP $remote_addr;");
+            server.addLocation(newLocation);
+            return newLocation;
+        });
+        return server;
+    }
+
+    private NginxUpstream getOrCreateUpstream(String upstreamName) {
+        return nginxConfig.upstream(upstreamName).orElseGet(() -> {
+            note.accept("Create missing LB upstream: " + upstreamName);
+            NginxUpstream newUpstream = NginxUpstream
+                .named(upstreamName)
+                .setMethod("least_conn");
+            nginxConfig.addUpstream(newUpstream);
+            return newUpstream;
+        });
     }
 }

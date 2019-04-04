@@ -7,11 +7,10 @@ import lombok.experimental.Wither;
 import java.net.URI;
 import java.util.Comparator;
 
+/** A hostname-port pair */
 @Value
 @Wither
 public class Endpoint implements Comparable<Endpoint> {
-    public static final int DEFAULT_HTTP_PORT = 80;
-
     String host;
     int port;
 

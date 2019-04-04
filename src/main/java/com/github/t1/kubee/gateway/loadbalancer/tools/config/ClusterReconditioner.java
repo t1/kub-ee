@@ -34,37 +34,32 @@ import java.util.function.Consumer;
     }
 
     private void reconditionCluster(Cluster cluster) {
-        cluster.nodes().forEach(this::reconditionNode);
+        cluster.nodes().forEach(this::reconditionReverseProxy);
         cluster.lastNodes().forEach(node -> new NodeCleanup(node.next()).run());
-        reconditionBalancedUpstream(cluster);
+        reconditionLoadBalancerFor(cluster);
     }
 
-    private void reconditionNode(ClusterNode node) {
+    private void reconditionReverseProxy(ClusterNode node) {
         Integer actualPort = containerStatus.actualPort(node.endpoint().getHost());
         if (actualPort == null) {
-            containerStatus.start(node);
+            actualPort = containerStatus.start(node);
         }
-        LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(node);
+        ReverseProxy reverseProxy = loadBalancerConfig.getOrCreateReverseProxyFor(node);
+        if (reverseProxy.getPort() != actualPort) {
+            reverseProxy.setPort(actualPort);
+        }
+    }
+
+    private void reconditionLoadBalancerFor(Cluster cluster) {
+        LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(cluster);
         reconditionLoadBalancer(loadBalancer);
-    }
-
-    private void reconditionBalancedUpstream(Cluster cluster) {
-        reconditionLoadBalancer(balancedUpstreamFor(cluster));
-        containerStatus.forEach(missing -> {
-            LoadBalancer loadBalancer = balancedUpstreamFor(cluster);
-            if (!loadBalancer.endpoints().contains(missing)) {
-                loadBalancer.addEndpoint(missing);
-            }
-        });
-    }
-
-    private LoadBalancer balancedUpstreamFor(Cluster cluster) {
-        return loadBalancerConfig.getOrCreateLoadBalancerFor(cluster);
+        containerStatus.actual()
+            .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
+            .forEach(loadBalancer::addEndpoint);
     }
 
     private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
-        // copy, as we change the HostPort, which would cause ConcurrentModification
-        for (Endpoint hostPort : new ArrayList<>(loadBalancer.endpoints())) {
+        for (Endpoint hostPort : loadBalancer.getEndpoints()) {
             Integer actualPort = containerStatus.actualPort(hostPort.getHost());
             if (actualPort == null)
                 continue; // TODO
@@ -85,13 +80,18 @@ import java.util.function.Consumer;
                 containerStatus.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
-            if (loadBalancerConfig.hasLoadBalancerFor(node)) {
+            if (loadBalancerConfig.hasReverseProxyFor(node)) {
                 lookForMore = true;
-                loadBalancerConfig.removeUpstream(node.endpoint());
+                loadBalancerConfig.removeReverseProxyFor(node);
             }
-            if (balancedUpstreamFor(node.getCluster()).hasHost(node.endpoint().getHost())) {
-                lookForMore = true;
-                balancedUpstreamFor(node.getCluster()).removeHost(node.endpoint().getHost());
+
+            if (loadBalancerConfig.hasLoadBalancerFor(node.getCluster())) {
+                LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(node.getCluster());
+                String host = node.endpoint().getHost();
+                if (loadBalancer.hasHost(host)) {
+                    lookForMore = true;
+                    loadBalancer.removeHost(host);
+                }
             }
 
             if (lookForMore) {
