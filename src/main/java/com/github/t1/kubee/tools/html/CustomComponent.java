@@ -27,7 +27,12 @@ public class CustomComponent extends Component {
     }
 
     public CustomComponent text(String text) {
-        element.text(text);
+        String[] lines = text.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            if (i > 0)
+                element.appendElement("br");
+            element.appendText(lines[i]);
+        }
         return this;
     }
 

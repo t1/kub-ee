@@ -14,6 +14,7 @@ import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.kubee.model.Version;
+import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
 import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +70,7 @@ public class Controller {
             return deployer.fetchDeployablesFrom(node);
         } catch (Exception e) {
             String error = errorString(e);
-            log.debug("deployer not found on {}: {}", node, error);
+            log.debug("GET from deployer on {} threw: {}", node, error);
             return Stream.of(Deployment
                 .builder()
                 .name("-")
@@ -89,6 +90,7 @@ public class Controller {
         String out = e.toString();
         while (out.startsWith(ExecutionException.class.getName() + ": ")
             || out.startsWith(ConnectException.class.getName() + ": ")
+            || out.startsWith(WebApplicationApplicationException.class.getName() + ": ")
             || out.startsWith(RuntimeException.class.getName() + ": "))
             out = out.substring(out.indexOf(": ") + 2);
         if (out.endsWith(UNKNOWN_HOST_SUFFIX))

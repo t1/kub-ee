@@ -63,7 +63,7 @@ public class YamlHttpClient {
         Response response = method.apply(invocation);
         try {
             String contentType = response.getHeaderString("Content-Type");
-            String body = response.readEntity(String.class);
+            String body = response.readEntity(String.class).replace("\r\n", "\n");
             if (NOT_FOUND.getStatusCode() == response.getStatus()) {
                 log.info("{} returns 404 Not Found: {}", uri, body);
                 throw new NotFoundException();
