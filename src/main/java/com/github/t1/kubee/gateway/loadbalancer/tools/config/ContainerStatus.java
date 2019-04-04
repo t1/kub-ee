@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-class ContainerStatus {
+public class ContainerStatus {
     private final Consumer<String> note;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;

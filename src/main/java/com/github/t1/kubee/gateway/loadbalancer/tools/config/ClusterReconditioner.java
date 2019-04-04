@@ -55,7 +55,7 @@ import java.util.function.Consumer;
         reconditionLoadBalancer(loadBalancer);
         containerStatus.actual()
             .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
-            .forEach(loadBalancer::addEndpoint);
+            .forEach(loadBalancer::addOrUpdateEndpoint);
     }
 
     private void reconditionLoadBalancer(LoadBalancer loadBalancer) {

@@ -62,9 +62,7 @@ public class LoadBalancerConfig {
     }
 
     public ReverseProxy getOrCreateReverseProxyFor(ClusterNode node) {
-        ReverseProxy reverseProxy = new ReverseProxy(node.host(), node.port());
-        reverseProxy.upstream.updateHostPort(toHostPort(node.endpoint()));
-        return reverseProxy;
+        return new ReverseProxy(node.host(), node.port());
     }
 
     public class ReverseProxy {
@@ -78,7 +76,9 @@ public class LoadBalancerConfig {
 
         public int getPort() {
             List<HostPort> hostPorts = upstream.getHostPorts();
-            if (hostPorts.size() != 1)
+            if (hostPorts.isEmpty())
+                return -1;
+            if (hostPorts.size() > 1)
                 throw new IllegalStateException("expected exactly one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
             return hostPorts.get(0).getPort();
         }
@@ -86,9 +86,13 @@ public class LoadBalancerConfig {
         public void setPort(int port) {
             note.accept("Add port of ReverseProxy " + upstream.getName() + " to " + port);
             List<HostPort> hostPorts = upstream.getHostPorts();
-            if (hostPorts.size() != 1)
-                throw new IllegalStateException("expected exactly one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
-            hostPorts.set(0, hostPorts.get(0).withPort(port));
+            if (hostPorts.size() > 1)
+                throw new IllegalStateException("expected no more than one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
+            if (hostPorts.isEmpty()) {
+                hostPorts.add(new HostPort(upstream.getName(), port));
+            } else {
+                hostPorts.set(0, hostPorts.get(0).withPort(port));
+            }
         }
     }
 
@@ -126,9 +130,14 @@ public class LoadBalancerConfig {
             return upstream.hostPorts().map(Tools::toEndpoint).collect(toList());
         }
 
-        public void addEndpoint(Endpoint endpoint) {
-            note.accept("Add missing endpoint " + endpoint + " to LB " + upstream.getName());
-            upstream.addHostPort(toHostPort(endpoint));
+        public void addOrUpdateEndpoint(Endpoint endpoint) {
+            if (upstream.hasHost(endpoint.getHost())) {
+                note.accept("Update endpoint " + endpoint + " to LB " + upstream.getName());
+                upstream.updateHostPort(toHostPort(endpoint));
+            } else {
+                note.accept("Add missing endpoint " + endpoint + " to LB " + upstream.getName());
+                upstream.addHostPort(toHostPort(endpoint));
+            }
         }
     }
 
