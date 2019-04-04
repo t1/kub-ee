@@ -17,7 +17,6 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ import static org.mockito.BDDMockito.will;
 import static org.mockito.Mockito.mock;
 
 public abstract class AbstractControllerTest {
-    static final ClusterNode DEV01 = CLUSTERS[0].node(DEV, 1);
+    public static final ClusterNode DEV01 = CLUSTERS[0].node(DEV, 1);
     static final Deployment DEPLOYMENT = Deployment
         .builder().name("foo").node(DEV01).groupId("foo-group").artifactId("foo-artifact").version("1.0.1").build();
     private static final String NGINX_CONFIG = "";
@@ -84,6 +83,6 @@ public abstract class AbstractControllerTest {
         String action;
         String name;
         Stage stage;
-        URI uri;
+        ClusterNode node;
     }
 }

@@ -1,4 +1,4 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools;
+package com.github.t1.kubee.gateway.loadbalancer.tools.config;
 
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import com.github.t1.nginx.HostPort;

@@ -2,7 +2,6 @@ package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
-import com.github.t1.nginx.NginxConfig.NginxServer;
 import com.github.t1.nginx.NginxConfig.NginxUpstream;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
@@ -22,16 +21,10 @@ abstract class LoadBalancerAction {
     private Consumer<NginxConfig> then;
 
 
-    String deployableName() { return deployableName; }
-
     String loadBalancerName() { return serverName() + "-lb"; }
 
     String serverName() { return stage.getPrefix() + deployableName + stage.getSuffix(); }
 
-
-    Optional<NginxServer> server(String name) {
-        return config.servers().filter(server -> server.getName().equals(name)).findAny();
-    }
 
     Optional<NginxUpstream> upstream(String name) { return config.upstream(name); }
 

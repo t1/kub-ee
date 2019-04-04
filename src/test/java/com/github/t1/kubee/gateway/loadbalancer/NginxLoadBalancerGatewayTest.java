@@ -1,9 +1,12 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.gateway.loadbalancer.tools.lb.NginxReloadService;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;
+import com.github.t1.kubee.model.Slot;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
 import org.junit.Before;
@@ -17,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.control.AbstractControllerTest.DEV01;
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.CONFIG_PATH;
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.RELOAD_MODE;
 import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.Reload;
@@ -119,10 +123,13 @@ public class NginxLoadBalancerGatewayTest {
         + "    }\n"
         + "}\n";
 
+    private static final Cluster CLUSTER = Cluster.builder().host("host").slot(Slot.builder().build()).build();
     private static final Stage DEV = Stage.builder().name("DEV").suffix("-test").count(2).indexLength(2).build();
     private static final Stage QA = Stage.builder().name("QA").suffix("qa").build();
     private static final Stage PROD = Stage.builder().name("PROD").count(2).build();
     private static final Stage[] NOTHING = {};
+    private static final ClusterNode PROD1_80 = new ClusterNode(CLUSTER, PROD, 1);
+    private static final ClusterNode QA2_80 = new ClusterNode(CLUSTER, QA, 2);
 
     private final LoadBalancerGateway gateway = new LoadBalancerGateway();
     private final LoadBalancerConfigAdapter nginxDev = mock(LoadBalancerConfigAdapter.class);
@@ -243,7 +250,7 @@ public class NginxLoadBalancerGatewayTest {
             + "}\n");
 
 
-        gateway.from("ping", DEV).removeTarget(URI.create("http://srv-test01.server.lan:8280"));
+        gateway.from("ping", DEV).removeTarget(DEV01);
 
         assertThat(updatedConfig(DEV)).isEqualTo(""
             + "http {\n"
@@ -270,7 +277,7 @@ public class NginxLoadBalancerGatewayTest {
     public void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() {
         given(PROD, CONFIG_PROD);
 
-        gateway.from("jolokia", PROD).removeTarget(URI.create("http://worker1:80"));
+        gateway.from("jolokia", PROD).removeTarget(DEV01);
 
         assertThat(updatedConfig(PROD))
             .isEqualTo(CONFIG_PROD.replace("        server localhost:8380;\n", ""));
@@ -281,7 +288,7 @@ public class NginxLoadBalancerGatewayTest {
     public void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() {
         given(QA, CONFIG_QA);
 
-        gateway.from("jolokia", QA).removeTarget(URI.create("http://worker" + "qa1:80"));
+        gateway.from("jolokia", QA).removeTarget(DEV01);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -310,7 +317,7 @@ public class NginxLoadBalancerGatewayTest {
     public void shouldAddTargetToExistingLoadBalancer() {
         given(QA, CONFIG_QA);
 
-        gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
+        gateway.to("jolokia", QA).addTarget(QA2_80);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -342,7 +349,7 @@ public class NginxLoadBalancerGatewayTest {
                 + "        listen 80;\n"
                 + "    }\n"));
 
-        gateway.to("jolokia", QA).addTarget(URI.create("http://worker" + "qa2:80"));
+        gateway.to("jolokia", QA).addTarget(QA2_80);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -362,7 +369,7 @@ public class NginxLoadBalancerGatewayTest {
     public void shouldAddTargetToNewLoadBalancer() {
         given(PROD, CONFIG_PROD);
 
-        gateway.to("foo", PROD).addTarget(URI.create("http://worker1:80"));
+        gateway.to("foo", PROD).addTarget(PROD1_80);
 
         assertThat(updatedConfig(PROD))
             .isEqualTo(CONFIG_PROD

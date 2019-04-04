@@ -152,7 +152,7 @@ public class Controller {
                 undeploy(node, name);
             } else if (versionBefore != null) {
                 log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
-                loadBalancing.from(name, node.getStage()).removeTarget(node.uri());
+                loadBalancing.from(name, node.getStage()).removeTarget(node);
             }
 
             Audits audits = deployer.deploy(node, name, versionAfter);
@@ -166,12 +166,14 @@ public class Controller {
                         + " flipped from healthy to unhealthy");
             }
         } catch (RuntimeException e) {
+            // TODO this log is wrong
             log.warn("rollback {} on {} to {} failed: {}", name, node, versionBefore, e.getMessage());
             deployer.undeploy(node, name);
             deployer.deploy(node, name, versionBefore);
             throw e;
         } finally {
-            loadBalancing.to(name, node.getStage()).addTarget(node.uri());
+            // TODO don't add when the deploy failed!
+            loadBalancing.to(name, node.getStage()).addTarget(node);
         }
     }
 
@@ -182,7 +184,7 @@ public class Controller {
     }
 
     private void undeploy(ClusterNode node, String name) {
-        loadBalancing.from(name, node.getStage()).removeTarget(node.uri());
+        loadBalancing.from(name, node.getStage()).removeTarget(node);
         Audits audits = deployer.undeploy(node, name);
         checkAudits(audits, "undeploy", name, null);
     }

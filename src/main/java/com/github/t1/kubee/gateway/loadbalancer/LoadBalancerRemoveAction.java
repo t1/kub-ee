@@ -1,12 +1,14 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
+import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.HostPort;
 import com.github.t1.nginx.NginxConfig;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.URI;
 import java.util.function.Consumer;
+
+import static com.github.t1.kubee.tools.Tools.toHostPort;
 
 @Slf4j
 public class LoadBalancerRemoveAction extends LoadBalancerAction {
@@ -14,9 +16,8 @@ public class LoadBalancerRemoveAction extends LoadBalancerAction {
         super(config, deployableName, stage, then);
     }
 
-    public void removeTarget(URI target) { removeTarget(HostPort.of(target)); }
-
-    private void removeTarget(HostPort hostPort) {
+    public void removeTarget(ClusterNode target) {
+        HostPort hostPort = toHostPort(target.endpoint());
         log.debug("remove {} from lb {}", hostPort, loadBalancerName());
         upstream(loadBalancerName()).map(upstream -> {
             if (upstream.getHostPorts().contains(hostPort)) {

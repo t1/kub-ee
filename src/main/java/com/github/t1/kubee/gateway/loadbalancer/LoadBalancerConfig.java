@@ -1,4 +1,4 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.lb;
+package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
@@ -31,6 +31,13 @@ public class LoadBalancerConfig {
         this.original = nginxConfig.toString();
     }
 
+    LoadBalancerConfig(NginxConfig nginxConfig, Consumer<String> note) {
+        this.configPath = null;
+        this.note = note;
+        this.nginxConfig = nginxConfig;
+        this.original = nginxConfig.toString();
+    }
+
     public boolean hasChanged() { return !nginxConfig.toString().equals(original); }
 
     public void apply() { nginxConfig.writeTo(configPath); }
@@ -46,7 +53,7 @@ public class LoadBalancerConfig {
 
     public LoadBalancer getOrCreateLoadBalancerFor(ClusterNode node) {
         LoadBalancer loadBalancer = new LoadBalancer(node.host(), node.port(), node.host(), "");
-        loadBalancer.upstream.addHostPort(toHostPort(node.endpoint()));
+        loadBalancer.upstream.updateHostPort(toHostPort(node.endpoint()));
         return loadBalancer;
     }
 

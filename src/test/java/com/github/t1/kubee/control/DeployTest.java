@@ -9,8 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
-import java.net.URI;
-
 import static com.github.t1.kubee.model.ClusterTest.DEV;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
@@ -72,11 +70,11 @@ public class DeployTest extends AbstractControllerTest {
     }
 
     private void verifyAddToLoadBalancer() {
-        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("add", "foo", DEV, URI.create("http://server-adev01.server.lan:8180")))).isTrue();
+        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("add", "foo", DEV, DEV01))).isTrue();
     }
 
     private void verifyRemoveFromLoadBalancer() {
-        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("remove", "foo", DEV, URI.create("http://server-adev01.server.lan:8180")))).isTrue();
+        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("remove", "foo", DEV, DEV01))).isTrue();
     }
 
     @After

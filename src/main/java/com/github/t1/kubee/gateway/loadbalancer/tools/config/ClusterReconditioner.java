@@ -1,7 +1,7 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools;
+package com.github.t1.kubee.gateway.loadbalancer.tools.config;
 
-import com.github.t1.kubee.gateway.loadbalancer.tools.lb.LoadBalancerConfig;
-import com.github.t1.kubee.gateway.loadbalancer.tools.lb.LoadBalancerConfig.LoadBalancer;
+import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig;
+import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.LoadBalancer;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
