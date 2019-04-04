@@ -4,7 +4,7 @@ import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -17,11 +17,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ReverseProxyListHtmlMessageBodyWriterTest {
+class ReverseProxyListHtmlMessageBodyWriterTest {
     private final ReverseProxyListHtmlMessageBodyWriter writer = new ReverseProxyListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         List<ReverseProxy> reverseProxies = asList(
             ReverseProxy.builder().from(URI.create("http://from1"))
                 .location(Location.builder().fromPath("a").target(URI.create("http://to1")).build())

@@ -3,7 +3,7 @@ package com.github.t1.kubee.boundary.html;
 import com.github.t1.kubee.model.LoadBalancer;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -14,11 +14,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class LoadBalancerListHtmlMessageBodyWriterTest {
+class LoadBalancerListHtmlMessageBodyWriterTest {
     private final LoadBalancerListHtmlMessageBodyWriter writer = new LoadBalancerListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         List<LoadBalancer> loadBalancers = asList(
             LoadBalancer.builder().name("backend1").method("least_conn").server("b1s1").server("b1s2").build(),
             LoadBalancer.builder().name("backend2").method("least_conn").server("b2s1").build()

@@ -9,8 +9,8 @@ import com.github.t1.kubee.model.ReverseProxy.Location;
 import com.github.t1.kubee.model.Slot;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.StringReader;
@@ -137,7 +137,7 @@ public class NginxLoadBalancerGatewayTest {
     private final LoadBalancerConfigAdapter nginxProd = mock(LoadBalancerConfigAdapter.class);
 
 
-    @Before public void setUp() {
+    @BeforeEach void setUp() {
         gateway.configAdapters = new LinkedHashMap<>();
         gateway.configAdapters.put(DEV.getName(), nginxDev);
         gateway.configAdapters.put(QA.getName(), nginxQa);
@@ -164,8 +164,7 @@ public class NginxLoadBalancerGatewayTest {
             verify(adapter(stage), times(updated.contains(stage) ? 1 : 0)).update(any(NginxConfig.class));
     }
 
-    @Test
-    public void shouldGetProdLoadBalancers() {
+    @Test void shouldGetProdLoadBalancers() {
         given(PROD, CONFIG_PROD);
 
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(PROD);
@@ -176,8 +175,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(NOTHING);
     }
 
-    @Test
-    public void shouldGetQaLoadBalancers() {
+    @Test void shouldGetQaLoadBalancers() {
         given(QA, CONFIG_QA);
 
         Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(QA);
@@ -188,8 +186,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(NOTHING);
     }
 
-    @Test
-    public void shouldGetQaReverseProxies() {
+    @Test void shouldGetQaReverseProxies() {
         given(QA, CONFIG_QA);
 
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(QA);
@@ -207,8 +204,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(NOTHING);
     }
 
-    @Test
-    public void shouldGetProdReverseProxies() {
+    @Test void shouldGetProdReverseProxies() {
         given(PROD, CONFIG_PROD);
 
         Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(PROD);
@@ -227,8 +223,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(NOTHING);
     }
 
-    @Test
-    public void shouldRemoveFirstTargetFromLoadBalancerWithoutResolve() {
+    @Test void shouldRemoveFirstTargetFromLoadBalancerWithoutResolve() {
         given(DEV, ""
             + "http {\n"
             + "    upstream ping-test-lb {\n"
@@ -273,8 +268,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(DEV);
     }
 
-    @Test
-    public void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() {
+    @Test void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() {
         given(PROD, CONFIG_PROD);
 
         gateway.from("jolokia", PROD).removeTarget(DEV01);
@@ -284,8 +278,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(PROD);
     }
 
-    @Test
-    public void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() {
+    @Test void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() {
         given(QA, CONFIG_QA);
 
         gateway.from("jolokia", QA).removeTarget(DEV01);
@@ -313,8 +306,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(QA);
     }
 
-    @Test
-    public void shouldAddTargetToExistingLoadBalancer() {
+    @Test void shouldAddTargetToExistingLoadBalancer() {
         given(QA, CONFIG_QA);
 
         gateway.to("jolokia", QA).addTarget(QA2_80);
@@ -333,8 +325,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(QA);
     }
 
-    @Test
-    public void shouldAddTargetToEmptyLoadBalancer() {
+    @Test void shouldAddTargetToEmptyLoadBalancer() {
         given(QA, CONFIG_QA.replace(""
                 + "    server {\n"
                 + "        server_name jolokia" + "qa;\n"
@@ -365,8 +356,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(QA);
     }
 
-    @Test
-    public void shouldAddTargetToNewLoadBalancer() {
+    @Test void shouldAddTargetToNewLoadBalancer() {
         given(PROD, CONFIG_PROD);
 
         gateway.to("foo", PROD).addTarget(PROD1_80);
@@ -402,8 +392,7 @@ public class NginxLoadBalancerGatewayTest {
         verifyUpdated(PROD);
     }
 
-    @Test
-    public void shouldCreateDefaultProdConfigAdapter() {
+    @Test void shouldCreateDefaultProdConfigAdapter() {
         gateway.configAdapters.clear();
 
         gateway.loadBalancers(PROD);
@@ -415,8 +404,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(NginxReloadService.DEFAULT_PORT);
     }
 
-    @Test
-    public void shouldCreateDefaultQaConfigAdapter() {
+    @Test void shouldCreateDefaultQaConfigAdapter() {
         gateway.configAdapters.clear();
 
         gateway.config(QA);
@@ -428,8 +416,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(NginxReloadService.DEFAULT_PORT);
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithPath() {
+    @Test void shouldCreateConfigAdapterWithPath() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(CONFIG_PATH, "/tmp/nginx.conf").build();
         gateway.configAdapters.clear();
 
@@ -440,8 +427,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(adapter.configPath).hasToString("/tmp/nginx.conf");
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithPort() {
+    @Test void shouldCreateConfigAdapterWithPort() {
         Stage stage = Stage.builder().name("DUMMY").suffix("dummy").loadBalancerConfig(
             ServiceReload.RELOAD_SERVICE_PORT, "1234").build();
         gateway.configAdapters.clear();
@@ -455,8 +441,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(1234);
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithUnknownReloadMode() {
+    @Test void shouldCreateConfigAdapterWithUnknownReloadMode() {
         gateway.configAdapters.clear();
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "foo").build();
 
@@ -464,8 +449,7 @@ public class NginxLoadBalancerGatewayTest {
             .hasMessage("unknown reload mode: foo");
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithDirectReload() {
+    @Test void shouldCreateConfigAdapterWithDirectReload() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "direct").build();
         gateway.configAdapters.clear();
 
@@ -477,8 +461,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DirectReload.class);
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithScriptReload() {
+    @Test void shouldCreateConfigAdapterWithScriptReload() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "set-user-id-script").build();
         gateway.configAdapters.clear();
 
@@ -490,8 +473,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.SetUserIdScriptReload.class);
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithDockerKillHupReloadWithDefaultHost() {
+    @Test void shouldCreateConfigAdapterWithDockerKillHupReloadWithDefaultHost() {
         Stage stage = Stage.builder().name("DUMMY").loadBalancerConfig(RELOAD_MODE, "docker-kill-hup").build();
         gateway.configAdapters.clear();
 
@@ -504,8 +486,7 @@ public class NginxLoadBalancerGatewayTest {
         assertThat(((LoadBalancerConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("localhost");
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithDockerKillHupReloadWithExplicitHost() {
+    @Test void shouldCreateConfigAdapterWithDockerKillHupReloadWithExplicitHost() {
         Stage stage = Stage.builder().name("DUMMY")
             .loadBalancerConfig(RELOAD_MODE, "docker-kill-hup")
             .loadBalancerConfig("host", "dummy-host")
@@ -525,8 +506,7 @@ public class NginxLoadBalancerGatewayTest {
         @Override public String reload() { return null; }
     }
 
-    @Test
-    public void shouldCreateConfigAdapterWithCustomReload() {
+    @Test void shouldCreateConfigAdapterWithCustomReload() {
         Stage stage = Stage.builder().name("DUMMY")
             .loadBalancerConfig(RELOAD_MODE, "custom")
             .loadBalancerConfig("class", DummyReload.class.getName())

@@ -1,24 +1,33 @@
 package com.github.t1.kubee.boundary.html;
 
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.ClusterTest;
+import com.github.t1.kubee.model.Deployment;
 import com.github.t1.kubee.model.Deployment.DeploymentBuilder;
-import org.junit.*;
+import com.github.t1.kubee.model.Slot;
+import com.github.t1.kubee.model.Stage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.UriInfo;
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 
-import static com.github.t1.kubee.control.ControllerMockFactory.*;
-import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.github.t1.kubee.control.ControllerMockFactory.create;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.contentOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class DeploymentListHtmlMessageBodyWriterTest {
+class DeploymentListHtmlMessageBodyWriterTest {
     private DeploymentListHtmlMessageBodyWriter writer = new DeploymentListHtmlMessageBodyWriter();
 
-    @Before
-    public void setUp() {
+    @BeforeEach void setUp() {
         writer.uriInfo = mock(UriInfo.class);
         when(writer.uriInfo.getBaseUri()).thenReturn(URI.create("http://localhost:8080/kub-ee/api/"));
     }
@@ -37,8 +46,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
     private DeploymentBuilder createDeployment() { return Deployment.builder().groupId("com.github.t1").type("war"); }
 
 
-    @Test
-    public void shouldWriteSimple() throws Exception {
+    @Test void shouldWriteSimple() throws Exception {
         Stage prod = Stage.builder().name("PROD").build();
         Cluster one = Cluster.builder().host("localhost")
                              .slot(Slot.builder().name("1").http(1).build())
@@ -67,8 +75,7 @@ public class DeploymentListHtmlMessageBodyWriterTest {
         assertThat(out.toString()).isEqualTo(contentOf(expected).trim());
     }
 
-    @Test
-    public void shouldWriteFull() throws Exception {
+    @Test void shouldWriteFull() throws Exception {
         List<Cluster> clusters = ClusterTest.readClusterConfig().getClusters();
         givenClusters(clusters);
 

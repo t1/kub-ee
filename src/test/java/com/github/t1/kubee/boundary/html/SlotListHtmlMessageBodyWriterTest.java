@@ -3,7 +3,7 @@ package com.github.t1.kubee.boundary.html;
 import com.github.t1.kubee.model.Slot;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -17,11 +17,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SlotListHtmlMessageBodyWriterTest {
+class SlotListHtmlMessageBodyWriterTest {
     private final SlotListHtmlMessageBodyWriter writer = new SlotListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         List<Slot> slots = asList(SLOT_0, SLOT_1);
         OutputStream out = new ByteArrayOutputStream();
 

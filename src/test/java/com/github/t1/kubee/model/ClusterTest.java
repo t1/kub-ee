@@ -3,19 +3,19 @@ package com.github.t1.kubee.model;
 import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.gateway.loadbalancer.NginxLoadBalancerGatewayTest.ReloadMock;
 import com.github.t1.kubee.model.Cluster.HealthConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClusterTest {
     public static final Slot SLOT_0 = Slot.builder().name("0").http(8080).https(8443).build();
     public static final Slot SLOT_1 = Slot.builder().name("1").http(8180).https(8543).build();
-    public static final Slot SLOT_2 = Slot.builder().name("2").http(8280).https(8643).build();
+    private static final Slot SLOT_2 = Slot.builder().name("2").http(8280).https(8643).build();
 
-    public static final HealthConfig HEALTH_CONFIG = HealthConfig.builder().path("dummy/health/path").build();
+    private static final HealthConfig HEALTH_CONFIG = HealthConfig.builder().path("dummy/health/path").build();
 
     public static final Stage DEV = Stage.builder().name("DEV").prefix("").suffix("dev").count(2).indexLength(2)
                                          .loadBalancerConfig("reload", "custom")
@@ -56,15 +56,13 @@ public class ClusterTest {
     }
 
 
-    @Test
-    public void shouldReadYamlConfig() {
+    @Test void shouldReadYamlConfig() {
         ClusterConfig clusterConfig = readClusterConfig();
 
         assertThat(clusterConfig.clusters()).containsExactly(CLUSTERS);
     }
 
-    @Test
-    public void shouldProduceAllUris() {
+    @Test void shouldProduceAllUris() {
         Cluster cluster = CLUSTERS[0];
         Stream<URI> uris = cluster.stages().flatMap(stage -> stage.nodes(cluster)).map(ClusterNode::uri);
         assertThat(uris).containsExactly(

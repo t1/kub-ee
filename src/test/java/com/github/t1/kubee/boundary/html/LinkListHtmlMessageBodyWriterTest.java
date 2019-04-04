@@ -3,7 +3,7 @@ package com.github.t1.kubee.boundary.html;
 import com.github.t1.kubee.boundary.BoundaryMockFactory;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Link;
 import java.io.ByteArrayOutputStream;
@@ -16,12 +16,11 @@ import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class LinkListHtmlMessageBodyWriterTest {
+class LinkListHtmlMessageBodyWriterTest {
     private static final URI BASE_URI = URI.create("http://localhost:8080/kub-ee/api");
     private LinkListHtmlMessageBodyWriter writer = new LinkListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         List<Link> links = BoundaryMockFactory.createWithBaseUri(BASE_URI).getLinks();
         OutputStream out = new ByteArrayOutputStream();
 

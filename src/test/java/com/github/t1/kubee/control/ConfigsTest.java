@@ -1,33 +1,33 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.*;
-import org.junit.Test;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.model.ClusterTest.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.github.t1.kubee.model.ClusterTest.CLUSTERS;
+import static com.github.t1.kubee.model.ClusterTest.DEV;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
-public class ConfigsTest extends AbstractControllerTest {
-    @Test
-    public void shouldGetClusters() {
+class ConfigsTest extends AbstractControllerTest {
+    @Test void shouldGetClusters() {
         Stream<Cluster> clusters = controller.clusters();
 
         assertThat(clusters).containsExactly(CLUSTERS);
     }
 
 
-    @Test
-    public void shouldGetNoLoadBalancers() {
+    @Test void shouldGetNoLoadBalancers() {
         Stream<LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of());
 
         assertThat(loadBalancers).containsExactly();
     }
 
-    @Test
-    public void shouldGetOneLoadBalancer() {
+    @Test void shouldGetOneLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
         when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo));
 
@@ -36,8 +36,7 @@ public class ConfigsTest extends AbstractControllerTest {
         assertThat(loadBalancers).containsExactly(foo);
     }
 
-    @Test
-    public void shouldGetTwoLoadBalancer() {
+    @Test void shouldGetTwoLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
         LoadBalancer bar = LoadBalancer.builder().name("bar").build();
         when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo, bar));
@@ -48,15 +47,13 @@ public class ConfigsTest extends AbstractControllerTest {
     }
 
 
-    @Test
-    public void shouldGetNoReverseProxies() {
+    @Test void shouldGetNoReverseProxies() {
         Stream<ReverseProxy> reverseProxies = controller.reverseProxies(Stream.of());
 
         assertThat(reverseProxies).containsExactly();
     }
 
-    @Test
-    public void shouldGetOneReverseProxy() {
+    @Test void shouldGetOneReverseProxy() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
         when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo));
 
@@ -65,8 +62,7 @@ public class ConfigsTest extends AbstractControllerTest {
         assertThat(reverseProxies).containsExactly(foo);
     }
 
-    @Test
-    public void shouldGetTwoReverseProxies() {
+    @Test void shouldGetTwoReverseProxies() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
         ReverseProxy bar = ReverseProxy.builder().from(URI.create("bar")).build();
         when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo, bar));

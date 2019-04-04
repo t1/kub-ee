@@ -5,7 +5,7 @@ import com.github.t1.kubee.boundary.BoundaryMockFactory;
 import com.github.t1.kubee.model.Stage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -16,11 +16,10 @@ import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StageListHtmlMessageBodyWriterTest {
+class StageListHtmlMessageBodyWriterTest {
     private final StageListHtmlMessageBodyWriter writer = new StageListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         Boundary boundary = BoundaryMockFactory.createWithClusters();
         List<Stage> stages = boundary.getStages();
         OutputStream out = new ByteArrayOutputStream();

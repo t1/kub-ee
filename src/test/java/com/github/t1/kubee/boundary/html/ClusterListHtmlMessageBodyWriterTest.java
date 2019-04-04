@@ -4,7 +4,7 @@ import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterTest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -15,11 +15,10 @@ import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ClusterListHtmlMessageBodyWriterTest {
+class ClusterListHtmlMessageBodyWriterTest {
     private ClusterListHtmlMessageBodyWriter writer = new ClusterListHtmlMessageBodyWriter();
 
-    @Test
-    public void shouldWriteHtml() throws Exception {
+    @Test void shouldWriteHtml() throws Exception {
         List<Cluster> clusters = ClusterTest.readClusterConfig().getClusters();
         OutputStream out = new ByteArrayOutputStream();
 

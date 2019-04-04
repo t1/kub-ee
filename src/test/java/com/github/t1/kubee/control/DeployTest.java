@@ -4,9 +4,9 @@ import com.github.t1.kubee.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.model.Audits;
 import com.github.t1.kubee.model.DeploymentId;
 import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
 import static com.github.t1.kubee.model.ClusterTest.DEV;
@@ -17,15 +17,14 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class DeployTest extends AbstractControllerTest {
+class DeployTest extends AbstractControllerTest {
     private static final DeploymentId DEPLOYMENT_ID = new DeploymentId(DEV01.id() + ":foo");
 
     private DeployerGateway deployer;
     private String versionBefore = "1.0.0";
     private String versionAfter = "1.0.2";
 
-    @Before
-    public void setup() {
+    @BeforeEach void setup() {
         deployer = controller.deployer;
         given(deployer.fetchVersion("foo", DEV01)).will(i -> versionBefore);
     }
@@ -77,16 +76,14 @@ public class DeployTest extends AbstractControllerTest {
         assertThat(loadBalancerCalls.remove(new LoadBalancerCall("remove", "foo", DEV, DEV01))).isTrue();
     }
 
-    @After
-    public void assertNoMore() {
+    @AfterEach void assertNoMore() {
         verify(deployer, atLeast(0)).fetchVersion("foo", DEV01);
         verifyNoMoreInteractions(deployer);
         assertThat(loadBalancerCalls).isEmpty();
     }
 
 
-    @Test
-    public void shouldDeployNew() {
+    @Test void shouldDeployNew() {
         versionBefore = null;
         givenHealthy(true);
         givenDeploy().willReturn(audit("add", versionBefore, versionAfter));
@@ -97,8 +94,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldDeployUpdate() {
+    @Test void shouldDeployUpdate() {
         givenHealthy(true);
         givenDeploy().willReturn(audit("change", versionBefore, versionAfter));
 
@@ -108,8 +104,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldReDeploy() {
+    @Test void shouldReDeploy() {
         givenHealthy(true);
         givenUndeploy().willReturn(audit("remove", versionBefore, null));
         givenDeploy(versionBefore).willReturn(audit("add", null, versionBefore));
@@ -121,8 +116,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldUnDeploy() {
+    @Test void shouldUnDeploy() {
         givenHealthy(true);
         givenUndeploy().willReturn(audit("remove", versionBefore, null));
 
@@ -133,8 +127,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
 
-    @Test
-    public void shouldRollbackAfterDeployWithMissingAudit() {
+    @Test void shouldRollbackAfterDeployWithMissingAudit() {
         givenHealthy(true);
         givenDeploy().willReturn(Audits.parseYaml(""
             + "audits:\n"
@@ -148,8 +141,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldRollbackAfterDeployWithWrongAuditOperation() {
+    @Test void shouldRollbackAfterDeployWithWrongAuditOperation() {
         givenHealthy(true);
         givenDeploy().willReturn(audit("remove", versionBefore, versionAfter));
 
@@ -161,8 +153,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldRollbackAfterDeployWithoutAuditVersionChange() {
+    @Test void shouldRollbackAfterDeployWithoutAuditVersionChange() {
         givenHealthy(true);
         givenDeploy().willReturn(audit("change", null, null));
 
@@ -174,8 +165,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldRollbackAfterDeployWithWrongVersionChange() {
+    @Test void shouldRollbackAfterDeployWithWrongVersionChange() {
         givenHealthy(true);
         givenDeploy().willReturn(audit("change", versionBefore, "1.0.3"));
 
@@ -188,8 +178,7 @@ public class DeployTest extends AbstractControllerTest {
     }
 
 
-    @Test
-    public void shouldRollbackAfterDeployFlipsToUnhealthy() {
+    @Test void shouldRollbackAfterDeployFlipsToUnhealthy() {
         givenHealthy(true, false);
         givenDeploy().willReturn(audit("change", versionBefore, versionAfter));
 
@@ -201,8 +190,7 @@ public class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test
-    public void shouldNotRollbackWhenDeployStaysUnhealthy() {
+    @Test void shouldNotRollbackWhenDeployStaysUnhealthy() {
         givenHealthy(false);
         givenDeploy().willReturn(audit("change", versionBefore, versionAfter));
 

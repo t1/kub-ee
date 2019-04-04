@@ -2,7 +2,7 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.model.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.NotFoundException;
 import java.net.ConnectException;
@@ -15,16 +15,14 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class FetchDeployablesTest extends AbstractControllerTest {
-    @Test
-    public void shouldFetchNoDeployables() {
+class FetchDeployablesTest extends AbstractControllerTest {
+    @Test void shouldFetchNoDeployables() {
         Stream<Deployment> deployments = controller.fetchDeploymentsOn(DEV01);
 
         assertThat(deployments).containsExactly();
     }
 
-    @Test
-    public void shouldFetchOneDeployable() {
+    @Test void shouldFetchOneDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01)).thenReturn(Stream.of(DEPLOYMENT));
 
         Stream<Deployment> deployments = controller.fetchDeploymentsOn(DEV01);
@@ -32,8 +30,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments).containsExactly(DEPLOYMENT);
     }
 
-    @Test
-    public void shouldFetchTwoDeployables() {
+    @Test void shouldFetchTwoDeployables() {
         Deployment foo = Deployment.builder().name("foo").node(DEV01).build();
         Deployment bar = Deployment.builder().name("bar").node(DEV01).build();
 
@@ -44,8 +41,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments).containsExactly(foo, bar);
     }
 
-    @Test
-    public void shouldFetchErrorDummyDeployable() {
+    @Test void shouldFetchErrorDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01)).thenThrow(new RuntimeException("dummy"));
 
         List<Deployment> deployments = controller.fetchDeploymentsOn(DEV01).collect(toList());
@@ -54,8 +50,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchErrorCauseDummyDeployable() {
+    @Test void shouldFetchErrorCauseDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("outer", new RuntimeException("dummy")));
 
@@ -65,8 +60,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchExecutionExceptionDummyDeployable() {
+    @Test void shouldFetchExecutionExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(ExecutionException.class.getName() + ": dummy"));
 
@@ -76,8 +70,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchConnectExceptionDummyDeployable() {
+    @Test void shouldFetchConnectExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(ConnectException.class.getName() + ": dummy"));
 
@@ -87,8 +80,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchConnectRuntimeExceptionDummyDeployable() {
+    @Test void shouldFetchConnectRuntimeExceptionDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(
                         RuntimeException.class.getName() + ": " + ConnectException.class.getName() + ": dummy"));
@@ -99,8 +91,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchUnknownHostSuffixDummyDeployable() {
+    @Test void shouldFetchUnknownHostSuffixDummyDeployable() {
         //noinspection SpellCheckingInspection
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("dummy: nodename nor servname provided, or not known"));
@@ -111,8 +102,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=dummy)");
     }
 
-    @Test
-    public void shouldFetchNotFoundDummyDeployable() {
+    @Test void shouldFetchNotFoundDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(NotFoundException.class.getName() + ": dummy"));
 
@@ -122,8 +112,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=deployer not found)");
     }
 
-    @Test
-    public void shouldFetchBadDeployerGatewayDummyDeployable() {
+    @Test void shouldFetchBadDeployerGatewayDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(BadGatewayException.class.getName() + ": dummy"));
 
@@ -133,8 +122,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=bad deployer gateway)");
     }
 
-    @Test
-    public void shouldFetchUnknownHostDummyDeployable() {
+    @Test void shouldFetchUnknownHostDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException(UnknownHostException.class.getName() + ": dummy"));
 
@@ -144,8 +132,7 @@ public class FetchDeployablesTest extends AbstractControllerTest {
         assertThat(deployments.get(0)).hasToString("Deployment(-:-|-:-:-|" + DEV01 + "|error=unknown host)");
     }
 
-    @Test
-    public void shouldFetchConnectionRefusedDummyDummyDeployable() {
+    @Test void shouldFetchConnectionRefusedDummyDummyDeployable() {
         when(controller.deployer.fetchDeployablesFrom(DEV01))
                 .thenThrow(new RuntimeException("Connection refused (Connection refused)"));
 

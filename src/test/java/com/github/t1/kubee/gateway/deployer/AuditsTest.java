@@ -2,15 +2,14 @@ package com.github.t1.kubee.gateway.deployer;
 
 import com.github.t1.kubee.model.Audits;
 import com.github.t1.kubee.model.Audits.Warning;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static com.github.t1.kubee.model.Audits.Audit.Change.*;
-import static com.github.t1.kubee.model.Audits.Audit.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.github.t1.kubee.model.Audits.Audit.Change.change;
+import static com.github.t1.kubee.model.Audits.Audit.audit;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class AuditsTest {
-    @Test
-    public void shouldDeserialize() {
+class AuditsTest {
+    @Test void shouldDeserialize() {
         Audits audits = Audits.parseYaml(""
                 + "audits:\n"
                 + "- !<deployable>\n"

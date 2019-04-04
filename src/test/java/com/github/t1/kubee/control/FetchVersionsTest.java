@@ -1,27 +1,28 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.model.Version;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.*;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ProcessingException;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import static com.github.t1.kubee.model.VersionStatus.*;
-import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.github.t1.kubee.model.VersionStatus.deployed;
+import static com.github.t1.kubee.model.VersionStatus.undeployed;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.Mockito.when;
 
-public class FetchVersionsTest extends AbstractControllerTest {
-    @Test
-    public void shouldFetchNoVersion() {
+class FetchVersionsTest extends AbstractControllerTest {
+    @Test void shouldFetchNoVersion() {
         List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
 
         assertThat(versions).isEmpty();
     }
 
-    @Test
-    public void shouldFetchOneVersion() {
+    @Test void shouldFetchOneVersion() {
         List<String> versionStrings = asList("1.0.0", "1.0.1", "1.0.2");
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenReturn(versionStrings);
@@ -35,8 +36,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
         );
     }
 
-    @Test
-    public void shouldFetchNotFoundVersionDummy() {
+    @Test void shouldFetchNotFoundVersionDummy() {
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenThrow(new NotFoundException("foo not found"));
 
@@ -45,8 +45,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
         assertThat(versions).containsExactly(new Version("1.0.1", deployed));
     }
 
-    @Test
-    public void shouldFetchUnknownHostVersionDummy() {
+    @Test void shouldFetchUnknownHostVersionDummy() {
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact"))
                 .thenThrow(new ProcessingException(new UnknownHostException("dummy")));
 
@@ -55,8 +54,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
         assertThat(versions).containsExactly(new Version("1.0.1", deployed));
     }
 
-    @Test
-    public void shouldFailToFetchVersion() {
+    @Test void shouldFailToFetchVersion() {
         RuntimeException dummy = new RuntimeException("dummy");
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact")).thenThrow(dummy);
 
@@ -65,8 +63,7 @@ public class FetchVersionsTest extends AbstractControllerTest {
         assertThat(throwable).isSameAs(dummy);
     }
 
-    @Test
-    public void shouldFailToFetchVersionFromProcessingException() {
+    @Test void shouldFailToFetchVersionFromProcessingException() {
         ProcessingException dummy = new ProcessingException(new RuntimeException("dummy"));
         when(controller.deployer.fetchVersions(DEV01.deployerUri(), "foo-group", "foo-artifact")).thenThrow(dummy);
 

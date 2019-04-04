@@ -1,7 +1,7 @@
 package com.github.t1.kubee.web;
 
 import com.github.t1.kubee.model.VersionStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -21,13 +21,12 @@ import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class VersionCellHelperTest {
+class VersionCellHelperTest {
     private static final String BY_CLASS_PREFIX = "By.className: ";
     private static final String BY_TAG_PREFIX = "By.tagName: ";
     private static final String BY_CSS_SELECTOR = "By.cssSelector: ";
 
-    @Test
-    public void dummy() {
+    @Test void dummy() {
         WebElement deployerElement = mockDeploymentElement("deployer");
         WebElement dummyElement = mockDeploymentElement("dummy");
 
