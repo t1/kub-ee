@@ -1,13 +1,17 @@
 package com.github.t1.kubee.lb.nginx;
 
-import javax.ws.rs.client.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.time.*;
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
-import static java.time.Instant.*;
-import static java.util.stream.Collectors.*;
-import static javax.ws.rs.core.Response.Status.Family.*;
+import static java.time.Instant.now;
+import static java.util.stream.Collectors.joining;
+import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 
 public class LoadGenerator implements Runnable {
     public static void main(String[] args) {

@@ -1,6 +1,7 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterTest;
 
 import java.util.List;
 

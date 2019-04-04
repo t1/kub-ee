@@ -2,7 +2,8 @@ package com.github.t1.kubee.boundary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.t1.kubee.AbstractIT;
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.Deployment;
 import com.github.t1.testtools.OrderedJUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,9 +11,10 @@ import org.junit.runner.RunWith;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static javax.ws.rs.core.MediaType.*;
-import static javax.ws.rs.core.Response.Status.*;
-import static org.assertj.core.api.Assertions.*;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import static javax.ws.rs.core.MediaType.TEXT_HTML_TYPE;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(OrderedJUnitRunner.class)
 public class BoundaryIT extends AbstractIT {

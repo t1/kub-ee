@@ -3,10 +3,11 @@ package com.github.t1.kubee.model;
 import lombok.Value;
 
 import javax.ws.rs.BadRequestException;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
 
 /**
  * A String made out of these components delimited by colons:<ol>

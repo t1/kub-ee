@@ -1,11 +1,17 @@
 package com.github.t1.kubee.model;
 
-import com.github.t1.kubee.tools.yaml.*;
-import lombok.*;
+import com.github.t1.kubee.tools.yaml.YamlDocument;
+import com.github.t1.kubee.tools.yaml.YamlNode;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Singular;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.StringReader;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Data

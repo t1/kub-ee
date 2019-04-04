@@ -2,16 +2,21 @@ package com.github.t1.kubee.web;
 
 import com.github.t1.kubee.AbstractIT;
 import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.testtools.*;
+import com.github.t1.testtools.OrderedJUnitRunner;
+import com.github.t1.testtools.WebDriverRule;
 import lombok.extern.java.Log;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import static com.github.t1.kubee.web.VersionCell.*;
-import static com.github.t1.kubee.web.VersionMenuItem.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.github.t1.kubee.web.VersionCell.closed;
+import static com.github.t1.kubee.web.VersionCell.open;
+import static com.github.t1.kubee.web.VersionMenuItem.versionMenuItem;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.atIndex;
 
 @Log
 @RunWith(OrderedJUnitRunner.class)

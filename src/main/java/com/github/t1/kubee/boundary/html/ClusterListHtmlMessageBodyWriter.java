@@ -1,20 +1,28 @@
 package com.github.t1.kubee.boundary.html;
 
-import com.github.t1.kubee.model.*;
-import com.github.t1.kubee.tools.html.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.tools.html.Html;
+import com.github.t1.kubee.tools.html.Table;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.ext.*;
-import java.io.*;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyWriter;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.html.Table.*;
-import static java.util.stream.Collectors.*;
-import static javax.ws.rs.core.MediaType.*;
+import static com.github.t1.kubee.tools.html.Table.TableRow;
+import static java.util.stream.Collectors.toList;
+import static javax.ws.rs.core.MediaType.TEXT_HTML;
 
 @Provider
 @Produces(TEXT_HTML)

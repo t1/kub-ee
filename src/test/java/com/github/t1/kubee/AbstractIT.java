@@ -3,21 +3,29 @@ package com.github.t1.kubee;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.gateway.deployer.DeployerMock;
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterTest;
+import com.github.t1.kubee.model.Stage;
 import com.github.t1.testtools.WildflySwarmTestRule;
 import io.dropwizard.testing.junit.DropwizardClientRule;
 import lombok.SneakyThrows;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 
-import javax.ws.rs.client.*;
-import java.io.*;
-import java.nio.file.*;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import static com.github.t1.kubee.control.ClusterConfig.FILE_NAME_PROPERTY;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AbstractIT {
     protected static final ObjectMapper MAPPER = new ObjectMapper();

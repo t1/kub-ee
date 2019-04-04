@@ -1,6 +1,7 @@
 package com.github.t1.kubee.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Data
 @AllArgsConstructor

@@ -10,10 +10,9 @@ import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Deployment;
 import com.github.t1.kubee.model.Stage;
 import lombok.Value;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.io.IOException;
@@ -42,11 +41,11 @@ public abstract class AbstractControllerTest {
     Controller controller = new Controller();
     List<LoadBalancerCall> loadBalancerCalls = new ArrayList<>();
 
-    @Rule public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir Path folder;
 
     private Path originalConfigFile;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         controller.clusters = asList(CLUSTERS);
         controller.deployer = mock(DeployerGateway.class);
@@ -56,9 +55,8 @@ public abstract class AbstractControllerTest {
         given(controller.loadBalancing.to(anyString(), any(Stage.class))).will(this::loadBalancerAdd);
         given(controller.loadBalancing.from(anyString(), any(Stage.class))).will(this::loadBalancerRemove);
 
-        Path etc = folder.getRoot().toPath();
-        originalConfigFile = NginxLoadBalancerGatewayTest.setConfigDir(etc);
-        Files.write(etc.resolve("nginx" + "dev.conf"), NGINX_CONFIG.getBytes(UTF_8));
+        originalConfigFile = NginxLoadBalancerGatewayTest.setConfigDir(folder);
+        Files.write(folder.resolve("nginx" + "dev.conf"), NGINX_CONFIG.getBytes(UTF_8));
     }
 
     private LoadBalancerAddAction loadBalancerAdd(InvocationOnMock invocation) {
@@ -75,7 +73,7 @@ public abstract class AbstractControllerTest {
         return mock;
     }
 
-    @After
+    @AfterEach
     public void tearDown() { NginxLoadBalancerGatewayTest.setConfigDir(originalConfigFile); }
 
     @Value

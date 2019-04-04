@@ -3,15 +3,20 @@ package com.github.t1.kubee.web;
 import com.github.t1.testtools.AbstractPage;
 import lombok.extern.java.Log;
 import org.assertj.core.api.Condition;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
-import static com.github.t1.testtools.AbstractPage.*;
-import static com.github.t1.testtools.AssertJHelpers.*;
-import static java.util.Objects.*;
-import static java.util.stream.Collectors.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.github.t1.testtools.AbstractPage.cssClass;
+import static com.github.t1.testtools.AbstractPage.displayed;
+import static com.github.t1.testtools.AbstractPage.getCssClasses;
+import static com.github.t1.testtools.AssertJHelpers.map;
+import static com.github.t1.testtools.AssertJHelpers.xAllOf;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.not;
 
 @Log
 class VersionCell {

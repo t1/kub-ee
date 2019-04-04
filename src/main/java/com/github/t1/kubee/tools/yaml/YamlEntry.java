@@ -5,7 +5,7 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 
 import java.util.stream.Stream;
 
-import static lombok.AccessLevel.*;
+import static lombok.AccessLevel.PACKAGE;
 
 @RequiredArgsConstructor(access = PACKAGE)
 public class YamlEntry {

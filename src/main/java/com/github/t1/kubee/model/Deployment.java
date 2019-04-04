@@ -1,7 +1,8 @@
 package com.github.t1.kubee.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.Comparator;
 

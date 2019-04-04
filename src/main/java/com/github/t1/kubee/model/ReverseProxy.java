@@ -1,6 +1,8 @@
 package com.github.t1.kubee.model;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Singular;
+import lombok.Value;
 
 import java.net.URI;
 import java.util.List;

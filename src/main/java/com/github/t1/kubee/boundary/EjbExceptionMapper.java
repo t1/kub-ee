@@ -2,8 +2,11 @@ package com.github.t1.kubee.boundary;
 
 import javax.ejb.EJBException;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.*;
-import javax.ws.rs.ext.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.Providers;
 
 @Provider
 public class EjbExceptionMapper implements ExceptionMapper<EJBException> {

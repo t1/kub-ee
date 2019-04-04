@@ -1,17 +1,22 @@
 package com.github.t1.kubee.tools.yaml;
 
 import lombok.RequiredArgsConstructor;
-import org.yaml.snakeyaml.nodes.*;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.SequenceNode;
 
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.yaml.YamlMapping.*;
-import static com.github.t1.kubee.tools.yaml.YamlSequence.*;
-import static java.util.Collections.*;
-import static lombok.AccessLevel.*;
-import static org.yaml.snakeyaml.nodes.NodeId.*;
+import static com.github.t1.kubee.tools.yaml.YamlMapping.EMPTY_MAPPING;
+import static com.github.t1.kubee.tools.yaml.YamlSequence.EMPTY_SEQUENCE;
+import static java.util.Collections.emptyList;
+import static lombok.AccessLevel.PACKAGE;
+import static org.yaml.snakeyaml.nodes.NodeId.mapping;
+import static org.yaml.snakeyaml.nodes.NodeId.scalar;
+import static org.yaml.snakeyaml.nodes.NodeId.sequence;
 
 @RequiredArgsConstructor(access = PACKAGE)
 public class YamlNode {

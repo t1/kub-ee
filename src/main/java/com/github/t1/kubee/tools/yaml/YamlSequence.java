@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static lombok.AccessLevel.*;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
+import static lombok.AccessLevel.PACKAGE;
 
 @RequiredArgsConstructor(access = PACKAGE)
 public class YamlSequence {

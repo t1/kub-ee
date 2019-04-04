@@ -2,13 +2,13 @@ package com.github.t1.kubee.gateway.loadbalancer.tools.config;
 
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.LoadBalancer;
+import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.ReverseProxy;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 

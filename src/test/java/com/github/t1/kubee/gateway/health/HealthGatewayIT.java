@@ -1,17 +1,22 @@
 package com.github.t1.kubee.gateway.health;
 
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.Cluster.HealthConfig;
-import io.dropwizard.testing.junit.DropwizardClientRule;
-import org.junit.*;
+import com.github.t1.kubee.model.Slot;
+import com.github.t1.kubee.model.Stage;
+import io.dropwizard.testing.junit5.DropwizardClientExtension;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class HealthGatewayIT {
-    @ClassRule public static final DropwizardClientRule SERVICE = new DropwizardClientRule(HealthMockBoundary.class);
+    @RegisterExtension static final DropwizardClientExtension SERVICE = new DropwizardClientExtension(HealthMockBoundary.class);
 
     private static boolean healthy = true;
 
@@ -19,16 +24,16 @@ public class HealthGatewayIT {
     public static class HealthMockBoundary {
         @GET @Path("/check") public Response check() {
             return healthy
-                    ? Response.ok("okay").build()
-                    : Response.serverError().entity("not okay").build();
+                ? Response.ok("okay").build()
+                : Response.serverError().entity("not okay").build();
         }
     }
 
     private static Stage DEV;
     private static Cluster CLUSTER;
 
-    @BeforeClass
-    public static void setUpClass() {
+    @BeforeAll
+    static void setUpClass() {
         Slot slot = Slot.builder().name("slot-1").http(SERVICE.baseUri().getPort()).build();
         HealthConfig healthConfig = HealthConfig.builder().path("-system/check").build();
         DEV = Stage.builder().name("DEV").build();
@@ -38,23 +43,20 @@ public class HealthGatewayIT {
 
     private HealthGateway gateway = new HealthGateway();
 
-    @Test
-    public void shouldNotFetchHealthWithoutHealthConfig() {
+    @Test void shouldNotFetchHealthWithoutHealthConfig() {
         Cluster clusterWithoutConfig = CLUSTER.toBuilder().healthConfig(null).build();
 
         boolean healthy = gateway.fetch(clusterWithoutConfig.node(DEV, 1), "application");
 
-        assertTrue(healthy);
+        assertThat(healthy).isTrue();
     }
 
-    @Test
-    public void shouldFetchHealth() {
+    @Test void shouldFetchHealth() {
         boolean healthy = gateway.fetch(CLUSTER.node(DEV, 1), "application");
-        assertTrue(healthy);
+        assertThat(healthy).isTrue();
     }
 
-    @Test
-    public void shouldFetchUnhealthy() {
+    @Test void shouldFetchUnhealthy() {
         boolean healthy;
         try {
             HealthGatewayIT.healthy = false;
@@ -63,6 +65,6 @@ public class HealthGatewayIT {
             HealthGatewayIT.healthy = true;
         }
 
-        assertFalse(healthy);
+        assertThat(healthy).isFalse();
     }
 }

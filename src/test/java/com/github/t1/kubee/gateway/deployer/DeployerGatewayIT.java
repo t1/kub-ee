@@ -1,14 +1,18 @@
 package com.github.t1.kubee.gateway.deployer;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway.Deployable;
-import com.github.t1.testtools.*;
+import com.github.t1.testtools.OrderedJUnitRunner;
+import com.github.t1.testtools.WebArchiveBuilder;
+import com.github.t1.testtools.WildflySwarmTestRule;
 import lombok.SneakyThrows;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(OrderedJUnitRunner.class)
 public class DeployerGatewayIT {

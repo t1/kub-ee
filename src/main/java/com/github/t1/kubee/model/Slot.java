@@ -1,7 +1,8 @@
 package com.github.t1.kubee.model;
 
 import com.github.t1.kubee.tools.yaml.YamlMapping;
-import lombok.*;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.Comparator;
 

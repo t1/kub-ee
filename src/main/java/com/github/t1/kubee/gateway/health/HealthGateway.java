@@ -4,11 +4,13 @@ import com.github.t1.kubee.model.Cluster.HealthConfig;
 import com.github.t1.kubee.model.ClusterNode;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.OK;
 
 @Slf4j
 public class HealthGateway {

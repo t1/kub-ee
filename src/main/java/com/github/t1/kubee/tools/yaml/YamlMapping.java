@@ -3,14 +3,19 @@ package com.github.t1.kubee.tools.yaml;
 import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.yaml.YamlNode.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
-import static lombok.AccessLevel.*;
+import static com.github.t1.kubee.tools.yaml.YamlNode.NULL_NODE;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static lombok.AccessLevel.PACKAGE;
 
 @RequiredArgsConstructor(access = PACKAGE)
 public class YamlMapping {

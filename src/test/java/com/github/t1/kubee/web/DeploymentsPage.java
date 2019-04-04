@@ -1,15 +1,18 @@
 package com.github.t1.kubee.web;
 
-import com.github.t1.kubee.model.*;
-import com.github.t1.testtools.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.testtools.AbstractPage;
+import com.github.t1.testtools.WebDriverRule;
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.net.URI;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class DeploymentsPage extends AbstractPage<DeploymentsPage> {

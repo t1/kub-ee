@@ -6,7 +6,8 @@ import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BoundaryMockFactory {
     public static Boundary createWithClusters() {

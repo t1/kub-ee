@@ -1,18 +1,25 @@
 package com.github.t1.kubee.boundary.html;
 
 import com.github.t1.kubee.model.Slot;
-import com.github.t1.kubee.tools.html.*;
+import com.github.t1.kubee.tools.html.Html;
+import com.github.t1.kubee.tools.html.Table;
 import com.github.t1.kubee.tools.html.Table.TableRow;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.ext.*;
-import java.io.*;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyWriter;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
-import static javax.ws.rs.core.MediaType.*;
+import static javax.ws.rs.core.MediaType.TEXT_HTML;
 
 @Provider
 @Produces(TEXT_HTML)

@@ -1,24 +1,41 @@
 package com.github.t1.kubee.boundary;
 
 import com.github.t1.kubee.control.Controller;
-import com.github.t1.kubee.model.*;
+import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.model.DeploymentId;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.model.Slot;
+import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.model.Version;
 import com.github.t1.log.Logged;
 import lombok.Builder;
-import lombok.*;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Link;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.*;
-import static com.github.t1.log.LogLevel.*;
-import static java.util.Arrays.*;
-import static java.util.Locale.*;
-import static java.util.stream.Collectors.*;
+import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static com.github.t1.log.LogLevel.INFO;
+import static java.util.Arrays.asList;
+import static java.util.Locale.US;
+import static java.util.stream.Collectors.toList;
 
 @Logged(level = INFO)
 @Slf4j

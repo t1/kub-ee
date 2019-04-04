@@ -3,7 +3,7 @@ package com.github.t1.kubee.tools.yaml;
 import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.nodes.Tag;
 
-import static lombok.AccessLevel.*;
+import static lombok.AccessLevel.PACKAGE;
 
 @RequiredArgsConstructor(access = PACKAGE)
 public class YamlTag {
