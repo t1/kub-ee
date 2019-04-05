@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.control.AbstractControllerTest.DEV01;
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.CONFIG_PATH;
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.RELOAD_MODE;
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.Reload;
-import static com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfigAdapter.ServiceReload;
+import static com.github.t1.kubee.gateway.loadbalancer.IngressConfigAdapter.CONFIG_PATH;
+import static com.github.t1.kubee.gateway.loadbalancer.IngressConfigAdapter.RELOAD_MODE;
+import static com.github.t1.kubee.gateway.loadbalancer.IngressConfigAdapter.Reload;
+import static com.github.t1.kubee.gateway.loadbalancer.IngressConfigAdapter.ServiceReload;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
 
 public class NginxLoadBalancerGatewayTest {
     public static Path setConfigDir(Path path) {
-        Path old = LoadBalancerConfigAdapter.NGINX_ETC;
-        LoadBalancerConfigAdapter.NGINX_ETC = path;
+        Path old = IngressConfigAdapter.NGINX_ETC;
+        IngressConfigAdapter.NGINX_ETC = path;
         return old;
     }
 
@@ -132,10 +132,10 @@ public class NginxLoadBalancerGatewayTest {
     private static final ClusterNode PROD1_80 = new ClusterNode(CLUSTER, PROD, 1);
     private static final ClusterNode QA2_80 = new ClusterNode(CLUSTER, QA, 2);
 
-    private final LoadBalancerGateway gateway = new LoadBalancerGateway();
-    private final LoadBalancerConfigAdapter nginxDev = mock(LoadBalancerConfigAdapter.class);
-    private final LoadBalancerConfigAdapter nginxQa = mock(LoadBalancerConfigAdapter.class);
-    private final LoadBalancerConfigAdapter nginxProd = mock(LoadBalancerConfigAdapter.class);
+    private final IngressGateway gateway = new IngressGateway();
+    private final IngressConfigAdapter nginxDev = mock(IngressConfigAdapter.class);
+    private final IngressConfigAdapter nginxQa = mock(IngressConfigAdapter.class);
+    private final IngressConfigAdapter nginxProd = mock(IngressConfigAdapter.class);
 
 
     @BeforeEach void setUp() {
@@ -145,7 +145,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.configAdapters.put(PROD.getName(), nginxProd);
     }
 
-    private LoadBalancerConfigAdapter adapter(Stage stage) {
+    private IngressConfigAdapter adapter(Stage stage) {
         return gateway.configAdapters.get(stage.getName());
     }
 
@@ -399,7 +399,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.loadBalancers(PROD);
 
         assertThat(gateway.configAdapters).containsKey(PROD.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(PROD.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(PROD.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
         assertThat(adapter.reload).isInstanceOf(ServiceReload.class);
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(NginxReloadService.DEFAULT_PORT);
@@ -411,7 +411,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(QA);
 
         assertThat(gateway.configAdapters).containsKey(QA.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(QA.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(QA.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx" + "qa.conf");
         assertThat(adapter.reload).isInstanceOf(ServiceReload.class);
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(NginxReloadService.DEFAULT_PORT);
@@ -424,7 +424,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/tmp/nginx.conf");
     }
 
@@ -436,7 +436,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx" + "dummy.conf");
         assertThat(adapter.reload).isInstanceOf(ServiceReload.class);
         assertThat(((ServiceReload) adapter.reload).adapter.port).isEqualTo(1234);
@@ -457,9 +457,9 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
-        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DirectReload.class);
+        assertThat(adapter.reload).isInstanceOf(IngressConfigAdapter.DirectReload.class);
     }
 
     @Test void shouldCreateConfigAdapterWithScriptReload() {
@@ -469,9 +469,9 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
-        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.SetUserIdScriptReload.class);
+        assertThat(adapter.reload).isInstanceOf(IngressConfigAdapter.SetUserIdScriptReload.class);
     }
 
     @Test void shouldCreateConfigAdapterWithDockerKillHupReloadWithDefaultHost() {
@@ -481,10 +481,10 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
-        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DockerKillHupReload.class);
-        assertThat(((LoadBalancerConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("localhost");
+        assertThat(adapter.reload).isInstanceOf(IngressConfigAdapter.DockerKillHupReload.class);
+        assertThat(((IngressConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("localhost");
     }
 
     @Test void shouldCreateConfigAdapterWithDockerKillHupReloadWithExplicitHost() {
@@ -497,10 +497,10 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
-        assertThat(adapter.reload).isInstanceOf(LoadBalancerConfigAdapter.DockerKillHupReload.class);
-        assertThat(((LoadBalancerConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("dummy-host");
+        assertThat(adapter.reload).isInstanceOf(IngressConfigAdapter.DockerKillHupReload.class);
+        assertThat(((IngressConfigAdapter.DockerKillHupReload) adapter.reload).host).isEqualTo("dummy-host");
     }
 
     public static class DummyReload implements Reload {
@@ -517,7 +517,7 @@ public class NginxLoadBalancerGatewayTest {
         gateway.config(stage);
 
         assertThat(gateway.configAdapters).containsKey(stage.getName());
-        LoadBalancerConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
+        IngressConfigAdapter adapter = gateway.configAdapters.get(stage.getName());
         assertThat(adapter.configPath).hasToString("/usr/local/etc/nginx/nginx.conf");
         assertThat(adapter.reload).isInstanceOf(DummyReload.class);
     }

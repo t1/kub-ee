@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
-import static com.github.t1.kubee.model.ClusterTest.DEV;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 import static org.mockito.BDDMockito.given;
@@ -69,17 +68,16 @@ class DeployTest extends AbstractControllerTest {
     }
 
     private void verifyAddToLoadBalancer() {
-        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("add", "foo", DEV, DEV01))).isTrue();
+        verify(controller.ingressGateway).add("foo", DEV01);
     }
 
     private void verifyRemoveFromLoadBalancer() {
-        assertThat(loadBalancerCalls.remove(new LoadBalancerCall("remove", "foo", DEV, DEV01))).isTrue();
+        verify(controller.ingressGateway).remove("foo", DEV01);
     }
 
     @AfterEach void assertNoMore() {
         verify(deployer, atLeast(0)).fetchVersion("foo", DEV01);
-        verifyNoMoreInteractions(deployer);
-        assertThat(loadBalancerCalls).isEmpty();
+        verifyNoMoreInteractions(deployer, controller.ingressGateway);
     }
 
 

@@ -61,11 +61,10 @@ public class IngressConfig {
     }
 
     public class ReverseProxy {
-        private final NginxServer server;
         private final NginxUpstream upstream;
 
         ReverseProxy(String name, int fromPort) {
-            this.server = getOrCreateServer(name, fromPort, name, "");
+            getOrCreateServer(name, fromPort, name, "");
             this.upstream = getOrCreateUpstream(name);
         }
 

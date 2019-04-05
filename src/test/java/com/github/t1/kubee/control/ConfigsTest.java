@@ -29,7 +29,7 @@ class ConfigsTest extends AbstractControllerTest {
 
     @Test void shouldGetOneLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
-        when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo));
+        when(controller.ingressGateway.loadBalancers(DEV)).thenReturn(Stream.of(foo));
 
         Stream<LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of(DEV));
 
@@ -39,7 +39,7 @@ class ConfigsTest extends AbstractControllerTest {
     @Test void shouldGetTwoLoadBalancer() {
         LoadBalancer foo = LoadBalancer.builder().name("foo").build();
         LoadBalancer bar = LoadBalancer.builder().name("bar").build();
-        when(controller.loadBalancing.loadBalancers(DEV)).thenReturn(Stream.of(foo, bar));
+        when(controller.ingressGateway.loadBalancers(DEV)).thenReturn(Stream.of(foo, bar));
 
         Stream<LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of(DEV));
 
@@ -55,7 +55,7 @@ class ConfigsTest extends AbstractControllerTest {
 
     @Test void shouldGetOneReverseProxy() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
-        when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo));
+        when(controller.ingressGateway.reverseProxies(DEV)).thenReturn(Stream.of(foo));
 
         Stream<ReverseProxy> reverseProxies = controller.reverseProxies(Stream.of(DEV));
 
@@ -65,7 +65,7 @@ class ConfigsTest extends AbstractControllerTest {
     @Test void shouldGetTwoReverseProxies() {
         ReverseProxy foo = ReverseProxy.builder().from(URI.create("foo")).build();
         ReverseProxy bar = ReverseProxy.builder().from(URI.create("bar")).build();
-        when(controller.loadBalancing.reverseProxies(DEV)).thenReturn(Stream.of(foo, bar));
+        when(controller.ingressGateway.reverseProxies(DEV)).thenReturn(Stream.of(foo, bar));
 
         Stream<ReverseProxy> reverseProxies = controller.reverseProxies(Stream.of(DEV));
 

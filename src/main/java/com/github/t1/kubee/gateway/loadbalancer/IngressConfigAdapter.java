@@ -18,7 +18,7 @@ import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
-class LoadBalancerConfigAdapter {
+class IngressConfigAdapter {
     static final String RELOAD_MODE = "reload";
     static final String CONFIG_PATH = "config-path";
     static Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
@@ -31,7 +31,7 @@ class LoadBalancerConfigAdapter {
         String reload();
     }
 
-    LoadBalancerConfigAdapter(Stage stage) {
+    IngressConfigAdapter(Stage stage) {
         this.configPath = configPath(stage);
         this.reload = reloadMode(stage);
     }

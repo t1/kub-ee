@@ -2,7 +2,7 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.gateway.health.HealthGateway;
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
+import com.github.t1.kubee.gateway.loadbalancer.IngressGateway;
 import com.github.t1.kubee.model.Audits;
 import com.github.t1.kubee.model.Audits.Audit;
 import com.github.t1.kubee.model.Audits.Audit.Change;
@@ -43,7 +43,7 @@ public class Controller {
         = ": nodename nor servname provided, or not known";
 
     @Inject List<Cluster> clusters;
-    @Inject LoadBalancerGateway loadBalancing;
+    @Inject IngressGateway ingressGateway;
     @Inject DeployerGateway deployer;
     @Inject HealthGateway healthGateway;
 
@@ -51,11 +51,11 @@ public class Controller {
     public Stream<Cluster> clusters() { return clusters.stream(); }
 
     public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
-        return stages.flatMap(stage -> loadBalancing.loadBalancers(stage));
+        return stages.flatMap(stage -> ingressGateway.loadBalancers(stage));
     }
 
     public Stream<ReverseProxy> reverseProxies(Stream<Stage> stages) {
-        return stages.flatMap(stage -> loadBalancing.reverseProxies(stage));
+        return stages.flatMap(stage -> ingressGateway.reverseProxies(stage));
     }
 
 
@@ -152,7 +152,7 @@ public class Controller {
                 undeploy(node, name);
             } else if (versionBefore != null) {
                 log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
-                loadBalancing.remove(name, node);
+                ingressGateway.remove(name, node);
             }
 
             Audits audits = deployer.deploy(node, name, versionAfter);
@@ -173,7 +173,7 @@ public class Controller {
             throw e;
         } finally {
             // TODO don't add when the deploy failed!
-            loadBalancing.add(name, node);
+            ingressGateway.add(name, node);
         }
     }
 
@@ -184,7 +184,7 @@ public class Controller {
     }
 
     private void undeploy(ClusterNode node, String name) {
-        loadBalancing.remove(name, node);
+        ingressGateway.remove(name, node);
         Audits audits = deployer.undeploy(node, name);
         checkAudits(audits, "undeploy", name, null);
     }

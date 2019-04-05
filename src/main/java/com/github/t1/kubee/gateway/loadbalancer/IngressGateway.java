@@ -22,19 +22,18 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Controls the load balancer. The public interface is generic, the implementation is NGINX specific.
+ * Controls the load balancers and reverse proxies. The public interface is generic, the implementation is NGINX specific.
  * see https://www.nginx.com/resources/admin-guide/load-balancer/
  */
 @Slf4j
-public class LoadBalancerGateway {
-    Map<String, LoadBalancerConfigAdapter> configAdapters = new LinkedHashMap<>();
+public class IngressGateway {
+    Map<String, IngressConfigAdapter> configAdapters = new LinkedHashMap<>();
 
-    public LoadBalancerConfigAdapter config(Stage stage) {
-        return configAdapters.computeIfAbsent(stage.getName(), name -> new LoadBalancerConfigAdapter(stage));
+    public IngressConfigAdapter config(Stage stage) {
+        return configAdapters.computeIfAbsent(stage.getName(), name -> new IngressConfigAdapter(stage));
     }
 
     private NginxConfig read(Stage stage) { return config(stage).read(); }
-
 
     public Stream<LoadBalancer> loadBalancers(Stage stage) {
         return read(stage).upstreams().map(this::buildLoadBalancer);
@@ -70,7 +69,7 @@ public class LoadBalancerGateway {
 
 
     public void remove(String deployableName, ClusterNode node) {
-        LoadBalancerConfigAdapter adapter = config(node.getStage());
+        IngressConfigAdapter adapter = config(node.getStage());
         IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
 
         log.debug("remove {} from lb for {}", node.endpoint(), deployableName);
@@ -85,7 +84,7 @@ public class LoadBalancerGateway {
     }
 
     public void add(String deployableName, ClusterNode node) {
-        LoadBalancerConfigAdapter adapter = config(node.getStage());
+        IngressConfigAdapter adapter = config(node.getStage());
         IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
 
         if (!ingressConfig.hasReverseProxyFor(node))
