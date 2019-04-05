@@ -2,9 +2,7 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.gateway.health.HealthGateway;
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerAddAction;
 import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerGateway;
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerRemoveAction;
 import com.github.t1.kubee.gateway.loadbalancer.NginxLoadBalancerGatewayTest;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Deployment;
@@ -27,7 +25,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.will;
 import static org.mockito.Mockito.mock;
 
@@ -52,25 +49,23 @@ public abstract class AbstractControllerTest {
         controller.healthGateway = mock(HealthGateway.class);
         controller.loadBalancing = mock(LoadBalancerGateway.class);
 
-        given(controller.loadBalancing.to(anyString(), any(Stage.class))).will(this::loadBalancerAdd);
-        given(controller.loadBalancing.from(anyString(), any(Stage.class))).will(this::loadBalancerRemove);
+        will(this::loadBalancerAdd).given(controller.loadBalancing).add(anyString(), any(ClusterNode.class));
+        will(this::loadBalancerRemove).given(controller.loadBalancing).remove(anyString(), any(ClusterNode.class));
 
         originalConfigFile = NginxLoadBalancerGatewayTest.setConfigDir(folder);
         Files.write(folder.resolve("nginx" + "dev.conf"), NGINX_CONFIG.getBytes(UTF_8));
     }
 
-    private LoadBalancerAddAction loadBalancerAdd(InvocationOnMock invocation) {
-        LoadBalancerAddAction mock = mock(LoadBalancerAddAction.class);
-        will(i1 -> loadBalancerCalls.add(new LoadBalancerCall("add", invocation.getArgument(0), invocation.getArgument(1), i1.getArgument(0))))
-            .given(mock).addTarget(any());
-        return mock;
+    private String loadBalancerAdd(InvocationOnMock invocation) {
+        ClusterNode node = invocation.getArgument(1);
+        loadBalancerCalls.add(new LoadBalancerCall("add", invocation.getArgument(0), node.getStage(), node));
+        return null;
     }
 
-    private LoadBalancerRemoveAction loadBalancerRemove(InvocationOnMock invocation) {
-        LoadBalancerRemoveAction mock = mock(LoadBalancerRemoveAction.class);
-        will(i1 -> loadBalancerCalls.add(new LoadBalancerCall("remove", invocation.getArgument(0), invocation.getArgument(1), i1.getArgument(0))))
-            .given(mock).removeTarget(any());
-        return mock;
+    private String loadBalancerRemove(InvocationOnMock invocation) {
+        ClusterNode node = invocation.getArgument(1);
+        loadBalancerCalls.add(new LoadBalancerCall("remove", invocation.getArgument(0), node.getStage(), node));
+        return null;
     }
 
     @AfterEach

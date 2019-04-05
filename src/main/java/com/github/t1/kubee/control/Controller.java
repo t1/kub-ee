@@ -152,7 +152,7 @@ public class Controller {
                 undeploy(node, name);
             } else if (versionBefore != null) {
                 log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
-                loadBalancing.from(name, node.getStage()).removeTarget(node);
+                loadBalancing.remove(name, node);
             }
 
             Audits audits = deployer.deploy(node, name, versionAfter);
@@ -173,7 +173,7 @@ public class Controller {
             throw e;
         } finally {
             // TODO don't add when the deploy failed!
-            loadBalancing.to(name, node.getStage()).addTarget(node);
+            loadBalancing.add(name, node);
         }
     }
 
@@ -184,7 +184,7 @@ public class Controller {
     }
 
     private void undeploy(ClusterNode node, String name) {
-        loadBalancing.from(name, node.getStage()).removeTarget(node);
+        loadBalancing.remove(name, node);
         Audits audits = deployer.undeploy(node, name);
         checkAudits(audits, "undeploy", name, null);
     }

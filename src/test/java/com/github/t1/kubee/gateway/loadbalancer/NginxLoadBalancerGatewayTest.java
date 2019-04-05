@@ -246,7 +246,7 @@ public class NginxLoadBalancerGatewayTest {
             + "}\n");
 
 
-        gateway.from("ping", DEV).removeTarget(DEV01);
+        gateway.remove("ping", DEV01);
 
         assertThat(updatedConfig(DEV)).isEqualTo(""
             + "http {\n"
@@ -272,7 +272,7 @@ public class NginxLoadBalancerGatewayTest {
     @Disabled @Test void shouldRemoveFirstTargetFromLoadBalancerAfterResolve() {
         given(PROD, CONFIG_PROD);
 
-        gateway.from("jolokia", PROD).removeTarget(DEV01);
+        gateway.remove("jolokia", DEV01);
 
         assertThat(updatedConfig(PROD))
             .isEqualTo(CONFIG_PROD.replace("        server localhost:8380;\n", ""));
@@ -282,7 +282,7 @@ public class NginxLoadBalancerGatewayTest {
     @Disabled @Test void shouldRemoveFinalTargetFromLoadBalancerAfterResolve() {
         given(QA, CONFIG_QA);
 
-        gateway.from("jolokia", QA).removeTarget(DEV01);
+        gateway.remove("jolokia", DEV01);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -310,7 +310,7 @@ public class NginxLoadBalancerGatewayTest {
     @Disabled @Test void shouldAddTargetToExistingLoadBalancer() {
         given(QA, CONFIG_QA);
 
-        gateway.to("jolokia", QA).addTarget(QA2_80);
+        gateway.add("jolokia", QA2_80);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -341,7 +341,7 @@ public class NginxLoadBalancerGatewayTest {
                 + "        listen 80;\n"
                 + "    }\n"));
 
-        gateway.to("jolokia", QA).addTarget(QA2_80);
+        gateway.add("jolokia", QA2_80);
 
         assertThat(updatedConfig(QA))
             .isEqualTo(CONFIG_QA
@@ -360,7 +360,7 @@ public class NginxLoadBalancerGatewayTest {
     @Disabled @Test void shouldAddTargetToNewLoadBalancer() {
         given(PROD, CONFIG_PROD);
 
-        gateway.to("foo", PROD).addTarget(PROD1_80);
+        gateway.add("foo", PROD1_80);
 
         assertThat(updatedConfig(PROD))
             .isEqualTo(CONFIG_PROD

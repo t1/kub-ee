@@ -1,6 +1,5 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.tools.Tools;
@@ -28,30 +27,25 @@ import static java.util.stream.Collectors.toList;
  * </ul>
  */
 public class IngressConfig {
-    private final NginxConfig nginxConfig;
     private final Consumer<String> note;
+    final NginxConfig nginxConfig;
 
     private final Path configPath;
     private final String original;
 
     public IngressConfig(Path configPath, Consumer<String> note) {
-        this.configPath = configPath;
         this.note = note;
+        this.configPath = configPath;
 
         this.nginxConfig = NginxConfig.readFrom(configPath.toUri());
         this.original = nginxConfig.toString();
     }
 
-    IngressConfig(NginxConfig nginxConfig, Consumer<String> note) {
-        this.configPath = null;
-        this.note = note;
-        this.nginxConfig = nginxConfig;
-        this.original = nginxConfig.toString();
-    }
-
     public boolean hasChanged() { return !nginxConfig.toString().equals(original); }
 
-    public void apply() { nginxConfig.writeTo(configPath); }
+    public void apply() {
+        nginxConfig.writeTo(configPath);
+    }
 
     public void removeReverseProxyFor(ClusterNode node) {
         nginxConfig.removeServer(new HostPort(node.host(), node.port()));
@@ -98,6 +92,10 @@ public class IngressConfig {
     }
 
 
+    public boolean hasLoadBalancerFor(String application) {
+        return nginxConfig.upstream(application + "-lb").isPresent();
+    }
+
     public Stream<LoadBalancer> loadBalancers() {
         return nginxConfig.servers()
             .filter(this::hasLoadBalancerUpstream)
@@ -120,8 +118,8 @@ public class IngressConfig {
         return path;
     }
 
-    public LoadBalancer getOrCreateLoadBalancerFor(Cluster cluster, String application) {
-        return new LoadBalancer(application, cluster.getSlot().getHttp(), cluster.getSimpleName() + "_nodes", "$app");
+    public LoadBalancer getOrCreateLoadBalancerFor(String application) {
+        return new LoadBalancer(application, 80, application + "-lb", application);
     }
 
     private Optional<NginxUpstream> upstreamFor(NginxServer server) {

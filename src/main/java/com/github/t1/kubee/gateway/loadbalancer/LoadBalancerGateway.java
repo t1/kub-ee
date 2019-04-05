@@ -1,5 +1,7 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
+import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.model.LoadBalancer;
 import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.ReverseProxy.Location;
@@ -40,11 +42,11 @@ public class LoadBalancerGateway {
 
     private LoadBalancer buildLoadBalancer(NginxUpstream server) {
         return LoadBalancer
-                .builder()
-                .name(server.getName())
-                .method(server.getMethod())
-                .servers(server.hostPorts().map(HostPort::toString).collect(toList()))
-                .build();
+            .builder()
+            .name(server.getName())
+            .method(server.getMethod())
+            .servers(server.hostPorts().map(HostPort::toString).collect(toList()))
+            .build();
     }
 
 
@@ -61,18 +63,37 @@ public class LoadBalancerGateway {
 
     private Location toLocation(NginxServerLocation location) {
         return Location.builder()
-                       .fromPath((location.getName()))
-                       .target(location.getProxyPass())
-                       .build();
+            .fromPath((location.getName()))
+            .target(location.getProxyPass())
+            .build();
     }
 
 
-    public LoadBalancerRemoveAction from(String deployableName, Stage stage) {
-        return new LoadBalancerRemoveAction(read(stage), deployableName, stage, config(stage)::update);
+    public void remove(String deployableName, ClusterNode node) {
+        LoadBalancerConfigAdapter adapter = config(node.getStage());
+        IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
+
+        log.debug("remove {} from lb for {}", node.endpoint(), deployableName);
+        if (!ingressConfig.hasLoadBalancerFor(deployableName)) {
+            log.debug("no lb found for {}", deployableName);
+            return;
+        }
+        ingressConfig.getOrCreateLoadBalancerFor(deployableName)
+            .removeHost(node.host());
+        ingressConfig.apply();
+        adapter.update(ingressConfig.nginxConfig);
     }
 
+    public void add(String deployableName, ClusterNode node) {
+        LoadBalancerConfigAdapter adapter = config(node.getStage());
+        IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
 
-    public LoadBalancerAddAction to(String deployableName, Stage stage) {
-        return new LoadBalancerAddAction(read(stage), deployableName, stage, config(stage)::update);
+        if (!ingressConfig.hasReverseProxyFor(node))
+            throw new IllegalStateException("no reverse proxy found for " + node);
+        int port = ingressConfig.getOrCreateReverseProxyFor(node).getPort();
+        ingressConfig.getOrCreateLoadBalancerFor(deployableName)
+            .addOrUpdateEndpoint(new Endpoint(node.host(), port));
+        ingressConfig.apply();
+        adapter.update(ingressConfig.nginxConfig);
     }
 }
