@@ -1,5 +1,5 @@
 @DependsUpon(packagesOf = {
-    com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.class,
+    com.github.t1.kubee.gateway.loadbalancer.IngressConfig.class,
     com.github.t1.kubee.model.LoadBalancer.class,
     com.github.t1.kubee.tools.cli.ProcessInvoker.class,
     com.github.t1.kubee.tools.yaml.YamlDocument.class,

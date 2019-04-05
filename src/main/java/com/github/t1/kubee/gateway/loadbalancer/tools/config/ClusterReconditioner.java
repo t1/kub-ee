@@ -1,8 +1,8 @@
 package com.github.t1.kubee.gateway.loadbalancer.tools.config;
 
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig;
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.LoadBalancer;
-import com.github.t1.kubee.gateway.loadbalancer.LoadBalancerConfig.ReverseProxy;
+import com.github.t1.kubee.gateway.loadbalancer.IngressConfig;
+import com.github.t1.kubee.gateway.loadbalancer.IngressConfig.LoadBalancer;
+import com.github.t1.kubee.gateway.loadbalancer.IngressConfig.ReverseProxy;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
@@ -21,22 +21,22 @@ import java.util.function.Consumer;
     private final List<Cluster> clusterConfig;
     private final ContainerStatus containerStatus;
     private final Path loadBalancerPath;
-    private LoadBalancerConfig loadBalancerConfig;
+    private IngressConfig ingressConfig;
 
     @Override public void run() {
-        loadBalancerConfig = new LoadBalancerConfig(loadBalancerPath, note);
+        ingressConfig = new IngressConfig(loadBalancerPath, note);
 
         clusterConfig.forEach(this::reconditionCluster);
 
-        if (loadBalancerConfig.hasChanged()) {
-            loadBalancerConfig.apply();
+        if (ingressConfig.hasChanged()) {
+            ingressConfig.apply();
         }
     }
 
     private void reconditionCluster(Cluster cluster) {
         cluster.nodes().forEach(this::reconditionReverseProxy);
         cluster.lastNodes().forEach(node -> new NodeCleanup(node.next()).run());
-        reconditionLoadBalancerFor(cluster);
+        reconditionLoadBalancers();
     }
 
     private void reconditionReverseProxy(ClusterNode node) {
@@ -44,18 +44,19 @@ import java.util.function.Consumer;
         if (actualPort == null) {
             actualPort = containerStatus.start(node);
         }
-        ReverseProxy reverseProxy = loadBalancerConfig.getOrCreateReverseProxyFor(node);
+        ReverseProxy reverseProxy = ingressConfig.getOrCreateReverseProxyFor(node);
         if (reverseProxy.getPort() != actualPort) {
             reverseProxy.setPort(actualPort);
         }
     }
 
-    private void reconditionLoadBalancerFor(Cluster cluster) {
-        LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(cluster);
-        reconditionLoadBalancer(loadBalancer);
-        containerStatus.actual()
-            .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
-            .forEach(loadBalancer::addOrUpdateEndpoint);
+    private void reconditionLoadBalancers() {
+        ingressConfig.loadBalancers().forEach(loadBalancer -> {
+            reconditionLoadBalancer(loadBalancer);
+            containerStatus.actual()
+                .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
+                .forEach(loadBalancer::addOrUpdateEndpoint);
+        });
     }
 
     private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
@@ -80,19 +81,18 @@ import java.util.function.Consumer;
                 containerStatus.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
-            if (loadBalancerConfig.hasReverseProxyFor(node)) {
+            if (ingressConfig.hasReverseProxyFor(node)) {
                 lookForMore = true;
-                loadBalancerConfig.removeReverseProxyFor(node);
+                ingressConfig.removeReverseProxyFor(node);
             }
 
-            if (loadBalancerConfig.hasLoadBalancerFor(node.getCluster())) {
-                LoadBalancer loadBalancer = loadBalancerConfig.getOrCreateLoadBalancerFor(node.getCluster());
+            ingressConfig.loadBalancers().forEach(loadBalancer -> {
                 String host = node.endpoint().getHost();
                 if (loadBalancer.hasHost(host)) {
                     lookForMore = true;
                     loadBalancer.removeHost(host);
                 }
-            }
+            });
 
             if (lookForMore) {
                 new NodeCleanup(node.next()).run();

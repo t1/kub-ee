@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 @AllArgsConstructor
 abstract class LoadBalancerAction {
     protected NginxConfig config;
-    private String deployableName;
+    protected String deployableName;
     private Stage stage;
     private Consumer<NginxConfig> then;
 

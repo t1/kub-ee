@@ -13,7 +13,9 @@ import com.github.t1.nginx.NginxConfig.NginxUpstream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.github.t1.kubee.tools.Tools.toHostPort;
 import static java.util.stream.Collectors.toList;
@@ -25,15 +27,14 @@ import static java.util.stream.Collectors.toList;
  * <li><b>Reverse Proxy</b>: a single node in a cluster exposed to the exterior.</li>
  * </ul>
  */
-public class LoadBalancerConfig {
-    private static final String LOAD_BALANCER_SERVER_PATTERN = "~^(?<app>.+).kub-ee$";
+public class IngressConfig {
     private final NginxConfig nginxConfig;
     private final Consumer<String> note;
 
     private final Path configPath;
     private final String original;
 
-    public LoadBalancerConfig(Path configPath, Consumer<String> note) {
+    public IngressConfig(Path configPath, Consumer<String> note) {
         this.configPath = configPath;
         this.note = note;
 
@@ -41,7 +42,7 @@ public class LoadBalancerConfig {
         this.original = nginxConfig.toString();
     }
 
-    LoadBalancerConfig(NginxConfig nginxConfig, Consumer<String> note) {
+    IngressConfig(NginxConfig nginxConfig, Consumer<String> note) {
         this.configPath = null;
         this.note = note;
         this.nginxConfig = nginxConfig;
@@ -97,17 +98,49 @@ public class LoadBalancerConfig {
     }
 
 
-    public boolean hasLoadBalancerFor(Cluster cluster) {
-        return nginxConfig.server(LOAD_BALANCER_SERVER_PATTERN, cluster.getSlot().getHttp()).isPresent();
+    public Stream<LoadBalancer> loadBalancers() {
+        return nginxConfig.servers()
+            .filter(this::hasLoadBalancerUpstream)
+            .map(LoadBalancer::new);
     }
 
-    public LoadBalancer getOrCreateLoadBalancerFor(Cluster cluster) { // TODO and application name
-        return new LoadBalancer(LOAD_BALANCER_SERVER_PATTERN, cluster.getSlot().getHttp(), cluster.getSimpleName() + "_nodes", "$app");
+    private Boolean hasLoadBalancerUpstream(NginxServer server) {
+        String path = trimSlashes(rootLocationProxyPass(server).getPath());
+        if (path.isEmpty())
+            return false;
+        String upstreamName = path + "-lb";
+        return upstreamFor(server).filter(upstream -> upstream.getName().equals(upstreamName)).isPresent();
+    }
+
+    private static String trimSlashes(String path) {
+        if (path.endsWith("/"))
+            path = path.substring(0, path.length() - 1);
+        if (path.startsWith("/"))
+            path = path.substring(1);
+        return path;
+    }
+
+    public LoadBalancer getOrCreateLoadBalancerFor(Cluster cluster, String application) {
+        return new LoadBalancer(application, cluster.getSlot().getHttp(), cluster.getSimpleName() + "_nodes", "$app");
+    }
+
+    private Optional<NginxUpstream> upstreamFor(NginxServer server) {
+        return nginxConfig
+            .upstream(rootLocationProxyPass(server).getHost());
+    }
+
+    private URI rootLocationProxyPass(NginxServer server) {
+        return server.location("/").orElseThrow(IllegalStateException::new).getProxyPass();
     }
 
     public class LoadBalancer {
         private final NginxServer server;
         private final NginxUpstream upstream;
+
+        LoadBalancer(NginxServer server) {
+            this.server = server;
+            this.upstream = upstreamFor(server).orElseThrow(IllegalStateException::new);
+        }
 
         LoadBalancer(String fromPattern, int fromListen, String upstreamName, String upstreamPath) {
             this.server = getOrCreateServer(fromPattern, fromListen, upstreamName, upstreamPath);
@@ -121,8 +154,16 @@ public class LoadBalancerConfig {
 
         public boolean hasHost(String host) { return upstream.hasHost(host); }
 
-        public void removeHost(String host) { upstream.removeHost(host); }
+        public void removeHost(String host) {
+            upstream.removeHost(host);
+            if (upstream.isEmpty())
+                remove();
+        }
 
+        private void remove() {
+            nginxConfig.removeServer(server);
+            nginxConfig.removeUpstream(upstream);
+        }
 
         public boolean hasEndpoint(Endpoint endpoint) { return getEndpoints().contains(endpoint); }
 
@@ -140,7 +181,6 @@ public class LoadBalancerConfig {
             }
         }
     }
-
 
     private NginxServer getOrCreateServer(String fromPattern, int fromListen, String upstreamName, String upstreamPath) {
         NginxServer server = nginxConfig.server(fromPattern, fromListen).orElseGet(() -> {

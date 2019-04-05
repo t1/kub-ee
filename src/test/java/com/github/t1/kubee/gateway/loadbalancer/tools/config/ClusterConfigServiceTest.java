@@ -31,6 +31,8 @@ class ClusterConfigServiceTest {
     private static final HostPort WORKER01 = HostPort.valueOf("worker01:10001");
     private static final HostPort WORKER02 = HostPort.valueOf("worker02:10002");
     private static final HostPort WORKER03 = HostPort.valueOf("worker03:10003");
+    private static final String PROXY_SETTINGS = "proxy_set_header Host      $host;\n" +
+        "            proxy_set_header X-Real-IP $remote_addr;";
 
     @TempDir Path tmp;
     private Path nginxConfigPath;
@@ -81,15 +83,18 @@ class ClusterConfigServiceTest {
 
     private NginxConfig nginxConfig(HostPort... workers) {
         NginxConfig nginxConfig = NginxConfig.create()
-            .addUpstream(NginxUpstream.named("worker_nodes").setMethod("least_conn").setHostPorts(asList(workers)))
-            .addServer(NginxServer.named("~^(?<app>.+).kub-ee$").setListen(8080)
-                .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://worker_nodes/$app"))
-                    .setAfter("proxy_set_header Host      $host;\n" +
-                        "            proxy_set_header X-Real-IP $remote_addr;")));
-        for (int i = 0; i < workers.length; i++) {
-            String upstreamName = "worker0" + (i + 1);
+            .addUpstream(NginxUpstream.named("dummy-app-lb").setMethod("least_conn").setHostPorts(asList(workers)))
+            .addServer(NginxServer.named("dummy-app").setListen(8080)
+                .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://dummy-app-lb/dummy-app")).setAfter(PROXY_SETTINGS)));
+        addReverseProxy(nginxConfig, workers);
+        return nginxConfig;
+    }
+
+    private NginxConfig addReverseProxy(NginxConfig nginxConfig, HostPort... workers) {
+        for (HostPort worker : workers) {
+            String upstreamName = worker.getHost();
             nginxConfig
-                .addUpstream(NginxUpstream.named(upstreamName).setMethod("least_conn").addHostPort(workers[i]))
+                .addUpstream(NginxUpstream.named(upstreamName).setMethod("least_conn").addHostPort(worker))
                 .addServer(NginxServer.named(upstreamName).setListen(8080)
                     .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://" + upstreamName + "/"))
                         .setAfter("proxy_set_header Host      $host;\n" +
@@ -146,18 +151,13 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldAddWorkerNodesServer() {
-        givenClusterConfig(1);
-        givenDocker(WORKER01);
-        givenNginx(NginxConfig.create()
-            .addUpstream(NginxUpstream.named("worker01").setMethod("least_conn").addHostPort(WORKER01))
-            .addServer(NginxServer.named("worker01").setListen(8080)
-                .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://worker01/"))
-                    .setAfter("proxy_set_header Host      $host;\n" +
-                        "            proxy_set_header X-Real-IP $remote_addr;"))));
+        givenClusterConfig(2);
+        givenDocker(WORKER01, WORKER02);
+        givenNginx(addReverseProxy(NginxConfig.create(), WORKER01));
 
         service.run();
 
-        assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
+        assertThat(actualNginxConfig()).isEqualTo(addReverseProxy(NginxConfig.create(), WORKER01, WORKER02));
     }
 
     @Test void shouldAddUpstream() {
@@ -190,7 +190,7 @@ class ClusterConfigServiceTest {
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01));
     }
 
-    // TODO create worker_nodes server
+    // TODO create dummy-app server
     // TODO scale containers up
     // TODO scale containers down
 

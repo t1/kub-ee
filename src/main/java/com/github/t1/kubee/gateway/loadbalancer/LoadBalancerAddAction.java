@@ -10,18 +10,18 @@ import java.util.function.Consumer;
 
 @Slf4j
 public class LoadBalancerAddAction extends LoadBalancerAction {
-    private final LoadBalancerConfig loadBalancerConfig;
+    private final IngressConfig ingressConfig;
 
     LoadBalancerAddAction(NginxConfig config, String deployableName, Stage stage, Consumer<NginxConfig> then) {
         super(config, deployableName, stage, then);
-        this.loadBalancerConfig = new LoadBalancerConfig(config, log::info);
+        this.ingressConfig = new IngressConfig(config, log::info);
     }
 
     public void addTarget(ClusterNode node) {
-        if (!loadBalancerConfig.hasReverseProxyFor(node))
+        if (!ingressConfig.hasReverseProxyFor(node))
             throw new IllegalStateException("no reverse proxy found for " + node);
-        int port = loadBalancerConfig.getOrCreateReverseProxyFor(node).getPort();
-        loadBalancerConfig.getOrCreateLoadBalancerFor(node.getCluster())
+        int port = ingressConfig.getOrCreateReverseProxyFor(node).getPort();
+        ingressConfig.getOrCreateLoadBalancerFor(node.getCluster(), deployableName)
             .addOrUpdateEndpoint(new Endpoint(node.host(), port));
         done();
     }
