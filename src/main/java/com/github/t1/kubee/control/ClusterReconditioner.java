@@ -1,5 +1,6 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.config;
+package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.gateway.container.ContainerStatus;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
@@ -9,24 +10,26 @@ import com.github.t1.kubee.model.Endpoint;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale it up or down as specified.
  * Then look at the load balancer config, and update it as specified in the (updated) docker-compose file.
  */
-@RequiredArgsConstructor class ClusterReconditioner implements Runnable {
+@RequiredArgsConstructor
+public class ClusterReconditioner implements Runnable {
     private final Consumer<String> note;
-    private final List<Cluster> clusterConfig;
-    private final ContainerStatus containerStatus;
-    private final Path loadBalancerPath;
+    private final Path clusterConfigPath;
+    private final Path dockerComposeConfigPath;
+    private final Path ingressConfigPath;
+
+    private ContainerStatus containerStatus;
     private Ingress ingress;
 
     @Override public void run() {
-        ingress = new Ingress(loadBalancerPath, note);
+        ingress = new Ingress(ingressConfigPath, note);
 
-        clusterConfig.forEach(this::reconditionCluster);
+        ClusterConfig.readFrom(clusterConfigPath).forEach(this::reconditionCluster);
 
         if (ingress.hasChanged()) {
             ingress.write();
@@ -34,6 +37,7 @@ import java.util.function.Consumer;
     }
 
     private void reconditionCluster(Cluster cluster) {
+        this.containerStatus = new ContainerStatus(note, cluster, dockerComposeConfigPath);
         cluster.nodes().forEach(this::reconditionReverseProxy);
         cluster.lastNodes().forEach(node -> new NodeCleanup(node.next()).run());
         reconditionLoadBalancers();

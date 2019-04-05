@@ -1,4 +1,4 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.config;
+package com.github.t1.kubee.gateway.container;
 
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
@@ -23,14 +23,13 @@ public class ContainerStatus {
     private final Path dockerComposeConfigPath;
     private final List<Endpoint> actualContainers;
 
-    ContainerStatus(
+    public ContainerStatus(
         @NonNull Consumer<String> note,
-        @NonNull ProcessInvoker proc,
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeConfigPath
     ) {
         this.note = note;
-        this.proc = proc;
+        this.proc = ProcessInvoker.INSTANCE;
         this.dockerComposeConfigPath = dockerComposeConfigPath;
         this.actualContainers = readDockerStatus(cluster);
     }
@@ -66,13 +65,13 @@ public class ContainerStatus {
     }
 
 
-    int start(ClusterNode node) {
+    public int start(ClusterNode node) {
         note.accept("Start missing container " + node.endpoint());
         actualContainers.add(node.endpoint()); // TODO actually start
         return -1;
     }
 
-    Integer actualPort(String host) {
+    public Integer actualPort(String host) {
         return actualContainers.stream()
             .filter(hostPort -> hostPort.getHost().equals(host))
             .findFirst()
@@ -80,9 +79,9 @@ public class ContainerStatus {
             .orElse(null);
     }
 
-    Stream<Endpoint> actual() { return actualContainers.stream(); }
+    public Stream<Endpoint> actual() { return actualContainers.stream(); }
 
-    void stop(Endpoint hostPort) {
+    public void stop(Endpoint hostPort) {
         note.accept("Stopping excess container " + hostPort);
         actualContainers.remove(hostPort); // TODO actually stop
     }

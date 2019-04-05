@@ -1,5 +1,6 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.config;
+package com.github.t1.kubee.tools.cli.config;
 
+import com.github.t1.kubee.control.ClusterReconditioner;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import com.github.t1.nginx.HostPort;
 import com.github.t1.nginx.NginxConfig;
@@ -7,6 +8,7 @@ import com.github.t1.nginx.NginxConfig.NginxServer;
 import com.github.t1.nginx.NginxConfig.NginxServerLocation;
 import com.github.t1.nginx.NginxConfig.NginxUpstream;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,24 +37,27 @@ class ClusterConfigServiceTest {
         "            proxy_set_header X-Real-IP $remote_addr;";
 
     @TempDir Path tmp;
-    private Path nginxConfigPath;
+    private Path ingressConfigPath;
     private Path clusterConfigPath;
-    private final Path dockerComposeConfigPath = Paths.get("./test/docker/docker-compose.yaml");
+    private final Path dockerComposeConfigPath = Paths.get("src/test/docker/docker-compose.yaml");
 
+    private final ProcessInvoker originalProcessInvoker = ProcessInvoker.INSTANCE;
     private final ProcessInvoker proc = mock(ProcessInvoker.class);
 
     private ClusterConfigService service;
 
     @BeforeEach
     void setUp() {
-        nginxConfigPath = tmp.resolve("nginx.conf");
+        ProcessInvoker.INSTANCE = proc;
+        ingressConfigPath = tmp.resolve("nginx.conf");
         clusterConfigPath = tmp.resolve("cluster-config.yaml");
-        service = new ClusterConfigService()
-            .setProc(proc)
-            .setDockerComposeConfigPath(dockerComposeConfigPath)
-            .setClusterConfigPath(clusterConfigPath)
-            .setNginxConfigPath(nginxConfigPath)
-            .setContinues(false);
+        ClusterReconditioner reconditioner = new ClusterReconditioner(System.out::println, clusterConfigPath, dockerComposeConfigPath, ingressConfigPath);
+        service = new ClusterConfigService(reconditioner, clusterConfigPath, false);
+    }
+
+    @AfterEach
+    void tearDown() {
+        ProcessInvoker.INSTANCE = originalProcessInvoker;
     }
 
     @SneakyThrows(IOException.class)
@@ -78,7 +83,7 @@ class ClusterConfigServiceTest {
 
     @SneakyThrows(IOException.class)
     private void givenNginx(NginxConfig nginxConfig) {
-        Files.write(nginxConfigPath, singletonList(nginxConfig.toString()));
+        Files.write(ingressConfigPath, singletonList(nginxConfig.toString()));
     }
 
     private NginxConfig nginxConfig(HostPort... workers) {
@@ -115,7 +120,7 @@ class ClusterConfigServiceTest {
             .willReturn(join("\n", containerIds));
     }
 
-    private NginxConfig actualNginxConfig() { return NginxConfig.readFrom(nginxConfigPath.toUri()); }
+    private NginxConfig actualNginxConfig() { return NginxConfig.readFrom(ingressConfigPath.toUri()); }
 
 
     @Test void shouldRunEmpty() {

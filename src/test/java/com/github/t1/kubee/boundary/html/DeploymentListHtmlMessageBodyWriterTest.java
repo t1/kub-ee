@@ -76,7 +76,7 @@ class DeploymentListHtmlMessageBodyWriterTest {
     }
 
     @Test void shouldWriteFull() throws Exception {
-        List<Cluster> clusters = ClusterTest.readClusterConfig().getClusters();
+        List<Cluster> clusters = ClusterTest.readClusterConfig();
         givenClusters(clusters);
 
         assertThat(clusters).hasSize(4);

@@ -1,6 +1,7 @@
 package com.github.t1.kubee.model;
 
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Value;
 
 import java.net.URI;
@@ -9,5 +10,5 @@ import java.net.URI;
 @Builder
 public class ReverseProxy {
     URI from;
-    int to;
+    @Default int to = -1;
 }

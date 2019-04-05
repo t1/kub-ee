@@ -3,7 +3,6 @@ package com.github.t1.kubee.control;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
 import lombok.EqualsAndHashCode;
-import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -18,10 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
 import static java.util.stream.Collectors.joining;
 
-@Slf4j
 @ApplicationScoped
 @EqualsAndHashCode
 public class ClusterConfig {
@@ -39,11 +36,7 @@ public class ClusterConfig {
 
     @PostConstruct void read() {
         Path path = getConfigPath();
-        try (InputStream stream = Files.newInputStream(path)) {
-            readFrom(stream);
-        } catch (IOException e) {
-            throw badRequest().detail("can't read cluster config file: " + path).exception();
-        }
+        this.clusters.addAll(readFrom(path));
     }
 
     private Path getConfigPath() {
@@ -56,9 +49,16 @@ public class ClusterConfig {
         return Paths.get(root, "cluster-config.yaml");
     }
 
-    public ClusterConfig readFrom(InputStream stream) {
+    static List<Cluster> readFrom(Path path) {
+        try (InputStream stream = Files.newInputStream(path)) {
+            return readFrom(stream);
+        } catch (IOException e) {
+            throw new IllegalStateException("can't read cluster config file: " + path);
+        }
+    }
+
+    public static List<Cluster> readFrom(InputStream stream) {
         YamlDocument document = YamlDocument.from(new InputStreamReader(stream));
-        clusters.addAll(Cluster.readAllFrom(document, log::warn));
-        return this;
+        return Cluster.readAllFrom(document, System.err::println);
     }
 }

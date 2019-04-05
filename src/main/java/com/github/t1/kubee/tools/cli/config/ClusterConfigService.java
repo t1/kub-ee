@@ -1,17 +1,13 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.config;
+package com.github.t1.kubee.tools.cli.config;
 
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.tools.cli.ProcessInvoker;
-import com.github.t1.kubee.tools.yaml.YamlDocument;
+import com.github.t1.kubee.control.ClusterReconditioner;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.extern.java.Log;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
@@ -19,10 +15,8 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -34,18 +28,19 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @Log
 @Setter @Accessors(chain = true)
+@AllArgsConstructor
 public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
     private static final String CLUSTER_CONFIG_ARG = "--cluster-config=";
-    private static final String NGINX_CONFIG_ARG = "--nginx-config=";
+    private static final String INGRESS_CONFIG_ARG = "--ingress-config=";
     private static final String DOCKER_COMPOSE_CONFIG_ARG = "--docker-compose-config=";
 
-    private static final Path DEFAULT_NGINX_CONFIG_PATH = Paths.get("/usr/local/etc/nginx/nginx.conf");
+    private static final Path DEFAULT_INGRESS_CONFIG_PATH = Paths.get("/usr/local/etc/nginx/nginx.conf");
     private static final int POLL_TIMEOUT = 100;
 
     public static void main(String[] args) {
         Path clusterConfigPath = null;
-        Path nginxConfigPath = DEFAULT_NGINX_CONFIG_PATH;
+        Path ingressConfigPath = DEFAULT_INGRESS_CONFIG_PATH;
         Path dockerComposeConfigPath = null;
         boolean once = false;
         for (String arg : args) {
@@ -53,8 +48,8 @@ public class ClusterConfigService {
                 once = true;
             if (arg.startsWith(CLUSTER_CONFIG_ARG))
                 clusterConfigPath = Paths.get(arg.substring(CLUSTER_CONFIG_ARG.length()));
-            if (arg.startsWith(NGINX_CONFIG_ARG))
-                nginxConfigPath = Paths.get(arg.substring(NGINX_CONFIG_ARG.length()));
+            if (arg.startsWith(INGRESS_CONFIG_ARG))
+                ingressConfigPath = Paths.get(arg.substring(INGRESS_CONFIG_ARG.length()));
             if (arg.startsWith(DOCKER_COMPOSE_CONFIG_ARG))
                 dockerComposeConfigPath = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
         }
@@ -63,20 +58,13 @@ public class ClusterConfigService {
             System.exit(1);
         }
         System.out.println("Start ClusterConfigService for " + clusterConfigPath);
-        new ClusterConfigService()
-            .setProc(new ProcessInvoker())
-            .setDockerComposeConfigPath(dockerComposeConfigPath)
-            .setClusterConfigPath(clusterConfigPath)
-            .setNginxConfigPath(nginxConfigPath)
-            .setContinues(!once)
+        ClusterReconditioner reconditioner = new ClusterReconditioner(System.out::println, clusterConfigPath, dockerComposeConfigPath, ingressConfigPath);
+        new ClusterConfigService(reconditioner, clusterConfigPath, !once)
             .run();
     }
 
-    private Consumer<String> note = System.out::println;
-    private ProcessInvoker proc;
-    private Path dockerComposeConfigPath;
-    private Path clusterConfigPath;
-    private Path nginxConfigPath;
+    private final ClusterReconditioner reconditioner;
+    private final Path clusterConfigPath;
     private boolean continues;
 
     void run() {
@@ -116,14 +104,6 @@ public class ClusterConfigService {
     }
 
     private void handleChange() {
-        List<Cluster> clusterConfig = readClusterConfig();
-        ContainerStatus containerStatus = new ContainerStatus(note, proc, clusterConfig.get(0), dockerComposeConfigPath);
-        new ClusterReconditioner(note, clusterConfig, containerStatus, nginxConfigPath).run();
-    }
-
-    @SneakyThrows(IOException.class)
-    private List<Cluster> readClusterConfig() {
-        YamlDocument document = YamlDocument.from(new InputStreamReader(Files.newInputStream(clusterConfigPath)));
-        return unmodifiableList(Cluster.readAllFrom(document, System.out::println));
+        reconditioner.run();
     }
 }

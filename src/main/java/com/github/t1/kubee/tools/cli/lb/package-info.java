@@ -1,4 +1,4 @@
 @DependsUpon()
-package com.github.t1.kubee.gateway.loadbalancer.tools.lb;
+package com.github.t1.kubee.tools.cli.lb;
 
 import com.github.t1.testtools.DependsUpon;

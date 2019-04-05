@@ -1,4 +1,4 @@
-package com.github.t1.kubee.gateway.loadbalancer.tools.lb;
+package com.github.t1.kubee.tools.cli.lb;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

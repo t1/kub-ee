@@ -10,6 +10,9 @@ import static java.lang.String.join;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ProcessInvoker {
+    /** Changeable for testing */
+    public static ProcessInvoker INSTANCE = new ProcessInvoker();
+
     public String invoke(String... args) { return invoke(null, args); }
 
     @SneakyThrows({IOException.class, InterruptedException.class})
