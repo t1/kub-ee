@@ -1,7 +1,6 @@
 package com.github.t1.kubee.boundary.html;
 
 import com.github.t1.kubee.model.ReverseProxy;
-import com.github.t1.kubee.model.ReverseProxy.Location;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
@@ -22,14 +21,9 @@ class ReverseProxyListHtmlMessageBodyWriterTest {
 
     @Test void shouldWriteHtml() throws Exception {
         List<ReverseProxy> reverseProxies = asList(
-            ReverseProxy.builder().from(URI.create("http://from1"))
-                .location(Location.builder().fromPath("a").target(URI.create("http://to1")).build())
-                .location(Location.builder().fromPath("b").target(URI.create("http://to2")).build())
-                .build(),
+            ReverseProxy.builder().from(URI.create("http://from1")).to(1).build(),
             ReverseProxy.builder().from(URI.create("http://from2")).build(),
-            ReverseProxy.builder().from(URI.create("http://from3"))
-                .location(Location.builder().fromPath("c").target(URI.create("http://to3")).build())
-                .build()
+            ReverseProxy.builder().from(URI.create("http://from3")).to(3).build()
         );
         OutputStream out = new ByteArrayOutputStream();
 
@@ -52,27 +46,19 @@ class ReverseProxyListHtmlMessageBodyWriterTest {
             + "    <tbody> \n"
             + "     <tr> \n"
             + "      <th>From</th> \n"
-            + "      <th>Path</th> \n"
-            + "      <th>Target</th> \n"
+            + "      <th>To</th> \n"
             + "     </tr> \n"
             + "     <tr> \n"
-            + "      <td rowspan=\"2\">http://from1</td> \n"
-            + "      <td>a</td> \n"
-            + "      <td>http://to1</td> \n"
+            + "      <td>http://from1</td> \n"
+            + "      <td>1</td> \n"
             + "     </tr> \n"
             + "     <tr> \n"
-            + "      <td>b</td> \n"
-            + "      <td>http://to2</td> \n"
-            + "     </tr> \n"
-            + "     <tr> \n"
-            + "      <td rowspan=\"0\">http://from2</td> \n"
-            + "      <td>-</td> \n"
+            + "      <td>http://from2</td> \n"
             + "      <td>-</td> \n"
             + "     </tr> \n"
             + "     <tr> \n"
-            + "      <td rowspan=\"1\">http://from3</td> \n"
-            + "      <td>c</td> \n"
-            + "      <td>http://to3</td> \n"
+            + "      <td>http://from3</td> \n"
+            + "      <td>3</td> \n"
             + "     </tr> \n"
             + "    </tbody> \n"
             + "   </table> \n"

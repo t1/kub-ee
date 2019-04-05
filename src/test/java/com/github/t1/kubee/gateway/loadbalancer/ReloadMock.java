@@ -1,6 +1,6 @@
 package com.github.t1.kubee.gateway.loadbalancer;
 
-import com.github.t1.kubee.gateway.loadbalancer.IngressConfigAdapter.Reload;
+import com.github.t1.kubee.gateway.loadbalancer.IngressReloadAdapter.Reload;
 
 public class ReloadMock implements Reload {
     static void reset() {

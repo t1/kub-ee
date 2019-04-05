@@ -2,6 +2,8 @@ package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.model.ReverseProxy;
 import com.github.t1.kubee.model.Slot;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.kubee.tools.http.ProblemDetail;
@@ -22,7 +24,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
+import static com.github.t1.kubee.gateway.loadbalancer.IngressGateway.NGINX_ETC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -52,8 +56,8 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
     private Path configPath;
 
     @BeforeEach void setUp() {
-        origConfigPath = IngressConfigAdapter.NGINX_ETC;
-        IngressConfigAdapter.NGINX_ETC = nginxEtc;
+        origConfigPath = NGINX_ETC;
+        NGINX_ETC = nginxEtc;
         configPath = nginxEtc.resolve("nginx-prod.conf");
     }
 
@@ -100,8 +104,29 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
     @AfterEach
     void tearDown() {
-        IngressConfigAdapter.NGINX_ETC = origConfigPath;
+        NGINX_ETC = origConfigPath;
         ReloadMock.reset();
+    }
+
+    @Test void shouldGetLoadBalancers() {
+        givenNginx(WORKER01);
+
+        Stream<LoadBalancer> loadBalancers = gateway.loadBalancers(STAGE);
+
+        assertThat(loadBalancers).containsExactly(
+            LoadBalancer.builder().name("dummy-app-lb").method("least_conn").server("worker-prod1:10001").build()
+        );
+    }
+
+    @Test void shouldGetReverseProxies() {
+        givenNginx(WORKER01, WORKER02);
+
+        Stream<ReverseProxy> reverseProxies = gateway.reverseProxies(STAGE);
+
+        assertThat(reverseProxies).containsExactly(
+            ReverseProxy.builder().from(URI.create("http://worker-prod1:8080")).to(10001).build(),
+            ReverseProxy.builder().from(URI.create("http://worker-prod2:8080")).to(10002).build()
+        );
     }
 
     @Test void shouldFailToAddUnknownNodeToLoadBalancer() {
@@ -144,7 +169,8 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
         givenNginx(WORKER01, WORKER02);
         ReloadMock.error = "dummy-error";
 
-        WebApplicationApplicationException throwable = catchThrowableOfType(() -> gateway.remove("dummy-app", NODE1),
+        WebApplicationApplicationException throwable = catchThrowableOfType(() ->
+                gateway.remove("dummy-app", NODE1),
             WebApplicationApplicationException.class);
 
         assertThat(throwable.getDetail()).extracting(ProblemDetail::getStatus, ProblemDetail::getDetail)

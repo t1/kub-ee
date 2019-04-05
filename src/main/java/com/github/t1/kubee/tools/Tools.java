@@ -5,10 +5,10 @@ import com.github.t1.nginx.HostPort;
 
 public class Tools {
     public static HostPort toHostPort(Endpoint endpoint) {
-        return new HostPort(endpoint.getHost(), endpoint.getPort());
+        return (endpoint == null) ? null : new HostPort(endpoint.getHost(), endpoint.getPort());
     }
 
     public static Endpoint toEndpoint(HostPort hostPort) {
-        return new Endpoint(hostPort.getHost(), hostPort.getPort());
+        return (hostPort == null) ? null : new Endpoint(hostPort.getHost(), hostPort.getPort());
     }
 }

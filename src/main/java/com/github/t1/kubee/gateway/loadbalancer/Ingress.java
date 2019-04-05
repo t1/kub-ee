@@ -28,18 +28,18 @@ import static java.util.stream.Collectors.toList;
  * <li><b>Reverse Proxy</b>: a single node in a cluster exposed to the exterior.</li>
  * </ul>
  */
-public class IngressConfig {
+public class Ingress {
     static String toString(Stream<ReverseProxy> reverseProxies) {
         return reverseProxies.map(ReverseProxy::name).collect(joining(", ", "[", "]"));
     }
 
     private final Consumer<String> note;
-    final NginxConfig nginxConfig;
+    private final NginxConfig nginxConfig;
 
     private final Path configPath;
     private final String original;
 
-    public IngressConfig(Path configPath, Consumer<String> note) {
+    public Ingress(Path configPath, Consumer<String> note) {
         this.note = note;
         this.configPath = configPath;
 
@@ -49,7 +49,7 @@ public class IngressConfig {
 
     public boolean hasChanged() { return !nginxConfig.toString().equals(original); }
 
-    public void apply() {
+    public void write() {
         nginxConfig.writeTo(configPath);
     }
 
@@ -62,7 +62,7 @@ public class IngressConfig {
         return nginxConfig.upstream(node.host()).isPresent();
     }
 
-    Stream<ReverseProxy> getReverseProxies() {
+    Stream<ReverseProxy> reverseProxies() {
         return nginxConfig.upstreams().filter(this::isReverseProxy).map(ReverseProxy::new);
     }
 
@@ -80,6 +80,8 @@ public class IngressConfig {
         private final NginxUpstream upstream;
 
         public String name() { return upstream.getName(); }
+
+        Integer listen() { return serverFor(upstream).map(NginxServer::getListen).orElse(null); }
 
         public int getPort() {
             List<HostPort> hostPorts = upstream.getHostPorts();
@@ -134,9 +136,12 @@ public class IngressConfig {
         return new LoadBalancer(application, 80, application + "-lb", application);
     }
 
+    private Optional<NginxServer> serverFor(NginxUpstream upstream) {
+        return nginxConfig.servers().filter(server -> upstreamFor(server).map(u -> u == upstream).orElse(false)).findAny();
+    }
+
     private Optional<NginxUpstream> upstreamFor(NginxServer server) {
-        return nginxConfig
-            .upstream(rootLocationProxyPass(server).getHost());
+        return nginxConfig.upstream(rootLocationProxyPass(server).getHost());
     }
 
     private URI rootLocationProxyPass(NginxServer server) {
@@ -156,6 +161,10 @@ public class IngressConfig {
             this.server = getOrCreateServer(fromPattern, fromListen, upstreamName, upstreamPath);
             this.upstream = getOrCreateUpstream(upstreamName);
         }
+
+        public String name() { return upstream.getName(); }
+
+        public String method() { return upstream.getMethod(); }
 
         public void updatePort(Endpoint endpoint, Integer newPort) {
             note.accept("LB port doesn't match actual: " + endpoint + " -> " + newPort);

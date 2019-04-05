@@ -1,8 +1,8 @@
 package com.github.t1.kubee.gateway.loadbalancer.tools.config;
 
-import com.github.t1.kubee.gateway.loadbalancer.IngressConfig;
-import com.github.t1.kubee.gateway.loadbalancer.IngressConfig.LoadBalancer;
-import com.github.t1.kubee.gateway.loadbalancer.IngressConfig.ReverseProxy;
+import com.github.t1.kubee.gateway.loadbalancer.Ingress;
+import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
+import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
@@ -21,15 +21,15 @@ import java.util.function.Consumer;
     private final List<Cluster> clusterConfig;
     private final ContainerStatus containerStatus;
     private final Path loadBalancerPath;
-    private IngressConfig ingressConfig;
+    private Ingress ingress;
 
     @Override public void run() {
-        ingressConfig = new IngressConfig(loadBalancerPath, note);
+        ingress = new Ingress(loadBalancerPath, note);
 
         clusterConfig.forEach(this::reconditionCluster);
 
-        if (ingressConfig.hasChanged()) {
-            ingressConfig.apply();
+        if (ingress.hasChanged()) {
+            ingress.write();
         }
     }
 
@@ -44,14 +44,14 @@ import java.util.function.Consumer;
         if (actualPort == null) {
             actualPort = containerStatus.start(node);
         }
-        ReverseProxy reverseProxy = ingressConfig.getOrCreateReverseProxyFor(node);
+        ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
         if (reverseProxy.getPort() != actualPort) {
             reverseProxy.setPort(actualPort);
         }
     }
 
     private void reconditionLoadBalancers() {
-        ingressConfig.loadBalancers().forEach(loadBalancer -> {
+        ingress.loadBalancers().forEach(loadBalancer -> {
             reconditionLoadBalancer(loadBalancer);
             containerStatus.actual()
                 .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
@@ -81,12 +81,12 @@ import java.util.function.Consumer;
                 containerStatus.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
-            if (ingressConfig.hasReverseProxyFor(node)) {
+            if (ingress.hasReverseProxyFor(node)) {
                 lookForMore = true;
-                ingressConfig.removeReverseProxyFor(node);
+                ingress.removeReverseProxyFor(node);
             }
 
-            ingressConfig.loadBalancers().forEach(loadBalancer -> {
+            ingress.loadBalancers().forEach(loadBalancer -> {
                 String host = node.endpoint().getHost();
                 if (loadBalancer.hasHost(host)) {
                     lookForMore = true;

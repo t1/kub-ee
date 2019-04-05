@@ -2,19 +2,13 @@ package com.github.t1.kubee.gateway.loadbalancer;
 
 import com.github.t1.kubee.gateway.loadbalancer.tools.lb.NginxReloadService;
 import com.github.t1.kubee.model.Stage;
-import com.github.t1.nginx.NginxConfig;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.github.t1.kubee.tools.http.ProblemDetail.internalServerError;
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -22,33 +16,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * This class hides the actual nginx reload mechanism
  */
 @Slf4j
-class IngressConfigAdapter {
-    static final String RELOAD_MODE = "reload";
-    static final String CONFIG_PATH = "config-path";
-    static Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
-
-    @Getter private final Path configPath;
-
-    final Reload reload;
-
+class IngressReloadAdapter {
     interface Reload {
         String reload();
     }
 
-    IngressConfigAdapter(Stage stage) {
-        this.configPath = configPath(stage);
-        this.reload = reloadMode(stage);
-    }
-
-    private static Path configPath(Stage stage) {
-        return NGINX_ETC.resolve(stage.getLoadBalancerConfig()
-            .getOrDefault(CONFIG_PATH,
-                stage.getPrefix() + "nginx" + stage.getSuffix() + ".conf"));
-    }
-
-    private Reload reloadMode(Stage stage) {
+    static Reload reloadMode(Stage stage) {
         Map<String, String> config = stage.getLoadBalancerConfig();
-        String mode = config.getOrDefault(RELOAD_MODE, "service");
+        String mode = config.getOrDefault("reload", "service");
         switch (mode) {
             case "service":
                 return new ServiceReload(stage);
@@ -65,7 +40,7 @@ class IngressConfigAdapter {
         }
     }
 
-    private Reload customReload(Map<String, String> config) {
+    private static Reload customReload(Map<String, String> config) {
         String className = config.get("class");
         if (className == null)
             throw new IllegalArgumentException("missing 'class' config for 'custom' mode");
@@ -76,24 +51,7 @@ class IngressConfigAdapter {
         }
     }
 
-
-    NginxConfig read() { return NginxConfig.readFrom(configPath.toUri()); }
-
-    void update(NginxConfig config) {
-        log.debug("write config");
-        config.writeTo(configPath);
-        nginxReload();
-    }
-
-    @SneakyThrows(Exception.class) private void nginxReload() {
-        log.debug("reload nginx");
-        String result = reload.reload();
-        if (result != null)
-            throw internalServerError().detail("failed to reload load balancer: " + result).exception();
-    }
-
-
-    static class ServiceReload implements Reload {
+    private static class ServiceReload implements Reload {
         static final String RELOAD_SERVICE_PORT = "port";
 
         final NginxReloadService.Adapter adapter;
@@ -108,16 +66,16 @@ class IngressConfigAdapter {
         @Override public String reload() { return adapter.call(); }
     }
 
-    static class DirectReload implements Reload {
+    private static class DirectReload implements Reload {
         @Override public String reload() { return run("/usr/local/bin/nginx", "-s", "reload"); }
     }
 
-    static class SetUserIdScriptReload implements Reload {
+    private static class SetUserIdScriptReload implements Reload {
         @Override public String reload() { return run("nginx-reload"); }
     }
 
     @RequiredArgsConstructor
-    static class DockerKillHupReload implements Reload {
+    private static class DockerKillHupReload implements Reload {
         public final String host;
 
         @Override public String reload() { return run("docker", "kill", "--signal", "HUP", host); }
