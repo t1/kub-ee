@@ -3,6 +3,7 @@ package com.github.t1.kubee.gateway.loadbalancer;
 import com.github.t1.kubee.gateway.loadbalancer.tools.lb.NginxReloadService;
 import com.github.t1.kubee.model.Stage;
 import com.github.t1.nginx.NginxConfig;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +18,16 @@ import static com.github.t1.kubee.tools.http.ProblemDetail.internalServerError;
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * This class hides the actual nginx reload mechanism
+ */
 @Slf4j
 class IngressConfigAdapter {
     static final String RELOAD_MODE = "reload";
     static final String CONFIG_PATH = "config-path";
     static Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
 
-    final Path configPath;
+    @Getter private final Path configPath;
 
     final Reload reload;
 

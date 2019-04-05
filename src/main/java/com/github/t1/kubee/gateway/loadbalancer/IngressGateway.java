@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toList;
 public class IngressGateway {
     Map<String, IngressConfigAdapter> configAdapters = new LinkedHashMap<>();
 
-    public IngressConfigAdapter config(Stage stage) {
+    IngressConfigAdapter config(Stage stage) {
         return configAdapters.computeIfAbsent(stage.getName(), name -> new IngressConfigAdapter(stage));
     }
 
@@ -68,9 +68,22 @@ public class IngressGateway {
     }
 
 
+    public void add(String deployableName, ClusterNode node) {
+        IngressConfigAdapter adapter = config(node.getStage());
+        IngressConfig ingressConfig = new IngressConfig(adapter.getConfigPath(), log::info);
+
+        if (!ingressConfig.hasReverseProxyFor(node))
+            throw new IllegalStateException("no reverse proxy found for " + node.host() + " in " + IngressConfig.toString(ingressConfig.getReverseProxies()));
+        int port = ingressConfig.getOrCreateReverseProxyFor(node).getPort();
+        ingressConfig.getOrCreateLoadBalancerFor(deployableName)
+            .addOrUpdateEndpoint(new Endpoint(node.host(), port));
+        ingressConfig.apply();
+        adapter.update(ingressConfig.nginxConfig);
+    }
+
     public void remove(String deployableName, ClusterNode node) {
         IngressConfigAdapter adapter = config(node.getStage());
-        IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
+        IngressConfig ingressConfig = new IngressConfig(adapter.getConfigPath(), log::info);
 
         log.debug("remove {} from lb for {}", node.endpoint(), deployableName);
         if (!ingressConfig.hasLoadBalancerFor(deployableName)) {
@@ -79,19 +92,6 @@ public class IngressGateway {
         }
         ingressConfig.getOrCreateLoadBalancerFor(deployableName)
             .removeHost(node.host());
-        ingressConfig.apply();
-        adapter.update(ingressConfig.nginxConfig);
-    }
-
-    public void add(String deployableName, ClusterNode node) {
-        IngressConfigAdapter adapter = config(node.getStage());
-        IngressConfig ingressConfig = new IngressConfig(adapter.configPath, log::info);
-
-        if (!ingressConfig.hasReverseProxyFor(node))
-            throw new IllegalStateException("no reverse proxy found for " + node);
-        int port = ingressConfig.getOrCreateReverseProxyFor(node).getPort();
-        ingressConfig.getOrCreateLoadBalancerFor(deployableName)
-            .addOrUpdateEndpoint(new Endpoint(node.host(), port));
         ingressConfig.apply();
         adapter.update(ingressConfig.nginxConfig);
     }

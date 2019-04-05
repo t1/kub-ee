@@ -1,7 +1,7 @@
 package com.github.t1.kubee.model;
 
 import com.github.t1.kubee.control.ClusterConfig;
-import com.github.t1.kubee.gateway.loadbalancer.NginxLoadBalancerGatewayTest.ReloadMock;
+import com.github.t1.kubee.gateway.loadbalancer.ReloadMock;
 import com.github.t1.kubee.model.Cluster.HealthConfig;
 import org.junit.jupiter.api.Test;
 

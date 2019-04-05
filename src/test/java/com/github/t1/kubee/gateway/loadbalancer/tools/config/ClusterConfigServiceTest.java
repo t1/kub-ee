@@ -84,7 +84,7 @@ class ClusterConfigServiceTest {
     private NginxConfig nginxConfig(HostPort... workers) {
         NginxConfig nginxConfig = NginxConfig.create()
             .addUpstream(NginxUpstream.named("dummy-app-lb").setMethod("least_conn").setHostPorts(asList(workers)))
-            .addServer(NginxServer.named("dummy-app").setListen(8080)
+            .addServer(NginxServer.named("dummy-app").setListen(80)
                 .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://dummy-app-lb/dummy-app")).setAfter(PROXY_SETTINGS)));
         addReverseProxy(nginxConfig, workers);
         return nginxConfig;

@@ -8,6 +8,7 @@ import com.github.t1.nginx.NginxConfig;
 import com.github.t1.nginx.NginxConfig.NginxServer;
 import com.github.t1.nginx.NginxConfig.NginxServerLocation;
 import com.github.t1.nginx.NginxConfig.NginxUpstream;
+import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.tools.Tools.toHostPort;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -27,6 +29,10 @@ import static java.util.stream.Collectors.toList;
  * </ul>
  */
 public class IngressConfig {
+    static String toString(Stream<ReverseProxy> reverseProxies) {
+        return reverseProxies.map(ReverseProxy::name).collect(joining(", ", "[", "]"));
+    }
+
     private final Consumer<String> note;
     final NginxConfig nginxConfig;
 
@@ -56,17 +62,24 @@ public class IngressConfig {
         return nginxConfig.upstream(node.host()).isPresent();
     }
 
-    public ReverseProxy getOrCreateReverseProxyFor(ClusterNode node) {
-        return new ReverseProxy(node.host(), node.port());
+    Stream<ReverseProxy> getReverseProxies() {
+        return nginxConfig.upstreams().filter(this::isReverseProxy).map(ReverseProxy::new);
     }
 
+    private boolean isReverseProxy(NginxUpstream upstream) {
+        return !upstream.getName().endsWith("-lb") && upstream.getHostPorts().size() == 1;
+    }
+
+    public ReverseProxy getOrCreateReverseProxyFor(ClusterNode node) {
+        getOrCreateServer(node.host(), node.port(), node.host(), "");
+        return new ReverseProxy(getOrCreateUpstream(node.host()));
+    }
+
+    @RequiredArgsConstructor
     public class ReverseProxy {
         private final NginxUpstream upstream;
 
-        ReverseProxy(String name, int fromPort) {
-            getOrCreateServer(name, fromPort, name, "");
-            this.upstream = getOrCreateUpstream(name);
-        }
+        public String name() { return upstream.getName(); }
 
         public int getPort() {
             List<HostPort> hostPorts = upstream.getHostPorts();
@@ -91,7 +104,7 @@ public class IngressConfig {
     }
 
 
-    public boolean hasLoadBalancerFor(String application) {
+    boolean hasLoadBalancerFor(String application) {
         return nginxConfig.upstream(application + "-lb").isPresent();
     }
 
@@ -117,7 +130,7 @@ public class IngressConfig {
         return path;
     }
 
-    public LoadBalancer getOrCreateLoadBalancerFor(String application) {
+    LoadBalancer getOrCreateLoadBalancerFor(String application) {
         return new LoadBalancer(application, 80, application + "-lb", application);
     }
 
