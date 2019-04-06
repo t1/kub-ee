@@ -37,7 +37,7 @@ public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
     private static final String CLUSTER_CONFIG_ARG = "--cluster-config=";
     private static final String INGRESS_CONFIG_ARG = "--ingress-config=";
-    private static final String DOCKER_COMPOSE_CONFIG_ARG = "--docker-compose-config=";
+    private static final String DOCKER_COMPOSE_CONFIG_ARG = "--docker-compose-dir=";
 
     private static final Path DEFAULT_INGRESS_CONFIG_PATH = Paths.get("/usr/local/etc/nginx/nginx.conf");
     private static final int POLL_TIMEOUT = 100;
@@ -45,7 +45,7 @@ public class ClusterConfigService {
     public static void main(String[] args) {
         Path clusterConfigPath = null;
         Path ingressConfigPath = DEFAULT_INGRESS_CONFIG_PATH;
-        Path dockerComposeConfigPath = null;
+        Path dockerComposeDir = null;
         boolean once = false;
         for (String arg : args) {
             if (arg.equals(ONCE_ARG))
@@ -55,24 +55,24 @@ public class ClusterConfigService {
             if (arg.startsWith(INGRESS_CONFIG_ARG))
                 ingressConfigPath = Paths.get(arg.substring(INGRESS_CONFIG_ARG.length()));
             if (arg.startsWith(DOCKER_COMPOSE_CONFIG_ARG))
-                dockerComposeConfigPath = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
+                dockerComposeDir = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
         }
-        if (clusterConfigPath == null || dockerComposeConfigPath == null) {
+        if (clusterConfigPath == null || dockerComposeDir == null) {
             System.err.println("Usage: `--cluster-config=<path>`: with the <path> to the `cluster-config.yaml`");
             System.exit(1);
         }
         System.out.println("Start ClusterConfigService for " + clusterConfigPath);
-        ClusterReconditioner reconditioner = buildReconditioner(clusterConfigPath, ingressConfigPath, dockerComposeConfigPath);
+        ClusterReconditioner reconditioner = buildReconditioner(clusterConfigPath, ingressConfigPath, dockerComposeDir);
         new ClusterConfigService(reconditioner, clusterConfigPath, !once).run();
     }
 
-    private static ClusterReconditioner buildReconditioner(Path clusterConfigPath, Path ingressConfigPath, Path dockerComposeConfigPath) {
+    private static ClusterReconditioner buildReconditioner(Path clusterConfigPath, Path ingressConfigPath, Path dockerComposeDir) {
         Consumer<String> note = System.out::println;
         Ingress ingress = new Ingress(ingressConfigPath, note);
         List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
         Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
         for (Cluster cluster : clusters) {
-            containerStatuses.put(cluster, new ClusterStatus(note, cluster, dockerComposeConfigPath));
+            containerStatuses.put(cluster, new ClusterStatus(note, cluster, dockerComposeDir));
         }
         return new ClusterReconditioner(containerStatuses, ingress);
     }

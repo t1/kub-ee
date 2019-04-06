@@ -36,7 +36,7 @@ class ClusterStatusTest {
     private static final Endpoint WORKER5 = new Endpoint("worker3", 32773);
     private static final List<Endpoint> WORKERS = asList(WORKER1, WORKER2, WORKER3, WORKER4, WORKER5);
 
-    private final Path dockerComposeConfigPath = Paths.get("src/test/docker/docker-compose.yaml");
+    private final Path dockerComposeDir = Paths.get("src/test/docker/");
 
     private final ProcessInvoker originalProcessInvoker = ProcessInvoker.INSTANCE;
     private final ProcessInvoker proc = mock(ProcessInvoker.class);
@@ -53,11 +53,11 @@ class ClusterStatusTest {
             given(proc.invoke("docker", "ps", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + SLOT.getHttp()))
                 .willReturn("0.0.0.0:" + workers[i].getPort() + "->" + SLOT.getHttp() + "/tcp\tdocker_worker_" + (i + 1));
         }
-        given(proc.invoke(dockerComposeConfigPath.getParent(), "docker-compose", "ps", "-q", "worker"))
+        given(proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", "worker"))
             .willReturn(join("\n", containerIds));
-        given(proc.invoke(eq(dockerComposeConfigPath), eq("docker-compose"), eq("up"), eq("--detach"), eq("--scale"), anyString()))
+        given(proc.invoke(eq(dockerComposeDir), eq("docker-compose"), eq("up"), eq("--detach"), eq("--scale"), anyString()))
             .will(i -> {
-                String scaleExpression = i.getArgument(5); // "worker=3"
+                String scaleExpression = i.getArgument(5);
                 assertThat(scaleExpression).startsWith("worker=");
                 int scale = Integer.parseInt(scaleExpression.substring(7));
                 givenContainers(WORKERS.subList(0, scale).toArray(new Endpoint[0]));
@@ -66,7 +66,7 @@ class ClusterStatusTest {
     }
 
     private ClusterStatus whenStatus() {
-        return new ClusterStatus(System.out::println, CLUSTER, dockerComposeConfigPath);
+        return new ClusterStatus(System.out::println, CLUSTER, dockerComposeDir);
     }
 
     @Test void shouldGetOneEndpoint() {

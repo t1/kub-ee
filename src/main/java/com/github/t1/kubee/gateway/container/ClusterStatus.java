@@ -24,18 +24,18 @@ public class ClusterStatus {
     private final Consumer<String> note;
     private final Cluster cluster;
     private final ProcessInvoker proc;
-    private final Path dockerComposeConfigPath;
+    private final Path dockerComposeDir;
     private final List<Endpoint> actualContainers;
 
     public ClusterStatus(
         @NonNull Consumer<String> note,
         @NonNull Cluster cluster,
-        @NonNull Path dockerComposeConfigPath
+        @NonNull Path dockerComposeDir
     ) {
         this.note = note;
         this.cluster = cluster;
         this.proc = ProcessInvoker.INSTANCE;
-        this.dockerComposeConfigPath = dockerComposeConfigPath;
+        this.dockerComposeDir = dockerComposeDir;
         this.actualContainers = readDockerStatus(cluster);
     }
 
@@ -47,7 +47,7 @@ public class ClusterStatus {
     }
 
     private List<String> readDockerComposeProcessIdsFor(String name) {
-        String output = proc.invoke(dockerComposeConfigPath.getParent(), "docker-compose", "ps", "-q", name);
+        String output = proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", name);
         return Arrays.asList(output.split("\n"));
     }
 
@@ -90,7 +90,7 @@ public class ClusterStatus {
     private void scale(String name, int count) {
         note.accept("Scale '" + name + "' from " + actualContainers.size() + " to " + count);
         String scaleExpression = name + "=" + count;
-        proc.invoke(dockerComposeConfigPath, "docker-compose", "up", "--detach", "--scale", scaleExpression);
+        proc.invoke(dockerComposeDir, "docker-compose", "up", "--detach", "--scale", scaleExpression);
         actualContainers.clear();
         actualContainers.addAll(readDockerStatus(cluster));
     }
