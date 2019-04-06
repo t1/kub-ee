@@ -2,7 +2,7 @@ package com.github.t1.kubee.tools.cli.config;
 
 import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.control.ClusterReconditioner;
-import com.github.t1.kubee.gateway.container.Status;
+import com.github.t1.kubee.gateway.container.ClusterStatus;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.model.Cluster;
 import lombok.AllArgsConstructor;
@@ -70,9 +70,9 @@ public class ClusterConfigService {
         Consumer<String> note = System.out::println;
         Ingress ingress = new Ingress(ingressConfigPath, note);
         List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
-        Map<Cluster, Status> containerStatuses = new LinkedHashMap<>();
+        Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
         for (Cluster cluster : clusters) {
-            containerStatuses.put(cluster, new Status(note, cluster, dockerComposeConfigPath));
+            containerStatuses.put(cluster, new ClusterStatus(note, cluster, dockerComposeConfigPath));
         }
         return new ClusterReconditioner(containerStatuses, ingress);
     }

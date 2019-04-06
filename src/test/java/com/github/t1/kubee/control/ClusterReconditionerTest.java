@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.container.Status;
+import com.github.t1.kubee.gateway.container.ClusterStatus;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
@@ -30,7 +30,7 @@ class ClusterReconditionerTest {
     private static final Endpoint WORKER03 = new Endpoint("worker03", 10003);
 
 
-    // <editor-fold desc="Cluster">
+    // <editor-fold desc="Cluster Config">
     private static final Slot SLOT = Slot.builder().name("0").http(8080).https(8443).build();
     private Cluster cluster = null;
     private final List<ClusterNode> nodes = new ArrayList<>();
@@ -51,14 +51,14 @@ class ClusterReconditionerTest {
     // </editor-fold>
 
 
-    // <editor-fold desc="Container">
-    private final Status status = new StatusMock();
+    // <editor-fold desc="Cluster Status">
+    private final ClusterStatus clusterStatus = new ClusterStatusMock();
     private final List<Endpoint> containers = new ArrayList<>();
     private final List<Endpoint> containersStarted = new ArrayList<>();
     private final List<Endpoint> containersStopped = new ArrayList<>();
     private int nextPort = 30000;
 
-    private class StatusMock extends Status {
+    private class ClusterStatusMock extends ClusterStatus {
         @Override public int start(ClusterNode node) {
             containers.add(node.endpoint());
             containersStarted.add(node.endpoint());
@@ -219,7 +219,7 @@ class ClusterReconditionerTest {
 
 
     private void recondition() {
-        new ClusterReconditioner(singletonMap(cluster, status), ingress).run();
+        new ClusterReconditioner(singletonMap(cluster, clusterStatus), ingress).run();
     }
 
 

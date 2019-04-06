@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.container.Status;
+import com.github.t1.kubee.gateway.container.ClusterStatus;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @RequiredArgsConstructor
 public class ClusterReconditioner implements Runnable {
-    private final Map<Cluster, Status> clusters;
+    private final Map<Cluster, ClusterStatus> clusters;
     private final Ingress ingress;
 
     @Override public void run() {
@@ -28,16 +28,16 @@ public class ClusterReconditioner implements Runnable {
         }
     }
 
-    private void reconditionCluster(Cluster cluster, Status status) {
-        cluster.nodes().forEach(node -> reconditionReverseProxy(node, status));
-        cluster.lastNodes().forEach(node -> new NodeCleanup(status, node.next()).run());
-        reconditionLoadBalancers(status);
+    private void reconditionCluster(Cluster cluster, ClusterStatus clusterStatus) {
+        cluster.nodes().forEach(node -> reconditionReverseProxy(node, clusterStatus));
+        cluster.lastNodes().forEach(node -> new NodeCleanup(clusterStatus, node.next()).run());
+        reconditionLoadBalancers(clusterStatus);
     }
 
-    private void reconditionReverseProxy(ClusterNode node, Status status) {
-        Integer actualPort = status.port(node.endpoint().getHost());
+    private void reconditionReverseProxy(ClusterNode node, ClusterStatus clusterStatus) {
+        Integer actualPort = clusterStatus.port(node.endpoint().getHost());
         if (actualPort == null) {
-            actualPort = status.start(node);
+            actualPort = clusterStatus.start(node);
         }
         ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
         if (reverseProxy.getPort() != actualPort) {
@@ -45,18 +45,18 @@ public class ClusterReconditioner implements Runnable {
         }
     }
 
-    private void reconditionLoadBalancers(Status status) {
+    private void reconditionLoadBalancers(ClusterStatus clusterStatus) {
         ingress.loadBalancers().forEach(loadBalancer -> {
-            reconditionLoadBalancer(loadBalancer, status);
-            status.endpoints()
+            reconditionLoadBalancer(loadBalancer, clusterStatus);
+            clusterStatus.endpoints()
                 .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
                 .forEach(loadBalancer::addOrUpdateEndpoint);
         });
     }
 
-    private void reconditionLoadBalancer(LoadBalancer loadBalancer, Status status) {
+    private void reconditionLoadBalancer(LoadBalancer loadBalancer, ClusterStatus clusterStatus) {
         for (Endpoint hostPort : loadBalancer.getEndpoints()) {
-            Integer actualPort = status.port(hostPort.getHost());
+            Integer actualPort = clusterStatus.port(hostPort.getHost());
             if (actualPort == null)
                 continue; // TODO
             if (hostPort.getPort() != actualPort) {
@@ -67,14 +67,14 @@ public class ClusterReconditioner implements Runnable {
 
     @RequiredArgsConstructor
     private class NodeCleanup implements Runnable {
-        private final Status status;
+        private final ClusterStatus clusterStatus;
         private final ClusterNode node;
         private boolean lookForMore = false;
 
         @Override public void run() {
-            Integer port = status.port(node.host());
+            Integer port = clusterStatus.port(node.host());
             if (port != null) {
-                status.stop(node.endpoint().withPort(port));
+                clusterStatus.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
             if (ingress.hasReverseProxyFor(node)) {
@@ -91,7 +91,7 @@ public class ClusterReconditioner implements Runnable {
             });
 
             if (lookForMore) {
-                new NodeCleanup(status, node.next()).run();
+                new NodeCleanup(clusterStatus, node.next()).run();
             }
         }
     }

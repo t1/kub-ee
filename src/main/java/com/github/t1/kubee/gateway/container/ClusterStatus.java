@@ -19,13 +19,13 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 @NoArgsConstructor(force = true)
-public class Status {
+public class ClusterStatus {
     private final Consumer<String> note;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;
     private final List<Endpoint> actualContainers;
 
-    public Status(
+    public ClusterStatus(
         @NonNull Consumer<String> note,
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeConfigPath

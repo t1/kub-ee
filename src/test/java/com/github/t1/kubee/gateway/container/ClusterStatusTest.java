@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-class StatusTest {
+class ClusterStatusTest {
     private static final Slot SLOT = Slot.builder().build();
     private static final Stage STAGE = Stage.builder().name("PROD").count(3).build();
     private static final Cluster CLUSTER = Cluster.builder().host("worker").slot(SLOT).stage(STAGE).build();
@@ -51,8 +51,8 @@ class StatusTest {
             .willReturn(join("\n", containerIds));
     }
 
-    private Status whenStatus() {
-        return new Status(System.out::println, CLUSTER, dockerComposeConfigPath);
+    private ClusterStatus whenStatus() {
+        return new ClusterStatus(System.out::println, CLUSTER, dockerComposeConfigPath);
     }
 
     @Test void shouldGetOneEndpoint() {
