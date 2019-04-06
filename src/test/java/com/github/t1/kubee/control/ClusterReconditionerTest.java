@@ -1,5 +1,6 @@
 package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.gateway.container.Status;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
@@ -9,28 +10,19 @@ import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.model.Slot;
 import com.github.t1.kubee.model.Stage;
-import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import lombok.Getter;
 import lombok.Setter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Stream;
 
-import static java.lang.String.join;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 
 class ClusterReconditionerTest {
     private static final Endpoint WORKER01 = new Endpoint("worker01", 10001);
@@ -60,24 +52,39 @@ class ClusterReconditionerTest {
 
 
     // <editor-fold desc="Container">
-    private final Path dockerComposeConfigPath = Paths.get("src/test/docker/docker-compose.yaml");
-    private final ProcessInvoker originalProcessInvoker = ProcessInvoker.INSTANCE;
-    private final ProcessInvoker proc = mock(ProcessInvoker.class);
+    private final Status status = new StatusMock();
+    private final List<Endpoint> containers = new ArrayList<>();
+    private final List<Endpoint> containersStarted = new ArrayList<>();
+    private final List<Endpoint> containersStopped = new ArrayList<>();
+    private int nextPort = 30000;
 
-    @BeforeEach void setUpProcessInvoker() { ProcessInvoker.INSTANCE = proc; }
-
-    @AfterEach void tearDownProcessInvoker() { ProcessInvoker.INSTANCE = originalProcessInvoker; }
-
-    private void givenContainers(Endpoint... workers) {
-        List<String> containerIds = new ArrayList<>();
-        for (int i = 0; i < workers.length; i++) {
-            String containerId = UUID.randomUUID().toString();
-            containerIds.add(containerId);
-            given(proc.invoke("docker", "ps", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=8080"))
-                .willReturn("0.0.0.0:" + workers[i].getPort() + "->8080/tcp\tdocker_worker_" + (i + 1));
+    private class StatusMock extends Status {
+        @Override public int start(ClusterNode node) {
+            containers.add(node.endpoint());
+            containersStarted.add(node.endpoint());
+            return nextPort++;
         }
-        given(proc.invoke(dockerComposeConfigPath.getParent(), "docker-compose", "ps", "-q", "worker"))
-            .willReturn(join("\n", containerIds));
+
+        @Override public Integer port(String host) {
+            for (Endpoint endpoint : containers)
+                if (endpoint.getHost().equals(host))
+                    return endpoint.getPort();
+            return null;
+        }
+
+        @Override public Stream<Endpoint> endpoints() { return containers.stream(); }
+
+        @Override public void stop(Endpoint endpoint) {
+            containers.remove(endpoint);
+            containersStopped.add(endpoint);
+        }
+    }
+
+    private void givenContainers(Endpoint... workers) { containers.addAll(asList(workers)); }
+
+    private void assertContainersUnchanged() {
+        assertThat(containersStarted).isEmpty();
+        assertThat(containersStopped).isEmpty();
     }
     // </editor-fold>
 
@@ -212,7 +219,7 @@ class ClusterReconditionerTest {
 
 
     private void recondition() {
-        new ClusterReconditioner(System.out::println, singletonList(cluster), dockerComposeConfigPath, ingress).run();
+        new ClusterReconditioner(singletonMap(cluster, status), ingress).run();
     }
 
 
@@ -224,8 +231,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(false, WORKER01);
-        // assertThat(containersStarted).isEmpty();
-        // assertThat(containersStopped).isEmpty();
+        assertContainersUnchanged();
     }
 
     @Test void shouldUpdatePortOfWorker01() {
@@ -237,7 +243,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, movedEndpoint);
-        assertThat(loadBalancer.getEndpoints()).containsExactly(movedEndpoint);
+        assertContainersUnchanged();
     }
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
@@ -249,6 +255,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, WORKER01, movedEndpoint, WORKER03);
+        assertContainersUnchanged();
     }
 
     @Test void shouldAddWorkerNodesServer() {
@@ -259,9 +266,21 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, WORKER01, WORKER02);
+        assertContainersUnchanged();
     }
 
-    @Test void shouldAddUpstream() {
+    @Test void shouldAddNodeToEmptyIngress() {
+        givenClusterWithNodeCount(1);
+        givenContainers(WORKER01);
+        givenIngress();
+
+        recondition();
+
+        assertIngress(true, WORKER01);
+        assertContainersUnchanged();
+    }
+
+    @Test void shouldAddNodeToIngress() {
         givenClusterWithNodeCount(2);
         givenContainers(WORKER01, WORKER02);
         givenIngress(WORKER01);
@@ -269,9 +288,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, WORKER01, WORKER02);
+        assertContainersUnchanged();
     }
 
-    @Test void shouldRemoveUpstream() {
+    @Test void shouldRemoveNodeFromIngress() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01);
         givenIngress(WORKER01, WORKER02);
@@ -279,9 +299,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, WORKER01);
+        assertContainersUnchanged();
     }
 
-    @Test void shouldRemoveTwoUpstreams() {
+    @Test void shouldRemoveTwoNodesFromIngress() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01);
         givenIngress(WORKER01, WORKER02, WORKER03);
@@ -289,6 +310,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertIngress(true, WORKER01);
+        assertContainersUnchanged();
     }
 
     // TODO create dummy-app server

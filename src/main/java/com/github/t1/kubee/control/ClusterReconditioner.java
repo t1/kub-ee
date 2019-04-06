@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.container.ContainerStatus;
+import com.github.t1.kubee.gateway.container.Status;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
@@ -9,9 +9,7 @@ import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
 import lombok.RequiredArgsConstructor;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.function.Consumer;
+import java.util.Map;
 
 /**
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale it up or down as specified.
@@ -19,12 +17,8 @@ import java.util.function.Consumer;
  */
 @RequiredArgsConstructor
 public class ClusterReconditioner implements Runnable {
-    private final Consumer<String> note;
-    private final List<Cluster> clusters;
-    private final Path dockerComposeConfigPath;
+    private final Map<Cluster, Status> clusters;
     private final Ingress ingress;
-
-    private ContainerStatus containerStatus;
 
     @Override public void run() {
         clusters.forEach(this::reconditionCluster);
@@ -34,17 +28,16 @@ public class ClusterReconditioner implements Runnable {
         }
     }
 
-    private void reconditionCluster(Cluster cluster) {
-        this.containerStatus = new ContainerStatus(note, cluster, dockerComposeConfigPath);
-        cluster.nodes().forEach(this::reconditionReverseProxy);
-        cluster.lastNodes().forEach(node -> new NodeCleanup(node.next()).run());
-        reconditionLoadBalancers();
+    private void reconditionCluster(Cluster cluster, Status status) {
+        cluster.nodes().forEach(node -> reconditionReverseProxy(node, status));
+        cluster.lastNodes().forEach(node -> new NodeCleanup(status, node.next()).run());
+        reconditionLoadBalancers(status);
     }
 
-    private void reconditionReverseProxy(ClusterNode node) {
-        Integer actualPort = containerStatus.actualPort(node.endpoint().getHost());
+    private void reconditionReverseProxy(ClusterNode node, Status status) {
+        Integer actualPort = status.port(node.endpoint().getHost());
         if (actualPort == null) {
-            actualPort = containerStatus.start(node);
+            actualPort = status.start(node);
         }
         ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
         if (reverseProxy.getPort() != actualPort) {
@@ -52,18 +45,18 @@ public class ClusterReconditioner implements Runnable {
         }
     }
 
-    private void reconditionLoadBalancers() {
+    private void reconditionLoadBalancers(Status status) {
         ingress.loadBalancers().forEach(loadBalancer -> {
-            reconditionLoadBalancer(loadBalancer);
-            containerStatus.actual()
+            reconditionLoadBalancer(loadBalancer, status);
+            status.endpoints()
                 .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
                 .forEach(loadBalancer::addOrUpdateEndpoint);
         });
     }
 
-    private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
+    private void reconditionLoadBalancer(LoadBalancer loadBalancer, Status status) {
         for (Endpoint hostPort : loadBalancer.getEndpoints()) {
-            Integer actualPort = containerStatus.actualPort(hostPort.getHost());
+            Integer actualPort = status.port(hostPort.getHost());
             if (actualPort == null)
                 continue; // TODO
             if (hostPort.getPort() != actualPort) {
@@ -74,13 +67,14 @@ public class ClusterReconditioner implements Runnable {
 
     @RequiredArgsConstructor
     private class NodeCleanup implements Runnable {
+        private final Status status;
         private final ClusterNode node;
         private boolean lookForMore = false;
 
         @Override public void run() {
-            Integer port = containerStatus.actualPort(node.host());
+            Integer port = status.port(node.host());
             if (port != null) {
-                containerStatus.stop(node.endpoint().withPort(port));
+                status.stop(node.endpoint().withPort(port));
                 lookForMore = true;
             }
             if (ingress.hasReverseProxyFor(node)) {
@@ -97,7 +91,7 @@ public class ClusterReconditioner implements Runnable {
             });
 
             if (lookForMore) {
-                new NodeCleanup(node.next()).run();
+                new NodeCleanup(status, node.next()).run();
             }
         }
     }

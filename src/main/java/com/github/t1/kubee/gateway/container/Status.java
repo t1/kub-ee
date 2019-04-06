@@ -4,6 +4,7 @@ import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.nio.file.Path;
@@ -17,13 +18,14 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-public class ContainerStatus {
+@NoArgsConstructor(force = true)
+public class Status {
     private final Consumer<String> note;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;
     private final List<Endpoint> actualContainers;
 
-    public ContainerStatus(
+    public Status(
         @NonNull Consumer<String> note,
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeConfigPath
@@ -71,15 +73,15 @@ public class ContainerStatus {
         return -1;
     }
 
-    public Integer actualPort(String host) {
-        return actualContainers.stream()
+    public Integer port(String host) {
+        return endpoints()
             .filter(hostPort -> hostPort.getHost().equals(host))
             .findFirst()
             .map(Endpoint::getPort)
             .orElse(null);
     }
 
-    public Stream<Endpoint> actual() { return actualContainers.stream(); }
+    public Stream<Endpoint> endpoints() { return actualContainers.stream(); }
 
     public void stop(Endpoint hostPort) {
         note.accept("Stopping excess container " + hostPort);

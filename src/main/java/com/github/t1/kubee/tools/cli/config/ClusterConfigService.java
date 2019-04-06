@@ -2,6 +2,7 @@ package com.github.t1.kubee.tools.cli.config;
 
 import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.control.ClusterReconditioner;
+import com.github.t1.kubee.gateway.container.Status;
 import com.github.t1.kubee.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.model.Cluster;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,9 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -67,7 +70,11 @@ public class ClusterConfigService {
         Consumer<String> note = System.out::println;
         Ingress ingress = new Ingress(ingressConfigPath, note);
         List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
-        return new ClusterReconditioner(note, clusters, dockerComposeConfigPath, ingress);
+        Map<Cluster, Status> containerStatuses = new LinkedHashMap<>();
+        for (Cluster cluster : clusters) {
+            containerStatuses.put(cluster, new Status(note, cluster, dockerComposeConfigPath));
+        }
+        return new ClusterReconditioner(containerStatuses, ingress);
     }
 
     private final ClusterReconditioner reconditioner;
