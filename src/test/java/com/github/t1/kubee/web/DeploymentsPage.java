@@ -1,7 +1,7 @@
 package com.github.t1.kubee.web;
 
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.testtools.AbstractPage;
 import com.github.t1.testtools.WebDriverRule;
 import lombok.extern.slf4j.Slf4j;

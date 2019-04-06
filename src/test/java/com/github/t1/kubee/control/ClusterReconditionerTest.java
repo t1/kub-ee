@@ -1,15 +1,15 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.container.ClusterStatus;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
-import com.github.t1.kubee.gateway.loadbalancer.ReloadMock;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.Endpoint;
-import com.github.t1.kubee.model.Slot;
-import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.LoadBalancer;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.ReverseProxy;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.ReloadMock;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.Endpoint;
+import com.github.t1.kubee.entity.Slot;
+import com.github.t1.kubee.entity.Stage;
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.jupiter.api.Test;

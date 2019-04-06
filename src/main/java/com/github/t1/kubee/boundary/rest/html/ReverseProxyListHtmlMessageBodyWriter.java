@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.entity.ReverseProxy;
 import com.github.t1.kubee.tools.html.Html;
 import com.github.t1.kubee.tools.html.Panel;
 import com.github.t1.kubee.tools.html.Table;

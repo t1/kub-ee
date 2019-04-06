@@ -1,6 +1,6 @@
 package com.github.t1.kubee.tools;
 
-import com.github.t1.kubee.model.Endpoint;
+import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.nginx.HostPort;
 
 public class Tools {

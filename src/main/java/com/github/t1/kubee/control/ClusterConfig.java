@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
 import lombok.EqualsAndHashCode;
 

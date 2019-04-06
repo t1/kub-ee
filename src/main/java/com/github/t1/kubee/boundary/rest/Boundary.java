@@ -1,15 +1,15 @@
 package com.github.t1.kubee.boundary.rest;
 
 import com.github.t1.kubee.control.Controller;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.Deployment;
-import com.github.t1.kubee.model.DeploymentId;
-import com.github.t1.kubee.model.LoadBalancer;
-import com.github.t1.kubee.model.ReverseProxy;
-import com.github.t1.kubee.model.Slot;
-import com.github.t1.kubee.model.Stage;
-import com.github.t1.kubee.model.Version;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.Deployment;
+import com.github.t1.kubee.entity.DeploymentId;
+import com.github.t1.kubee.entity.LoadBalancer;
+import com.github.t1.kubee.entity.ReverseProxy;
+import com.github.t1.kubee.entity.Slot;
+import com.github.t1.kubee.entity.Stage;
+import com.github.t1.kubee.entity.Version;
 import com.github.t1.log.Logged;
 import lombok.Builder;
 import lombok.Data;

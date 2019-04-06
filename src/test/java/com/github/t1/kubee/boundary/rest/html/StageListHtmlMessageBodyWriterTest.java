@@ -2,7 +2,7 @@ package com.github.t1.kubee.boundary.rest.html;
 
 import com.github.t1.kubee.boundary.rest.Boundary;
 import com.github.t1.kubee.boundary.rest.BoundaryMockFactory;
-import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.entity.Stage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;

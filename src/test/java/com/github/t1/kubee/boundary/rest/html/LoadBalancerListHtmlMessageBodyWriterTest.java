@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.LoadBalancer;
+import com.github.t1.kubee.entity.LoadBalancer;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;

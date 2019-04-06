@@ -1,7 +1,7 @@
 package com.github.t1.kubee.web;
 
 import com.github.t1.kubee.AbstractIT;
-import com.github.t1.kubee.model.ClusterNode;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.testtools.OrderedJUnitRunner;
 import com.github.t1.testtools.WebDriverRule;
 import lombok.extern.java.Log;

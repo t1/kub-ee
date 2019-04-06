@@ -1,7 +1,7 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterTest;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterTest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;

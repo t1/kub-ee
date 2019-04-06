@@ -1,12 +1,12 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.container.ClusterStatus;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress.LoadBalancer;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress.ReverseProxy;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.Endpoint;
+import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.LoadBalancer;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.ReverseProxy;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.Endpoint;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;

@@ -1,10 +1,10 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.deployer.DeployerGateway;
-import com.github.t1.kubee.gateway.health.HealthGateway;
-import com.github.t1.kubee.gateway.loadbalancer.IngressGateway;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
+import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.IngressGateway;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.Deployment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,9 +13,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static com.github.t1.kubee.gateway.loadbalancer.IngressGateway.NGINX_ETC;
-import static com.github.t1.kubee.model.ClusterTest.CLUSTERS;
-import static com.github.t1.kubee.model.ClusterTest.DEV;
+import static com.github.t1.kubee.boundary.gateway.loadbalancer.IngressGateway.NGINX_ETC;
+import static com.github.t1.kubee.entity.ClusterTest.CLUSTERS;
+import static com.github.t1.kubee.entity.ClusterTest.DEV;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;

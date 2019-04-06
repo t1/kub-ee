@@ -1,6 +1,6 @@
 package com.github.t1.kubee.web;
 
-import com.github.t1.kubee.model.VersionStatus;
+import com.github.t1.kubee.entity.VersionStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.openqa.selenium.By;
@@ -8,9 +8,9 @@ import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
-import static com.github.t1.kubee.model.VersionStatus.deployed;
-import static com.github.t1.kubee.model.VersionStatus.undeployed;
-import static com.github.t1.kubee.model.VersionStatus.undeploying;
+import static com.github.t1.kubee.entity.VersionStatus.deployed;
+import static com.github.t1.kubee.entity.VersionStatus.undeployed;
+import static com.github.t1.kubee.entity.VersionStatus.undeploying;
 import static com.github.t1.kubee.web.VersionCell.closed;
 import static com.github.t1.kubee.web.VersionMenuItem.versionMenuItem;
 import static java.util.Arrays.asList;

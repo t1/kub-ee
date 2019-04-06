@@ -1,12 +1,12 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.ClusterTest;
-import com.github.t1.kubee.model.Deployment;
-import com.github.t1.kubee.model.Deployment.DeploymentBuilder;
-import com.github.t1.kubee.model.Slot;
-import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.ClusterTest;
+import com.github.t1.kubee.entity.Deployment;
+import com.github.t1.kubee.entity.Deployment.DeploymentBuilder;
+import com.github.t1.kubee.entity.Slot;
+import com.github.t1.kubee.entity.Stage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

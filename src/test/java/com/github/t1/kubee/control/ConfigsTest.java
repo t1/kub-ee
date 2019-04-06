@@ -1,15 +1,15 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.LoadBalancer;
-import com.github.t1.kubee.model.ReverseProxy;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.LoadBalancer;
+import com.github.t1.kubee.entity.ReverseProxy;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.model.ClusterTest.CLUSTERS;
-import static com.github.t1.kubee.model.ClusterTest.DEV;
+import static com.github.t1.kubee.entity.ClusterTest.CLUSTERS;
+import static com.github.t1.kubee.entity.ClusterTest.DEV;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 

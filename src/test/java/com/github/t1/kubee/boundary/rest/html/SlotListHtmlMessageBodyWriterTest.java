@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.Slot;
+import com.github.t1.kubee.entity.Slot;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
@@ -9,8 +9,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import static com.github.t1.kubee.model.ClusterTest.SLOT_0;
-import static com.github.t1.kubee.model.ClusterTest.SLOT_1;
+import static com.github.t1.kubee.entity.ClusterTest.SLOT_0;
+import static com.github.t1.kubee.entity.ClusterTest.SLOT_1;
 import static com.github.t1.kubee.tools.html.Html.BOOTSTRAP_CSS;
 import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
 import static java.nio.charset.StandardCharsets.UTF_8;

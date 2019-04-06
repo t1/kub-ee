@@ -1,10 +1,10 @@
 package com.github.t1.kubee.boundary.rest.html;
 
 import com.github.t1.kubee.control.Controller;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterNode;
-import com.github.t1.kubee.model.Deployment;
-import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.Deployment;
+import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.html.CustomComponent;
 import com.github.t1.kubee.tools.html.Html;
 import com.github.t1.kubee.tools.html.Table;

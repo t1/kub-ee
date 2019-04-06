@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.Version;
+import com.github.t1.kubee.entity.Version;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.NotFoundException;
@@ -8,8 +8,8 @@ import javax.ws.rs.ProcessingException;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import static com.github.t1.kubee.model.VersionStatus.deployed;
-import static com.github.t1.kubee.model.VersionStatus.undeployed;
+import static com.github.t1.kubee.entity.VersionStatus.deployed;
+import static com.github.t1.kubee.entity.VersionStatus.undeployed;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;

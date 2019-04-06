@@ -1,10 +1,10 @@
 package com.github.t1.kubee.boundary.cli.config;
 
+import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress;
 import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.control.ClusterReconditioner;
-import com.github.t1.kubee.gateway.container.ClusterStatus;
-import com.github.t1.kubee.gateway.loadbalancer.Ingress;
-import com.github.t1.kubee.model.Cluster;
+import com.github.t1.kubee.entity.Cluster;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
 

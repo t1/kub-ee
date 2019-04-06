@@ -1,11 +1,11 @@
 package com.github.t1.kubee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
 import com.github.t1.kubee.control.ClusterConfig;
-import com.github.t1.kubee.gateway.deployer.DeployerMock;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.ClusterTest;
-import com.github.t1.kubee.model.Stage;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterTest;
+import com.github.t1.kubee.entity.Stage;
 import com.github.t1.testtools.WildflySwarmTestRule;
 import io.dropwizard.testing.junit.DropwizardClientRule;
 import lombok.SneakyThrows;

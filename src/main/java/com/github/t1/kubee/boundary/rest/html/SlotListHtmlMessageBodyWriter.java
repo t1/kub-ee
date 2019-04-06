@@ -1,6 +1,6 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.model.Slot;
+import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.tools.html.Html;
 import com.github.t1.kubee.tools.html.Table;
 import com.github.t1.kubee.tools.html.Table.TableRow;

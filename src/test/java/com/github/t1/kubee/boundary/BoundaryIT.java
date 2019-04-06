@@ -2,8 +2,8 @@ package com.github.t1.kubee.boundary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.t1.kubee.AbstractIT;
-import com.github.t1.kubee.model.Cluster;
-import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.testtools.OrderedJUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;

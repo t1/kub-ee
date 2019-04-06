@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.model.Deployment;
+import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import org.junit.jupiter.api.Test;
 

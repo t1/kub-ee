@@ -1,8 +1,8 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.gateway.deployer.DeployerGateway;
-import com.github.t1.kubee.model.Audits;
-import com.github.t1.kubee.model.DeploymentId;
+import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
+import com.github.t1.kubee.entity.Audits;
+import com.github.t1.kubee.entity.DeploymentId;
 import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
