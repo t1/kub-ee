@@ -49,7 +49,7 @@ public class ClusterConfig {
         return Paths.get(root, "cluster-config.yaml");
     }
 
-    static List<Cluster> readFrom(Path path) {
+    public static List<Cluster> readFrom(Path path) {
         try (InputStream stream = Files.newInputStream(path)) {
             return readFrom(stream);
         } catch (IOException e) {

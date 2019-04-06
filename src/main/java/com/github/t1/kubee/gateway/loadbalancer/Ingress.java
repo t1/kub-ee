@@ -8,7 +8,9 @@ import com.github.t1.nginx.NginxConfig;
 import com.github.t1.nginx.NginxConfig.NginxServer;
 import com.github.t1.nginx.NginxConfig.NginxServerLocation;
 import com.github.t1.nginx.NginxConfig.NginxUpstream;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -28,18 +30,19 @@ import static java.util.stream.Collectors.toList;
  * <li><b>Reverse Proxy</b>: a single node in a cluster exposed to the exterior.</li>
  * </ul>
  */
+@NoArgsConstructor(force = true)
 public class Ingress {
     static String toString(Stream<ReverseProxy> reverseProxies) {
         return reverseProxies.map(ReverseProxy::name).collect(joining(", ", "[", "]"));
     }
 
-    private final Consumer<String> note;
-    private final NginxConfig nginxConfig;
+    private final @NotNull Consumer<String> note;
+    private final @NotNull NginxConfig nginxConfig;
 
-    private final Path configPath;
-    private final String original;
+    private final @NotNull Path configPath;
+    private final @NotNull String original;
 
-    public Ingress(Path configPath, Consumer<String> note) {
+    public Ingress(Path configPath, @NotNull Consumer<String> note) {
         this.note = note;
         this.configPath = configPath;
 
@@ -148,6 +151,7 @@ public class Ingress {
         return server.location("/").orElseThrow(IllegalStateException::new).getProxyPass();
     }
 
+    @NoArgsConstructor(force = true)
     public class LoadBalancer {
         private final NginxServer server;
         private final NginxUpstream upstream;

@@ -1,9 +1,10 @@
 package com.github.t1.kubee.tools.cli.config;
 
+import com.github.t1.kubee.control.ClusterConfig;
 import com.github.t1.kubee.control.ClusterReconditioner;
+import com.github.t1.kubee.gateway.loadbalancer.Ingress;
+import com.github.t1.kubee.model.Cluster;
 import lombok.AllArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import lombok.extern.java.Log;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -27,7 +29,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * where &lt;path&gt; is the path to the <code>cluster-config.yaml</code> file to watch.
  */
 @Log
-@Setter @Accessors(chain = true)
 @AllArgsConstructor
 public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
@@ -58,19 +59,25 @@ public class ClusterConfigService {
             System.exit(1);
         }
         System.out.println("Start ClusterConfigService for " + clusterConfigPath);
-        ClusterReconditioner reconditioner = new ClusterReconditioner(System.out::println, clusterConfigPath, dockerComposeConfigPath, ingressConfigPath);
-        new ClusterConfigService(reconditioner, clusterConfigPath, !once)
-            .run();
+        ClusterReconditioner reconditioner = buildReconditioner(clusterConfigPath, ingressConfigPath, dockerComposeConfigPath);
+        new ClusterConfigService(reconditioner, clusterConfigPath, !once).run();
+    }
+
+    private static ClusterReconditioner buildReconditioner(Path clusterConfigPath, Path ingressConfigPath, Path dockerComposeConfigPath) {
+        Consumer<String> note = System.out::println;
+        Ingress ingress = new Ingress(ingressConfigPath, note);
+        List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
+        return new ClusterReconditioner(note, clusters, dockerComposeConfigPath, ingress);
     }
 
     private final ClusterReconditioner reconditioner;
     private final Path clusterConfigPath;
     private boolean continues;
 
-    void run() {
+    private void run() {
         try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
             clusterConfigPath.getParent().register(watcher, ENTRY_MODIFY);
-            handleChange(); // initial
+            reconditioner.run(); // initial
             while (continues) {
                 WatchKey key = watcher.poll(POLL_TIMEOUT, MILLISECONDS);
                 if (key != null) {
@@ -83,7 +90,7 @@ public class ClusterConfigService {
                             Thread.yield();
                         } else if (ENTRY_MODIFY.equals(event.kind()) && event.context().equals(clusterConfigPath.getFileName())) {
                             log.fine("handle " + event.kind() + " for " + event.context());
-                            handleChange();
+                            reconditioner.run();
                         } else {
                             log.fine("skip " + event.kind() + " for " + event.context());
                         }
@@ -103,7 +110,5 @@ public class ClusterConfigService {
         }
     }
 
-    private void handleChange() {
-        reconditioner.run();
-    }
+    void stop() { continues = false; }
 }

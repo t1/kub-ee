@@ -50,21 +50,16 @@ public class Cluster implements Comparable<Cluster> {
     }
 
 
-    public Stream<ClusterNode> lastNodes() {
-        return stages()
-            .map(stage -> stage.lastNodeIn(this));
-    }
+    public Stream<ClusterNode> lastNodes() { return stages().map(stage -> stage.lastNodeIn(this)); }
 
     public static List<Cluster> readAllFrom(YamlDocument document, Consumer<String> warnings) {
         ClusterBuilderContext context = new ClusterBuilderContext(warnings);
         return document.mapping().flatMap(context::from).collect(toList());
     }
 
-    @JsonIgnore
-    public String getSimpleName() { return hostSplit()[0]; }
+    @JsonIgnore public String getSimpleName() { return hostSplit()[0]; }
 
-    @JsonIgnore
-    public String getDomainName() { return (hostSplit().length == 1) ? "" : hostSplit()[1]; }
+    @JsonIgnore public String getDomainName() { return (hostSplit().length == 1) ? "" : hostSplit()[1]; }
 
     private String[] hostSplit() { return host.split("\\.", 2); }
 

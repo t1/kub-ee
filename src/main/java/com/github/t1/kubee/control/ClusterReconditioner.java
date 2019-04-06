@@ -10,6 +10,7 @@ import com.github.t1.kubee.model.Endpoint;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -19,17 +20,14 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class ClusterReconditioner implements Runnable {
     private final Consumer<String> note;
-    private final Path clusterConfigPath;
+    private final List<Cluster> clusters;
     private final Path dockerComposeConfigPath;
-    private final Path ingressConfigPath;
+    private final Ingress ingress;
 
     private ContainerStatus containerStatus;
-    private Ingress ingress;
 
     @Override public void run() {
-        ingress = new Ingress(ingressConfigPath, note);
-
-        ClusterConfig.readFrom(clusterConfigPath).forEach(this::reconditionCluster);
+        clusters.forEach(this::reconditionCluster);
 
         if (ingress.hasChanged()) {
             ingress.write();
