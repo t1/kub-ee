@@ -3,6 +3,7 @@ package com.github.t1.kubee.gateway.container;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.ClusterNode;
 import com.github.t1.kubee.model.Endpoint;
+import com.github.t1.kubee.model.Stage;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -21,6 +22,7 @@ import static java.util.stream.Collectors.toList;
 @NoArgsConstructor(force = true)
 public class ClusterStatus {
     private final Consumer<String> note;
+    private final Cluster cluster;
     private final ProcessInvoker proc;
     private final Path dockerComposeConfigPath;
     private final List<Endpoint> actualContainers;
@@ -31,6 +33,7 @@ public class ClusterStatus {
         @NonNull Path dockerComposeConfigPath
     ) {
         this.note = note;
+        this.cluster = cluster;
         this.proc = ProcessInvoker.INSTANCE;
         this.dockerComposeConfigPath = dockerComposeConfigPath;
         this.actualContainers = readDockerStatus(cluster);
@@ -52,7 +55,8 @@ public class ClusterStatus {
         SimpleEntry<Integer, Integer> indexToPort = readExposedPortFor(containerId, cluster.getSlot().getHttp(), cluster.getSimpleName());
         int index = indexToPort.getKey();
         int port = indexToPort.getValue();
-        return cluster.node(cluster.getStages().get(0), index).endpoint().withPort(port);
+        Stage stage = cluster.getStages().get(0); // TODO
+        return new ClusterNode(cluster, stage, index).endpoint().withPort(port);
     }
 
     private SimpleEntry<Integer, Integer> readExposedPortFor(String containerId, int publishPort, String clusterName) {
@@ -67,15 +71,9 @@ public class ClusterStatus {
     }
 
 
-    public int start(ClusterNode node) {
-        note.accept("Start missing container " + node.endpoint());
-        actualContainers.add(node.endpoint()); // TODO actually start
-        return -1;
-    }
-
     public Integer port(String host) {
         return endpoints()
-            .filter(hostPort -> hostPort.getHost().equals(host))
+            .filter(endpoint -> endpoint.getHost().equals(host))
             .findFirst()
             .map(Endpoint::getPort)
             .orElse(null);
@@ -83,8 +81,17 @@ public class ClusterStatus {
 
     public Stream<Endpoint> endpoints() { return actualContainers.stream(); }
 
-    public void stop(Endpoint hostPort) {
-        note.accept("Stopping excess container " + hostPort);
-        actualContainers.remove(hostPort); // TODO actually stop
+    public List<Endpoint> scale(Stage stage) {
+        if (actualContainers.size() != stage.getCount())
+            scale(stage.nodeBaseName(cluster), stage.getCount());
+        return actualContainers;
+    }
+
+    private void scale(String name, int count) {
+        note.accept("Scale '" + name + "' from " + actualContainers.size() + " to " + count);
+        String scaleExpression = name + "=" + count;
+        proc.invoke(dockerComposeConfigPath, "docker-compose", "up", "--detach", "--scale", scaleExpression);
+        actualContainers.clear();
+        actualContainers.addAll(readDockerStatus(cluster));
     }
 }

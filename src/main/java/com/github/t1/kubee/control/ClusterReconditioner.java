@@ -29,6 +29,7 @@ public class ClusterReconditioner implements Runnable {
     }
 
     private void reconditionCluster(Cluster cluster, ClusterStatus clusterStatus) {
+        cluster.stages().forEach(clusterStatus::scale);
         cluster.nodes().forEach(node -> reconditionReverseProxy(node, clusterStatus));
         cluster.lastNodes().forEach(node -> new NodeCleanup(clusterStatus, node.next()).run());
         reconditionLoadBalancers(clusterStatus);
@@ -36,9 +37,8 @@ public class ClusterReconditioner implements Runnable {
 
     private void reconditionReverseProxy(ClusterNode node, ClusterStatus clusterStatus) {
         Integer actualPort = clusterStatus.port(node.endpoint().getHost());
-        if (actualPort == null) {
-            actualPort = clusterStatus.start(node);
-        }
+        if (actualPort == null)
+            throw new IllegalStateException("expected " + node + " to be running");
         ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
         if (reverseProxy.getPort() != actualPort) {
             reverseProxy.setPort(actualPort);
@@ -72,11 +72,6 @@ public class ClusterReconditioner implements Runnable {
         private boolean lookForMore = false;
 
         @Override public void run() {
-            Integer port = clusterStatus.port(node.host());
-            if (port != null) {
-                clusterStatus.stop(node.endpoint().withPort(port));
-                lookForMore = true;
-            }
             if (ingress.hasReverseProxyFor(node)) {
                 lookForMore = true;
                 ingress.removeReverseProxyFor(node);

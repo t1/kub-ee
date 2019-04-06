@@ -28,6 +28,7 @@ class ClusterReconditionerTest {
     private static final Endpoint WORKER01 = new Endpoint("worker01", 10001);
     private static final Endpoint WORKER02 = new Endpoint("worker02", 10002);
     private static final Endpoint WORKER03 = new Endpoint("worker03", 10003);
+    private static final List<Endpoint> WORKERS = asList(WORKER01, WORKER02, WORKER03);
 
 
     // <editor-fold desc="Cluster Config">
@@ -54,17 +55,8 @@ class ClusterReconditionerTest {
     // <editor-fold desc="Cluster Status">
     private final ClusterStatus clusterStatus = new ClusterStatusMock();
     private final List<Endpoint> containers = new ArrayList<>();
-    private final List<Endpoint> containersStarted = new ArrayList<>();
-    private final List<Endpoint> containersStopped = new ArrayList<>();
-    private int nextPort = 30000;
 
     private class ClusterStatusMock extends ClusterStatus {
-        @Override public int start(ClusterNode node) {
-            containers.add(node.endpoint());
-            containersStarted.add(node.endpoint());
-            return nextPort++;
-        }
-
         @Override public Integer port(String host) {
             for (Endpoint endpoint : containers)
                 if (endpoint.getHost().equals(host))
@@ -74,18 +66,16 @@ class ClusterReconditionerTest {
 
         @Override public Stream<Endpoint> endpoints() { return containers.stream(); }
 
-        @Override public void stop(Endpoint endpoint) {
-            containers.remove(endpoint);
-            containersStopped.add(endpoint);
+        @Override public List<Endpoint> scale(Stage stage) {
+            while (containers.size() > stage.getCount())
+                containers.remove(containers.size() - 1);
+            for (int i = containers.size(); i < stage.getCount(); i++)
+                containers.add(WORKERS.get(i));
+            return null;
         }
     }
 
-    private void givenContainers(Endpoint... workers) { containers.addAll(asList(workers)); }
-
-    private void assertContainersUnchanged() {
-        assertThat(containersStarted).isEmpty();
-        assertThat(containersStopped).isEmpty();
-    }
+    private void givenContainers(Endpoint... endpoints) { containers.addAll(asList(endpoints)); }
     // </editor-fold>
 
 
@@ -208,11 +198,12 @@ class ClusterReconditionerTest {
     private void assertIngress(boolean written, Endpoint... endpoints) {
         if (ingressWritten != written)
             assertThat(ingressBefore).describedAs("expected ingress written " + written).isEqualTo(ingress.toString());
-        assertThat(loadBalancer.getEndpoints()).containsExactly(endpoints);
-        assertThat(reverseProxies).hasSize(endpoints.length);
+        assertThat(loadBalancer.getEndpoints()).describedAs("load balancers").containsExactly(endpoints);
+        assertThat(reverseProxies).describedAs("reverse proxies").hasSize(endpoints.length);
         for (int i = 0; i < endpoints.length; i++) {
             ReverseProxy reverseProxy = reverseProxies.get(nodes.get(i));
-            assertThat(new Endpoint(reverseProxy.name(), reverseProxy.getPort())).isEqualTo(endpoints[i]);
+            assertThat(new Endpoint(reverseProxy.name(), reverseProxy.getPort()))
+                .describedAs("reverse proxy " + i).isEqualTo(endpoints[i]);
         }
     }
     // </editor-fold>
@@ -230,8 +221,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01);
         assertIngress(false, WORKER01);
-        assertContainersUnchanged();
     }
 
     @Test void shouldUpdatePortOfWorker01() {
@@ -242,8 +233,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(movedEndpoint);
         assertIngress(true, movedEndpoint);
-        assertContainersUnchanged();
     }
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
@@ -254,8 +245,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01, movedEndpoint, WORKER03);
         assertIngress(true, WORKER01, movedEndpoint, WORKER03);
-        assertContainersUnchanged();
     }
 
     @Test void shouldAddWorkerNodesServer() {
@@ -265,8 +256,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01, WORKER02);
         assertIngress(true, WORKER01, WORKER02);
-        assertContainersUnchanged();
     }
 
     @Test void shouldAddNodeToEmptyIngress() {
@@ -276,8 +267,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01);
         assertIngress(true, WORKER01);
-        assertContainersUnchanged();
     }
 
     @Test void shouldAddNodeToIngress() {
@@ -287,8 +278,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01, WORKER02);
         assertIngress(true, WORKER01, WORKER02);
-        assertContainersUnchanged();
     }
 
     @Test void shouldRemoveNodeFromIngress() {
@@ -298,8 +289,8 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01);
         assertIngress(true, WORKER01);
-        assertContainersUnchanged();
     }
 
     @Test void shouldRemoveTwoNodesFromIngress() {
@@ -309,13 +300,53 @@ class ClusterReconditionerTest {
 
         recondition();
 
+        assertThat(containers).containsExactly(WORKER01);
         assertIngress(true, WORKER01);
-        assertContainersUnchanged();
     }
 
-    // TODO create dummy-app server
-    // TODO scale containers up
-    // TODO scale containers down
+    @Test void shouldScaleOneUp() {
+        givenClusterWithNodeCount(2);
+        givenContainers(WORKER01);
+        givenIngress(WORKER01);
+
+        recondition();
+
+        assertThat(containers).containsExactly(WORKER01, WORKER02);
+        assertIngress(true, WORKER01, WORKER02);
+    }
+
+    @Test void shouldScaleTwoUp() {
+        givenClusterWithNodeCount(3);
+        givenContainers(WORKER01);
+        givenIngress(WORKER01);
+
+        recondition();
+
+        assertThat(containers).containsExactly(WORKER01, WORKER02, WORKER03);
+        assertIngress(true, WORKER01, WORKER02, WORKER03);
+    }
+
+    @Test void shouldScaleOneDown() {
+        givenClusterWithNodeCount(1);
+        givenContainers(WORKER01, WORKER02);
+        givenIngress(WORKER01, WORKER02);
+
+        recondition();
+
+        assertThat(containers).containsExactly(WORKER01);
+        assertIngress(true, WORKER01);
+    }
+
+    @Test void shouldScaleTwoDown() {
+        givenClusterWithNodeCount(1);
+        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenIngress(WORKER01, WORKER02, WORKER03);
+
+        recondition();
+
+        assertThat(containers).containsExactly(WORKER01);
+        assertIngress(true, WORKER01);
+    }
 
     // TODO multiple stages
     // TODO multiple clusters

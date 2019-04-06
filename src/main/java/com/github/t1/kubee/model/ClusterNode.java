@@ -31,9 +31,7 @@ public class ClusterNode implements Comparable<ClusterNode> {
 
     public String host() {
         return ""
-            + stage.getPrefix()
-            + cluster.getSimpleName()
-            + stage.getSuffix()
+            + stage.nodeBaseName(cluster)
             + stage.formattedIndex(index)
             + ((cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName());
     }

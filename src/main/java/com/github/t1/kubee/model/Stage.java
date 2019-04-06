@@ -5,6 +5,7 @@ import com.github.t1.kubee.model.Cluster.ClusterBuilder;
 import com.github.t1.kubee.tools.yaml.YamlEntry;
 import com.github.t1.kubee.tools.yaml.YamlMapping;
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
 
@@ -47,28 +48,30 @@ public class Stage implements Comparable<Stage> {
 
     public ClusterNode index(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
 
-    public IntStream indexes() { return IntStream.range(1, this.count + 1); }
+    private IntStream indexes() { return IntStream.range(1, this.count + 1); }
+
+    public String nodeBaseName(Cluster cluster) { return prefix + cluster.getSimpleName() + suffix; }
 
     public String formattedIndex(int index) {
         return (indexLength == 0)
-                ? (count == 1) ? "" : Integer.toString(index)
-                : format("%0" + indexLength + "d", index);
+            ? (count == 1) ? "" : Integer.toString(index)
+            : format("%0" + indexLength + "d", index);
     }
 
     public Stage largerCount(Stage other) { return (getCount() > other.getCount()) ? this : other; }
 
     /** generally, the name should be sufficient, the other field comparison seems useful */
-    @Override public int compareTo(Stage that) {
+    @Override public int compareTo(@NonNull Stage that) {
         return Comparator.comparing(Stage::getName)
-                         .thenComparing(Stage::getCount)
-                         .thenComparing(Stage::getIndexLength)
-                         .thenComparing(Stage::getPath)
-                         .thenComparing(Stage::getPrefix)
-                         .thenComparing(Stage::getSuffix)
-                         .compare(this, that);
+            .thenComparing(Stage::getCount)
+            .thenComparing(Stage::getIndexLength)
+            .thenComparing(Stage::getPath)
+            .thenComparing(Stage::getPrefix)
+            .thenComparing(Stage::getSuffix)
+            .compare(this, that);
     }
 
-    public ClusterNode lastNodeIn(Cluster cluster) {
+    ClusterNode lastNodeIn(Cluster cluster) {
         return nodes(cluster).max(Comparator.naturalOrder()).orElseThrow(IllegalStateException::new);
     }
 
