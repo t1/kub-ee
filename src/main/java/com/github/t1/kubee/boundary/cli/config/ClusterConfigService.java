@@ -62,29 +62,18 @@ public class ClusterConfigService {
             System.exit(1);
         }
         System.out.println("Start ClusterConfigService for " + clusterConfigPath);
-        ClusterReconditioner reconditioner = buildReconditioner(clusterConfigPath, ingressConfigPath, dockerComposeDir);
-        new ClusterConfigService(reconditioner, clusterConfigPath, !once).run();
+        new ClusterConfigService(clusterConfigPath, ingressConfigPath, dockerComposeDir, !once).run();
     }
 
-    private static ClusterReconditioner buildReconditioner(Path clusterConfigPath, Path ingressConfigPath, Path dockerComposeDir) {
-        Consumer<String> note = System.out::println;
-        Ingress ingress = new Ingress(ingressConfigPath, note);
-        List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
-        Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
-        for (Cluster cluster : clusters) {
-            containerStatuses.put(cluster, new ClusterStatus(note, cluster, dockerComposeDir));
-        }
-        return new ClusterReconditioner(containerStatuses, ingress);
-    }
-
-    private final ClusterReconditioner reconditioner;
     private final Path clusterConfigPath;
+    private final Path ingressConfigPath;
+    private final Path dockerComposeDir;
     private boolean continues;
 
     private void run() {
         try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
             clusterConfigPath.getParent().register(watcher, ENTRY_MODIFY);
-            reconditioner.run(); // initial
+            buildReconditioner().run(); // initial
             while (continues) {
                 WatchKey key = watcher.poll(POLL_TIMEOUT, MILLISECONDS);
                 if (key != null) {
@@ -97,7 +86,7 @@ public class ClusterConfigService {
                             Thread.yield();
                         } else if (ENTRY_MODIFY.equals(event.kind()) && event.context().equals(clusterConfigPath.getFileName())) {
                             log.fine("handle " + event.kind() + " for " + event.context());
-                            reconditioner.run();
+                            buildReconditioner().run();
                         } else {
                             log.fine("skip " + event.kind() + " for " + event.context());
                         }
@@ -115,6 +104,16 @@ public class ClusterConfigService {
             Thread.currentThread().interrupt();
             throw new RuntimeException("while watching " + clusterConfigPath, e);
         }
+    }
+
+    private ClusterReconditioner buildReconditioner() {
+        Consumer<String> note = System.out::println;
+        Ingress ingress = new Ingress(ingressConfigPath, note);
+        List<Cluster> clusters = ClusterConfig.readFrom(clusterConfigPath);
+        Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
+        for (Cluster cluster : clusters)
+            containerStatuses.put(cluster, new ClusterStatus(note, cluster, dockerComposeDir));
+        return new ClusterReconditioner(containerStatuses, ingress);
     }
 
     void stop() { continues = false; }
