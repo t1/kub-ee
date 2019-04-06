@@ -1,4 +1,4 @@
-package com.github.t1.kubee.boundary.cli.lb;
+package com.github.t1.kubee.boundary.cli.reload;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
