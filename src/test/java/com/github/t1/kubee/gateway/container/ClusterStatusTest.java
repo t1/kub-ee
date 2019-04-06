@@ -1,10 +1,10 @@
 package com.github.t1.kubee.gateway.container;
 
+import com.github.t1.kubee.boundary.cli.ProcessInvoker;
 import com.github.t1.kubee.model.Cluster;
 import com.github.t1.kubee.model.Endpoint;
 import com.github.t1.kubee.model.Slot;
 import com.github.t1.kubee.model.Stage;
-import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
