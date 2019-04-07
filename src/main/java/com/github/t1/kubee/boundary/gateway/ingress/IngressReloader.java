@@ -1,9 +1,9 @@
-package com.github.t1.kubee.boundary.gateway.loadbalancer;
+package com.github.t1.kubee.boundary.gateway.ingress;
 
 import com.github.t1.kubee.boundary.cli.reload.NginxReloadService;
 import com.github.t1.kubee.entity.Stage;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.java.Log;
 
 import java.io.IOException;
 import java.util.Map;
@@ -11,12 +11,13 @@ import java.util.Optional;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.logging.Level.WARNING;
 
 /**
  * This class hides the actual nginx reload mechanism
  */
-@Slf4j
-class IngressReloadAdapter {
+@Log
+class IngressReloader {
     interface Reload {
         String reload();
     }
@@ -92,7 +93,7 @@ class IngressReloadAdapter {
                 return "nginx reload with error";
             return null;
         } catch (InterruptedException | IOException e) {
-            log.warn("reload failed", e);
+            log.log(WARNING, "reload failed", e);
             return "reload failed: " + e.getMessage();
         }
     }

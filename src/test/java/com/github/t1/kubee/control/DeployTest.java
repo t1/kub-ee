@@ -68,16 +68,16 @@ class DeployTest extends AbstractControllerTest {
     }
 
     private void verifyAddToLoadBalancer() {
-        verify(controller.ingressGateway).add("foo", DEV01);
+        verify(ingress).addToLoadBalancerFor("foo", DEV01);
     }
 
     private void verifyRemoveFromLoadBalancer() {
-        verify(controller.ingressGateway).remove("foo", DEV01);
+        verify(ingress).removeFromLoadBalancer("foo", DEV01);
     }
 
     @AfterEach void assertNoMore() {
         verify(deployer, atLeast(0)).fetchVersion("foo", DEV01);
-        verifyNoMoreInteractions(deployer, controller.ingressGateway);
+        verifyNoMoreInteractions(deployer, ingress);
     }
 
 

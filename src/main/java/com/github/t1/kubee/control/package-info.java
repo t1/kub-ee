@@ -2,7 +2,7 @@
     com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.class,
     com.github.t1.kubee.boundary.gateway.health.HealthGateway.class,
     com.github.t1.kubee.boundary.gateway.container.ClusterStatus.class,
-    com.github.t1.kubee.boundary.gateway.loadbalancer.IngressGateway.class,
+    com.github.t1.kubee.boundary.gateway.ingress.Ingress.class,
     com.github.t1.kubee.entity.Cluster.class,
     com.github.t1.kubee.tools.http.ProblemDetail.class,
     com.github.t1.kubee.tools.yaml.YamlDocument.class,

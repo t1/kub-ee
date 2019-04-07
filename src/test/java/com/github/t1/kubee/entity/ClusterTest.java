@@ -1,7 +1,7 @@
 package com.github.t1.kubee.entity;
 
-import com.github.t1.kubee.boundary.gateway.loadbalancer.ReloadMock;
-import com.github.t1.kubee.control.ClusterConfig;
+import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
+import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster.HealthConfig;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +53,7 @@ public class ClusterTest {
     };
 
     public static List<Cluster> readClusterConfig() {
-        return ClusterConfig.readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
+        return Clusters.readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
     }
 
 

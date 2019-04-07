@@ -66,7 +66,7 @@ class ClusterStatusTest {
     }
 
     private ClusterStatus whenStatus() {
-        return new ClusterStatus(System.out::println, CLUSTER, dockerComposeDir);
+        return new ClusterStatus(CLUSTER, dockerComposeDir);
     }
 
     @Test void shouldGetOneEndpoint() {

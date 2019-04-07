@@ -1,10 +1,10 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
-import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress;
-import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.LoadBalancer;
-import com.github.t1.kubee.boundary.gateway.loadbalancer.Ingress.ReverseProxy;
-import com.github.t1.kubee.boundary.gateway.loadbalancer.ReloadMock;
+import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
+import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
+import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
+import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -96,7 +97,7 @@ class ClusterReconditionerTest {
 
         @Override public boolean hasChanged() { return !this.toString().equals(ingressBefore); }
 
-        @Override public void write() { ingressWritten = true; }
+        @Override public void apply() { ingressWritten = true; }
 
         @Override public void removeReverseProxyFor(ClusterNode node) { reverseProxies.remove(node); }
 
@@ -210,7 +211,13 @@ class ClusterReconditionerTest {
 
 
     private void recondition() {
-        new ClusterReconditioner(singletonMap(cluster, clusterStatus), ingress).run();
+        Function<Stage, Ingress> originalBuilder = Ingress.BUILDER;
+        Ingress.BUILDER = stage -> ingress;
+        try {
+            new ClusterReconditioner(singletonMap(cluster, clusterStatus)).run();
+        } finally {
+            Ingress.BUILDER = originalBuilder;
+        }
     }
 
 

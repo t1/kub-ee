@@ -21,7 +21,7 @@ import static java.util.stream.Collectors.joining;
 
 @ApplicationScoped
 @EqualsAndHashCode
-public class ClusterConfig {
+public class Clusters {
     public static final String FILE_NAME_PROPERTY = "kub-ee.cluster-config";
 
     private final List<Cluster> clusters = new ArrayList<>();

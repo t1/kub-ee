@@ -7,32 +7,30 @@ import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.extern.java.Log;
 
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
+@Log
 @NoArgsConstructor(force = true)
 public class ClusterStatus {
-    private final Consumer<String> note;
     private final Cluster cluster;
     private final ProcessInvoker proc;
     private final Path dockerComposeDir;
     private final List<Endpoint> actualContainers;
 
     public ClusterStatus(
-        @NonNull Consumer<String> note,
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeDir
     ) {
-        this.note = note;
         this.cluster = cluster;
         this.proc = ProcessInvoker.INSTANCE;
         this.dockerComposeDir = dockerComposeDir;
@@ -88,7 +86,7 @@ public class ClusterStatus {
     }
 
     private void scale(String name, int count) {
-        note.accept("Scale '" + name + "' from " + actualContainers.size() + " to " + count);
+        log.info("Scale '" + name + "' from " + actualContainers.size() + " to " + count);
         String scaleExpression = name + "=" + count;
         proc.invoke(dockerComposeDir, "docker-compose", "up", "--detach", "--scale", scaleExpression);
         actualContainers.clear();

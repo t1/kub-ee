@@ -17,7 +17,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Helper class to reload an nginx running as root, as a simple script `nginx -s reload` with the
  * set-user-ID-on-execution bit set (`chmod +s`) doesn't work on my Mac. Start it like this:<br>
- * <code>sudo java -cp target/classes com.github.t1.kubee.gateway.loadbalancer.NginxReloadService</code>
+ * <code>sudo java -cp target/classes com.github.t1.kubee.gateway.ingress.NginxReloadService</code>
  */
 @RequiredArgsConstructor
 public class NginxReloadService {

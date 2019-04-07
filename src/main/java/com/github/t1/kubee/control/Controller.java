@@ -2,7 +2,6 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
-import com.github.t1.kubee.boundary.gateway.loadbalancer.IngressGateway;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.Audits.Audit;
 import com.github.t1.kubee.entity.Audits.Audit.Change;
@@ -10,6 +9,7 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.entity.DeploymentId;
+import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.LoadBalancer;
 import com.github.t1.kubee.entity.ReverseProxy;
 import com.github.t1.kubee.entity.Stage;
@@ -23,12 +23,14 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
 import java.net.ConnectException;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.ingress;
 import static com.github.t1.kubee.entity.VersionStatus.deployed;
 import static com.github.t1.kubee.entity.VersionStatus.undeployed;
 import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
@@ -43,7 +45,6 @@ public class Controller {
         = ": nodename nor servname provided, or not known";
 
     @Inject List<Cluster> clusters;
-    @Inject IngressGateway ingressGateway;
     @Inject DeployerGateway deployer;
     @Inject HealthGateway healthGateway;
 
@@ -51,13 +52,21 @@ public class Controller {
     public Stream<Cluster> clusters() { return clusters.stream(); }
 
     public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
-        return stages.flatMap(stage -> ingressGateway.loadBalancers(stage));
+        return stages.flatMap(stage ->
+            ingress(stage).loadBalancers().map(config -> LoadBalancer.builder()
+                .name(config.name())
+                .method(config.method())
+                .servers(config.getEndpoints().stream().map(Endpoint::toString).collect(toList()))
+                .build()));
     }
 
     public Stream<ReverseProxy> reverseProxies(Stream<Stage> stages) {
-        return stages.flatMap(stage -> ingressGateway.reverseProxies(stage));
+        return stages.flatMap(stage ->
+            ingress(stage).reverseProxies().map(config -> ReverseProxy.builder()
+                .from(URI.create("http://" + config.name() + ":" + config.listen()))
+                .to(config.getPort())
+                .build()));
     }
-
 
     public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {
         log.debug("fetch deployments from {}:", node);
@@ -152,7 +161,7 @@ public class Controller {
                 undeploy(node, name);
             } else if (versionBefore != null) {
                 log.info("update {} on {} from {} to {}", name, node, versionBefore, versionAfter);
-                ingressGateway.remove(name, node);
+                ingress(node.getStage()).removeFromLoadBalancer(name, node);
             }
 
             Audits audits = deployer.deploy(node, name, versionAfter);
@@ -173,7 +182,7 @@ public class Controller {
             throw e;
         } finally {
             // TODO don't add when the deploy failed!
-            ingressGateway.add(name, node);
+            ingress(node.getStage()).addToLoadBalancerFor(name, node);
         }
     }
 
@@ -184,7 +193,7 @@ public class Controller {
     }
 
     private void undeploy(ClusterNode node, String name) {
-        ingressGateway.remove(name, node);
+        ingress(node.getStage()).removeFromLoadBalancer(name, node);
         Audits audits = deployer.undeploy(node, name);
         checkAudits(audits, "undeploy", name, null);
     }

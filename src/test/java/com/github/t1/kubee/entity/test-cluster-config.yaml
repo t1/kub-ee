@@ -22,7 +22,7 @@ server-a.server.lan:1:
     count: 2
     load-balancer:
       reload: custom
-      class: com.github.t1.kubee.boundary.gateway.loadbalancer.ReloadMock
+      class: com.github.t1.kubee.boundary.gateway.ingress.ReloadMock
   QA:
     prefix: qa
     count: 2
@@ -39,7 +39,7 @@ server-a.server.lan:2:
     count: 2
     load-balancer:
       reload: custom
-      class: com.github.t1.kubee.boundary.gateway.loadbalancer.ReloadMock
+      class: com.github.t1.kubee.boundary.gateway.ingress.ReloadMock
   QA:
     prefix: qa
     count: 2

@@ -2,7 +2,7 @@ package com.github.t1.kubee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
-import com.github.t1.kubee.control.ClusterConfig;
+import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;
 import com.github.t1.kubee.entity.Stage;
@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
-import static com.github.t1.kubee.control.ClusterConfig.FILE_NAME_PROPERTY;
+import static com.github.t1.kubee.control.Clusters.FILE_NAME_PROPERTY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AbstractIT {
@@ -50,8 +50,7 @@ public abstract class AbstractIT {
             .fill("slot-2-port", WORKER_2.baseUri().getPort())
             .write(CLUSTER_CONFIG_PATH);
 
-        new ClusterConfig();
-        List<Cluster> clusters = ClusterConfig.readFrom(Files.newInputStream(CLUSTER_CONFIG_PATH));
+        List<Cluster> clusters = Clusters.readFrom(Files.newInputStream(CLUSTER_CONFIG_PATH));
         CLUSTER_1 = clusters.get(0);
         CLUSTER_2 = clusters.get(1);
 
