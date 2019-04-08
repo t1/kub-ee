@@ -56,7 +56,7 @@ public class Controller {
             ingress(stage).loadBalancers().map(config -> LoadBalancer.builder()
                 .name(config.name())
                 .method(config.method())
-                .servers(config.getEndpoints().stream().map(Endpoint::toString).collect(toList()))
+                .servers(config.endpoints().map(Endpoint::toString).collect(toList()))
                 .build()));
     }
 

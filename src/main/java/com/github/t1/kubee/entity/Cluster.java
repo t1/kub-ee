@@ -49,9 +49,6 @@ public class Cluster implements Comparable<Cluster> {
             .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
     }
 
-
-    public Stream<ClusterNode> lastNodes() { return stages().map(stage -> stage.lastNodeIn(this)); }
-
     public static List<Cluster> readAllFrom(YamlDocument document, Consumer<String> warnings) {
         ClusterBuilderContext context = new ClusterBuilderContext(warnings);
         return document.mapping().flatMap(context::from).collect(toList());

@@ -28,6 +28,7 @@ import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.NGINX_ETC;
 import static com.github.t1.kubee.tools.Tools.toEndpoint;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
@@ -117,7 +118,7 @@ import static org.assertj.core.api.Assertions.tuple;
         Stream<LoadBalancer> loadBalancers = whenIngress().loadBalancers();
 
         assertThat(loadBalancers)
-            .extracting(LoadBalancer::name, LoadBalancer::method, LoadBalancer::getEndpoints)
+            .extracting(LoadBalancer::name, LoadBalancer::method, loadBalancer -> loadBalancer.endpoints().collect(toList()))
             .containsExactly(tuple("dummy-app-lb", "least_conn", singletonList(toEndpoint(WORKER01))));
     }
 

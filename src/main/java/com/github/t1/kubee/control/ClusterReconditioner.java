@@ -6,11 +6,12 @@ import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
-import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale it up or down as specified.
@@ -47,8 +48,8 @@ public class ClusterReconditioner implements Runnable {
         void recondition() {
             clusterStatus.scale(stage);
             cluster.nodes().forEach(this::reconditionReverseProxy);
-            cluster.lastNodes().forEach(node -> new NodeCleanup(node.next()).run());
-            reconditionLoadBalancers(clusterStatus);
+            ingress.loadBalancers().forEach(this::reconditionLoadBalancer);
+            cleanupNext(stage.lastNodeIn(cluster));
 
             if (ingress.hasChanged()) {
                 ingress.apply();
@@ -65,49 +66,39 @@ public class ClusterReconditioner implements Runnable {
             }
         }
 
-        private void reconditionLoadBalancers(ClusterStatus clusterStatus) {
-            ingress.loadBalancers().forEach(loadBalancer -> {
-                reconditionLoadBalancer(loadBalancer, clusterStatus);
-                clusterStatus.endpoints()
-                    .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
-                    .forEach(loadBalancer::addOrUpdateEndpoint);
+        private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
+            loadBalancer.endpoints().forEach(endpoint -> {
+                Integer actualPort = clusterStatus.port(endpoint.getHost());
+                if (actualPort == null)
+                    return; // will be removed in cleanup
+                if (endpoint.getPort() != actualPort) {
+                    loadBalancer.updatePort(endpoint, actualPort);
+                }
             });
+            clusterStatus.endpoints()
+                .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
+                .forEach(loadBalancer::addOrUpdateEndpoint);
         }
 
-        private void reconditionLoadBalancer(LoadBalancer loadBalancer, ClusterStatus clusterStatus) {
-            for (Endpoint hostPort : loadBalancer.getEndpoints()) {
-                Integer actualPort = clusterStatus.port(hostPort.getHost());
-                if (actualPort == null)
-                    continue; // TODO
-                if (hostPort.getPort() != actualPort) {
-                    loadBalancer.updatePort(hostPort, actualPort);
+        private void cleanupNext(ClusterNode node) {
+            ClusterNode next = stage.nodeAt(cluster, (node == null) ? 1 : node.getIndex() + 1);
+            boolean lookForMore = false;
+
+            if (ingress.hasReverseProxyFor(next)) {
+                lookForMore = true;
+                ingress.removeReverseProxyFor(next);
+            }
+
+            for (LoadBalancer loadBalancer : ingress.loadBalancers().collect(toList())) {
+                String host = next.endpoint().getHost();
+                if (loadBalancer.hasHost(host)) {
+                    lookForMore = true;
+                    loadBalancer.removeHost(host);
                 }
             }
-        }
 
-        @RequiredArgsConstructor
-        private class NodeCleanup implements Runnable {
-            private final ClusterNode node;
-
-            private boolean lookForMore = false;
-
-            @Override public void run() {
-                if (ingress.hasReverseProxyFor(node)) {
-                    lookForMore = true;
-                    ingress.removeReverseProxyFor(node);
-                }
-
-                ingress.loadBalancers().forEach(loadBalancer -> {
-                    String host = node.endpoint().getHost();
-                    if (loadBalancer.hasHost(host)) {
-                        lookForMore = true;
-                        loadBalancer.removeHost(host);
-                    }
-                });
-
-                if (lookForMore) {
-                    new NodeCleanup(node.next()).run();
-                }
+            if (lookForMore) {
+                cleanupNext(next);
             }
         }
     }

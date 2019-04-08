@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 
 import static com.github.t1.kubee.tools.Tools.toHostPort;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * We have two use cases:
@@ -247,11 +246,9 @@ public class Ingress {
             nginxConfig.removeUpstream(upstream);
         }
 
-        public boolean hasEndpoint(Endpoint endpoint) { return getEndpoints().contains(endpoint); }
+        public boolean hasEndpoint(Endpoint endpoint) { return endpoints().anyMatch(endpoint::equals); }
 
-        public List<Endpoint> getEndpoints() {
-            return upstream.hostPorts().map(Tools::toEndpoint).collect(toList());
-        }
+        public Stream<Endpoint> endpoints() { return upstream.hostPorts().map(Tools::toEndpoint); }
 
         public void addOrUpdateEndpoint(Endpoint endpoint) {
             if (upstream.hasHost(endpoint.getHost())) {

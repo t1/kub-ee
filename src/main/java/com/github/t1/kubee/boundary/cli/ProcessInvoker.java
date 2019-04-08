@@ -24,7 +24,8 @@ public class ProcessInvoker {
         boolean inTime = process.waitFor(10, SECONDS);
         if (!inTime)
             throw new RuntimeException("could not invoke `" + join(" ", args) + "` in time");
-        String output = new Scanner(process.getInputStream()).useDelimiter("\\Z").next();
+        Scanner scanner = new Scanner(process.getInputStream()).useDelimiter("\\Z");
+        String output = (scanner.hasNext()) ? scanner.next() : "";
         if (process.exitValue() != 0)
             throw new RuntimeException(join(" ", args) + " returned error " + process.exitValue() + ":\n" + output);
         return output;

@@ -44,9 +44,9 @@ public class Stage implements Comparable<Stage> {
 
     public Stream<ClusterNode> nodes() { return nodes(null); }
 
-    public Stream<ClusterNode> nodes(Cluster cluster) { return indexes().mapToObj(index -> index(cluster, index)); }
+    public Stream<ClusterNode> nodes(Cluster cluster) { return indexes().mapToObj(index -> nodeAt(cluster, index)); }
 
-    public ClusterNode index(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
+    public ClusterNode nodeAt(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
 
     private IntStream indexes() { return IntStream.range(1, this.count + 1); }
 
@@ -71,9 +71,8 @@ public class Stage implements Comparable<Stage> {
             .compare(this, that);
     }
 
-    ClusterNode lastNodeIn(Cluster cluster) {
-        return nodes(cluster).max(Comparator.naturalOrder()).orElseThrow(IllegalStateException::new);
-    }
+    /** The last node or <code>null</code>, if there are none. */
+    public ClusterNode lastNodeIn(Cluster cluster) { return nodes(cluster).max(Comparator.naturalOrder()).orElse(null); }
 
 
     public static class StageBuilder {

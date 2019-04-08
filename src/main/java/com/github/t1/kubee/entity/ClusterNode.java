@@ -45,7 +45,4 @@ public class ClusterNode implements Comparable<ClusterNode> {
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;
     }
-
-    /** The next node after this, i.e. with <code>index + 1</code> */
-    public ClusterNode next() { return new ClusterNode(cluster, stage, index + 1); }
 }

@@ -11,12 +11,13 @@ import lombok.extern.java.Log;
 
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 @Log
@@ -46,7 +47,7 @@ public class ClusterStatus {
 
     private List<String> readDockerComposeProcessIdsFor(String name) {
         String output = proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", name);
-        return Arrays.asList(output.split("\n"));
+        return output.isEmpty() ? emptyList() : asList(output.split("\n"));
     }
 
     private Endpoint getEndpointFor(Cluster cluster, String containerId) {
@@ -59,6 +60,8 @@ public class ClusterStatus {
 
     private SimpleEntry<Integer, Integer> readExposedPortFor(String containerId, int publishPort, String clusterName) {
         String ports = proc.invoke("docker", "ps", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + publishPort);
+        if (ports.isEmpty())
+            throw new RuntimeException("no docker status for container " + containerId);
         Pattern pattern = Pattern.compile("0\\.0\\.0\\.0:(?<port>\\d+)->" + publishPort + "/tcp\tdocker_" + clusterName + "_(?<index>\\d+)");
         Matcher matcher = pattern.matcher(ports);
         if (!matcher.matches())

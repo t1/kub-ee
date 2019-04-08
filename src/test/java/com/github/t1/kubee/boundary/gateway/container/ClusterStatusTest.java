@@ -69,6 +69,14 @@ class ClusterStatusTest {
         return new ClusterStatus(CLUSTER, dockerComposeDir);
     }
 
+    @Test void shouldGetNoEndpoint() {
+        givenContainers();
+
+        List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
+
+        assertThat(endpoints).isEmpty();
+    }
+
     @Test void shouldGetOneEndpoint() {
         givenContainers(WORKER1);
 

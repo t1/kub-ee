@@ -57,8 +57,8 @@ class DeploymentListHtmlMessageBodyWriterTest {
                              .stage(prod)
                              .build();
         givenClusters(asList(one, two));
-        ClusterNode prod1 = prod.index(one, 1);
-        ClusterNode prod2 = prod.index(two, 1);
+        ClusterNode prod1 = prod.nodeAt(one, 1);
+        ClusterNode prod2 = prod.nodeAt(two, 1);
 
         DeploymentBuilder deployer = createDeployment().artifactId("deployer").name("deployer").version("unknown");
         DeploymentBuilder jolokia = createDeployment().artifactId("jolokia").name("jolokia");
@@ -82,21 +82,21 @@ class DeploymentListHtmlMessageBodyWriterTest {
         assertThat(clusters).hasSize(4);
         Cluster a1 = clusters.get(0);
         assertThat(a1.id()).isEqualTo("server-a:1");
-        ClusterNode a1_dev_1 = a1.getStages().get(0).index(a1, 1);
-        ClusterNode a1_dev_2 = a1.getStages().get(0).index(a1, 2);
-        ClusterNode a1_qa_1 = a1.getStages().get(1).index(a1, 1);
-        ClusterNode a1_qa_2 = a1.getStages().get(1).index(a1, 2);
-        ClusterNode a1_prod_1 = a1.getStages().get(2).index(a1, 1);
-        ClusterNode a1_prod_2 = a1.getStages().get(2).index(a1, 2);
-        ClusterNode a1_prod_3 = a1.getStages().get(2).index(a1, 3);
+        ClusterNode a1_dev_1 = a1.getStages().get(0).nodeAt(a1, 1);
+        ClusterNode a1_dev_2 = a1.getStages().get(0).nodeAt(a1, 2);
+        ClusterNode a1_qa_1 = a1.getStages().get(1).nodeAt(a1, 1);
+        ClusterNode a1_qa_2 = a1.getStages().get(1).nodeAt(a1, 2);
+        ClusterNode a1_prod_1 = a1.getStages().get(2).nodeAt(a1, 1);
+        ClusterNode a1_prod_2 = a1.getStages().get(2).nodeAt(a1, 2);
+        ClusterNode a1_prod_3 = a1.getStages().get(2).nodeAt(a1, 3);
 
         Cluster a2 = clusters.get(1);
         assertThat(a2.id()).isEqualTo("server-a:2");
 
         Cluster b2 = clusters.get(2);
         assertThat(b2.id()).isEqualTo("server-b:2");
-        ClusterNode b2_dev_1 = b2.getStages().get(0).index(b2, 1);
-        ClusterNode b2_dev_2 = b2.getStages().get(0).index(b2, 2);
+        ClusterNode b2_dev_1 = b2.getStages().get(0).nodeAt(b2, 1);
+        ClusterNode b2_dev_2 = b2.getStages().get(0).nodeAt(b2, 2);
 
         Cluster l = clusters.get(3);
         assertThat(l.id()).isEqualTo("localhost:1");
