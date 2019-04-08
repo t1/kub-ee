@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
-import static com.github.t1.kubee.control.Clusters.FILE_NAME_PROPERTY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AbstractIT {
@@ -42,7 +41,7 @@ public abstract class AbstractIT {
     protected static Cluster CLUSTER_2;
 
     @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
-        .withProperty(FILE_NAME_PROPERTY, CLUSTER_CONFIG_PATH);
+        .withProperty("kub-ee.cluster-config", CLUSTER_CONFIG_PATH);
 
     @BeforeClass public static void setup() throws IOException {
         new Template(ClusterTest.class.getResourceAsStream("it-cluster-config.yaml"))
@@ -50,7 +49,7 @@ public abstract class AbstractIT {
             .fill("slot-2-port", WORKER_2.baseUri().getPort())
             .write(CLUSTER_CONFIG_PATH);
 
-        List<Cluster> clusters = Clusters.readFrom(Files.newInputStream(CLUSTER_CONFIG_PATH));
+        List<Cluster> clusters = Clusters.readFrom(CLUSTER_CONFIG_PATH);
         CLUSTER_1 = clusters.get(0);
         CLUSTER_2 = clusters.get(1);
 

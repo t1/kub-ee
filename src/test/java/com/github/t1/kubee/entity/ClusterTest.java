@@ -3,9 +3,12 @@ package com.github.t1.kubee.entity;
 import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
 import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster.HealthConfig;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -52,8 +55,9 @@ public class ClusterTest {
             .healthConfig(HEALTH_CONFIG).build()
     };
 
+    @SneakyThrows(URISyntaxException.class)
     public static List<Cluster> readClusterConfig() {
-        return Clusters.readFrom(ClusterTest.class.getResourceAsStream("test-cluster-config.yaml"));
+        return Clusters.readFrom(Paths.get(ClusterTest.class.getResource("test-cluster-config.yaml").toURI()));
     }
 
 
