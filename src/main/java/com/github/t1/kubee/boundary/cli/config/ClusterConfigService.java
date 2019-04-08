@@ -21,6 +21,7 @@ import java.util.Map;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.logging.Level.SEVERE;
 
 /**
  * Helper service to scale a docker-compose cluster of worker nodes whenever the <code>cluster-config.yaml</code>
@@ -65,7 +66,7 @@ public class ClusterConfigService {
     private void loop() {
         try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
             clusterConfigPath.getParent().register(watcher, ENTRY_MODIFY);
-            buildReconditioner().run(); // initial
+            recondition(); // initial
             while (continues) {
                 WatchKey key = watcher.poll(POLL_TIMEOUT, MILLISECONDS);
                 if (key != null) {
@@ -78,7 +79,7 @@ public class ClusterConfigService {
                             Thread.yield();
                         } else if (ENTRY_MODIFY.equals(event.kind()) && event.context().equals(clusterConfigPath.getFileName())) {
                             log.fine("handle " + event.kind() + " for " + event.context());
-                            buildReconditioner().run();
+                            recondition();
                         } else {
                             log.fine("skip " + event.kind() + " for " + event.context());
                         }
@@ -95,6 +96,15 @@ public class ClusterConfigService {
             log.severe("interrupted while watching " + clusterConfigPath + " due to " + e.getClass().getSimpleName() + " " + e.getMessage());
             Thread.currentThread().interrupt();
             throw new RuntimeException("while watching " + clusterConfigPath, e);
+        }
+    }
+
+    private void recondition() {
+        ClusterReconditioner reconditioner = buildReconditioner();
+        try {
+            reconditioner.run();
+        } catch (RuntimeException e) {
+            log.log(SEVERE, "can't recondition", e);
         }
     }
 
