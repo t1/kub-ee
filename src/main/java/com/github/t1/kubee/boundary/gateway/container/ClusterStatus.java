@@ -35,14 +35,12 @@ public class ClusterStatus {
         this.cluster = cluster;
         this.proc = ProcessInvoker.INSTANCE;
         this.dockerComposeDir = dockerComposeDir;
-        this.actualContainers = readDockerStatus(cluster);
+        this.actualContainers = readDockerStatus();
     }
 
-    private List<Endpoint> readDockerStatus(Cluster cluster) {
+    private List<Endpoint> readDockerStatus() {
         List<String> containerIds = readDockerComposeProcessIdsFor(cluster.getSimpleName());
-        return containerIds.stream()
-            .map(containerId -> getEndpointFor(cluster, containerId))
-            .collect(toList());
+        return containerIds.stream().map(this::getEndpointFor).collect(toList());
     }
 
     private List<String> readDockerComposeProcessIdsFor(String name) {
@@ -50,7 +48,7 @@ public class ClusterStatus {
         return output.isEmpty() ? emptyList() : asList(output.split("\n"));
     }
 
-    private Endpoint getEndpointFor(Cluster cluster, String containerId) {
+    private Endpoint getEndpointFor(String containerId) {
         SimpleEntry<Integer, Integer> indexToPort = readExposedPortFor(containerId, cluster.getSlot().getHttp(), cluster.getSimpleName());
         int index = indexToPort.getKey();
         int port = indexToPort.getValue();
@@ -59,9 +57,11 @@ public class ClusterStatus {
     }
 
     private SimpleEntry<Integer, Integer> readExposedPortFor(String containerId, int publishPort, String clusterName) {
-        String ports = proc.invoke("docker", "ps", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + publishPort);
+        String ports = proc.invoke("docker", "ps", "--all", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + publishPort);
         if (ports.isEmpty())
             throw new RuntimeException("no docker status for container " + containerId);
+        if (ports.startsWith("\t"))
+            throw new RuntimeException("container seems to be down: " + containerId);
         Pattern pattern = Pattern.compile("0\\.0\\.0\\.0:(?<port>\\d+)->" + publishPort + "/tcp\tdocker_" + clusterName + "_(?<index>\\d+)");
         Matcher matcher = pattern.matcher(ports);
         if (!matcher.matches())
@@ -93,6 +93,6 @@ public class ClusterStatus {
         String scaleExpression = name + "=" + count;
         proc.invoke(dockerComposeDir, "docker-compose", "up", "--detach", "--scale", scaleExpression);
         actualContainers.clear();
-        actualContainers.addAll(readDockerStatus(cluster));
+        actualContainers.addAll(readDockerStatus());
     }
 }

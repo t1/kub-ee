@@ -18,6 +18,7 @@ import java.nio.file.WatchService;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -39,7 +40,10 @@ public class ClusterConfigService {
 
     private static final int POLL_TIMEOUT = 100;
 
-    public static void main(String[] args) {
+    public static Consumer<Integer> exit = System::exit;
+
+    public static void main(String... args) {
+        int statusCode = 0;
         Path clusterConfigPath = null;
         Path dockerComposeDir = null;
         boolean once = false;
@@ -52,18 +56,23 @@ public class ClusterConfigService {
                 dockerComposeDir = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
         }
         if (clusterConfigPath == null || dockerComposeDir == null) {
-            System.err.println("Usage: `--cluster-config=<path>`: with the <path> to the `cluster-config.yaml`");
-            System.exit(1);
+            System.err.println("Usage:\n" +
+                "    `" + ONCE_ARG + "`: to run only once and exit. Otherwise: loop until stopped.\n" +
+                "    `" + CLUSTER_CONFIG_ARG + "<path>`: with the <path> to the `cluster-config.yaml`\n" +
+                "    `" + DOCKER_COMPOSE_CONFIG_ARG + "<path>`: with the <path> to the directory containing the `docker-compose.yaml`\n");
+            statusCode = 1;
+        } else {
+            System.out.println("Start ClusterConfigService for " + clusterConfigPath);
+            new ClusterConfigService(clusterConfigPath, dockerComposeDir, !once).loop();
         }
-        System.out.println("Start ClusterConfigService for " + clusterConfigPath);
-        new ClusterConfigService(clusterConfigPath, dockerComposeDir, !once).loop();
+        exit.accept(statusCode);
     }
 
     private final Path clusterConfigPath;
     private final Path dockerComposeDir;
     private boolean continues;
 
-    private void loop() {
+    void loop() {
         try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
             clusterConfigPath.getParent().register(watcher, ENTRY_MODIFY);
             recondition(); // initial
@@ -97,13 +106,17 @@ public class ClusterConfigService {
             Thread.currentThread().interrupt();
             throw new RuntimeException("while watching " + clusterConfigPath, e);
         }
+        System.out.println("end loop");
     }
 
     private void recondition() {
-        ClusterReconditioner reconditioner = buildReconditioner();
         try {
+            System.out.println("recondition start");
+            ClusterReconditioner reconditioner = buildReconditioner();
             reconditioner.run();
+            System.out.println("recondition done");
         } catch (RuntimeException e) {
+            System.out.println("recondition failed " + e.getMessage());
             log.log(SEVERE, "can't recondition", e);
         }
     }
