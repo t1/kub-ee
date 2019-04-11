@@ -1,8 +1,8 @@
 package com.github.t1.kubee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.t1.kubee.boundary.gateway.Clusters;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
-import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;
 import com.github.t1.kubee.entity.Stage;
@@ -43,7 +43,7 @@ public abstract class AbstractIT {
     @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
         .withProperty("kub-ee.cluster-config", CLUSTER_CONFIG_PATH);
 
-    @BeforeClass public static void setup() throws IOException {
+    @BeforeClass public static void setup() {
         new Template(ClusterTest.class.getResourceAsStream("it-cluster-config.yaml"))
             .fill("slot-1-port", WORKER_1.baseUri().getPort())
             .fill("slot-2-port", WORKER_2.baseUri().getPort())

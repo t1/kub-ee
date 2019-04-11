@@ -48,12 +48,12 @@ public class Boundary {
 
     @GET public List<Link> getLinks() {
         return asList(
-                link("Load Balancers"),
-                link("Reverse Proxies"),
-                link("Clusters"),
-                link("Slots"),
-                link("Stages"),
-                link("Deployments")
+            link("Load Balancers"),
+            link("Reverse Proxies"),
+            link("Clusters"),
+            link("Slots"),
+            link("Stages"),
+            link("Deployments")
         );
     }
 
@@ -77,9 +77,9 @@ public class Boundary {
 
     @GET @Path("/clusters/{name}") public Cluster getCluster(@PathParam("name") String name) {
         return controller.clusters()
-                         .filter(cluster -> cluster.getSimpleName().equals(name))
-                         .findFirst()
-                         .orElseThrow(() -> new NotFoundException("cluster not found: '" + name + "'"));
+            .filter(cluster -> cluster.getSimpleName().equals(name))
+            .findFirst()
+            .orElseThrow(() -> new NotFoundException("cluster not found: '" + name + "'"));
     }
 
 
@@ -89,10 +89,10 @@ public class Boundary {
 
     @GET @Path("/slots/{name}") public Slot getSlot(@PathParam("name") String name) {
         return controller.clusters()
-                         .map(Cluster::getSlot)
-                         .filter(slot -> slot.getName().equals(name))
-                         .findFirst()
-                         .orElseThrow(() -> new NotFoundException("slot not found: '" + name + "'"));
+            .map(Cluster::getSlot)
+            .filter(slot -> slot.getName().equals(name))
+            .findFirst()
+            .orElseThrow(() -> new NotFoundException("slot not found: '" + name + "'"));
     }
 
 
@@ -100,9 +100,9 @@ public class Boundary {
 
     @GET @Path("/stages/{name}") public Stage getStage(@PathParam("name") String name) {
         return stages()
-                .filter(stage -> stage.getName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
+            .filter(stage -> stage.getName().equals(name))
+            .findFirst()
+            .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
 
     private Stream<Stage> stages() { return controller.clusters().flatMap(Cluster::stages).sorted().distinct(); }
@@ -119,21 +119,21 @@ public class Boundary {
     @GET @Path("/deployments/{id}") public GetDeploymentResponse getDeployment(@PathParam("id") DeploymentId id) {
         ClusterNode node = id.node(controller.clusters());
         Deployment deployment = controller
-                .fetchDeploymentsOn(node)
-                .filter(id::matchName)
-                .findFirst()
-                .orElseThrow(() -> new DeployableNotFoundException(id.deploymentName(), node));
+            .fetchDeploymentsOn(node)
+            .filter(id::matchName)
+            .findFirst()
+            .orElseThrow(() -> new DeployableNotFoundException(id.deploymentName(), node));
         List<Version> available = controller.fetchVersions(node, deployment);
         return GetDeploymentResponse
-                .builder()
-                .id(id)
-                .available(available)
-                .build();
+            .builder()
+            .id(id)
+            .available(available)
+            .build();
     }
 
 
     public static class DeployableNotFoundException extends BadRequestException {
-        public DeployableNotFoundException(String deployableName, ClusterNode node) {
+        DeployableNotFoundException(String deployableName, ClusterNode node) {
             super("deployable '" + deployableName + "' not found on '" + node.id() + "'");
         }
     }
@@ -146,25 +146,31 @@ public class Boundary {
     }
 
 
-    public enum DeploymentMode {deploy, undeploy}
+    public enum DeploymentMode {deploy, balance, unbalance, undeploy}
 
     @POST @Path("/deployments/{id}") public void postDeployments(
-            @PathParam("id") DeploymentId id,
-            @FormParam("version") String version,
-            @FormParam("mode") DeploymentMode mode) {
+        @PathParam("id") DeploymentId id,
+        @FormParam("version") String version,
+        @FormParam("mode") DeploymentMode mode) {
         if (id == null)
             throw badRequest().detail("id is a required parameter").exception();
         if (mode == null)
             throw badRequest().detail("mode is a required parameter").exception();
         switch (mode) {
-        case deploy:
-            if (version == null)
-                throw badRequest().detail("version is a required parameter when deploying").exception();
-            controller.deploy(id, version);
-            break;
-        case undeploy:
-            controller.undeploy(id);
-            break;
+            case deploy:
+                if (version == null)
+                    throw badRequest().detail("version is a required parameter when deploying").exception();
+                controller.deploy(id, version);
+                break;
+            case balance:
+                controller.balance(id);
+                break;
+            case unbalance:
+                controller.unbalance(id);
+                break;
+            case undeploy:
+                controller.undeploy(id);
+                break;
         }
     }
 }

@@ -1,9 +1,9 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
+import com.github.t1.kubee.control.Controller.UnexpectedAuditException;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.DeploymentId;
-import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +102,7 @@ class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test void shouldReDeploy() {
+    @Test void shouldRedeploy() {
         givenHealthy(true);
         givenUndeploy().willReturn(audit("remove", versionBefore, null));
         givenDeploy(versionBefore).willReturn(audit("add", null, versionBefore));
@@ -114,7 +114,23 @@ class DeployTest extends AbstractControllerTest {
         verifyRemoveAndAddToLoadBalancer();
     }
 
-    @Test void shouldUnDeploy() {
+    @Test void shouldBalance() {
+        givenHealthy(true);
+
+        controller.balance(DEPLOYMENT_ID);
+
+        verifyAddToLoadBalancer();
+    }
+
+    @Test void shouldUnbalance() {
+        givenHealthy(true);
+
+        controller.unbalance(DEPLOYMENT_ID);
+
+        verifyRemoveFromLoadBalancer();
+    }
+
+    @Test void shouldUndeploy() {
         givenHealthy(true);
         givenUndeploy().willReturn(audit("remove", versionBefore, null));
 
@@ -133,7 +149,7 @@ class DeployTest extends AbstractControllerTest {
 
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
-        assertThat(throwable).isExactlyInstanceOf(WebApplicationApplicationException.class)
+        assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for foo");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
@@ -145,7 +161,7 @@ class DeployTest extends AbstractControllerTest {
 
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
-        assertThat(throwable).isExactlyInstanceOf(WebApplicationApplicationException.class)
+        assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for foo");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
@@ -157,7 +173,7 @@ class DeployTest extends AbstractControllerTest {
 
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
-        assertThat(throwable).isExactlyInstanceOf(WebApplicationApplicationException.class)
+        assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for foo to change version.");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
@@ -169,12 +185,11 @@ class DeployTest extends AbstractControllerTest {
 
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
-        assertThat(throwable).isExactlyInstanceOf(WebApplicationApplicationException.class)
+        assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for foo to change version to 1.0.2, but changed to 1.0.3.");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
-
 
     @Test void shouldRollbackAfterDeployFlipsToUnhealthy() {
         givenHealthy(true, false);

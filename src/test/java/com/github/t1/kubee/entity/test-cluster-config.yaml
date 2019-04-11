@@ -64,9 +64,11 @@ server-b.server.lan:2:
       reload: service
       port: 12345
   PROD:
-    count: 3
+    count: 5
     load-balancer:
-      reload: direct
+      reload: docker-kill-hup
+    status:
+      2:dummy-app: unbalanced
 
 #localhost:0:
 #  PROD:

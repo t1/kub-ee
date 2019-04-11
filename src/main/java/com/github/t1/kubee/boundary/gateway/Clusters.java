@@ -1,4 +1,4 @@
-package com.github.t1.kubee.control;
+package com.github.t1.kubee.boundary.gateway;
 
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.tools.yaml.YamlDocument;

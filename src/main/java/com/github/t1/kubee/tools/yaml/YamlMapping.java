@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.tools.yaml.YamlNode.NULL_NODE;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static lombok.AccessLevel.PACKAGE;
 
 @RequiredArgsConstructor(access = PACKAGE)
@@ -51,7 +51,7 @@ public class YamlMapping {
     }
 
     public Map<String, String> asStringMap() {
-        return stream().collect(Collectors.toMap(entry -> entry.key().asString(), entry -> entry.value().asString()));
+        return stream().collect(toMap(entry -> entry.key().asString(), entry -> entry.value().asString()));
     }
 
     public Stream<YamlEntry> stream() { return entries.stream().map(YamlEntry::new); }

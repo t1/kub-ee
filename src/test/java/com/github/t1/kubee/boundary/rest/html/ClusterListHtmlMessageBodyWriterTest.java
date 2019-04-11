@@ -57,7 +57,7 @@ class ClusterListHtmlMessageBodyWriterTest {
             + "     <th>server-b:2</th> \n"
             + "     <td> prefix: '' <br> suffix: 'test' <br> count: 2 <br> index-length: 2 </td> \n"
             + "     <td> prefix: 'qa' <br> suffix: '' <br> count: 2 <br> index-length: 2 </td> \n"
-            + "     <td> prefix: '' <br> suffix: '' <br> count: 3 <br> index-length: 2 </td> \n"
+            + "     <td> prefix: '' <br> suffix: '' <br> count: 5 <br> index-length: 2 </td> \n"
             + "    </tr> \n"
             + "    <tr> \n"
             + "     <th>localhost:1</th> \n"

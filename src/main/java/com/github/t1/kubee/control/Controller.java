@@ -14,26 +14,22 @@ import com.github.t1.kubee.entity.LoadBalancer;
 import com.github.t1.kubee.entity.ReverseProxy;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.entity.Version;
-import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
-import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.ingress;
 import static com.github.t1.kubee.entity.VersionStatus.deployed;
 import static com.github.t1.kubee.entity.VersionStatus.undeployed;
-import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static com.github.t1.kubee.tools.Tools.errorString;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -41,9 +37,6 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Stateless
 public class Controller {
-    @SuppressWarnings("SpellCheckingInspection") private static final String UNKNOWN_HOST_SUFFIX
-        = ": nodename nor servname provided, or not known";
-
     @Inject List<Cluster> clusters;
     @Inject DeployerGateway deployer;
     @Inject HealthGateway healthGateway;
@@ -92,29 +85,6 @@ public class Controller {
                 .build());
         }
     }
-
-    private static String errorString(Throwable e) {
-        while (e.getCause() != null)
-            e = e.getCause();
-        String out = e.toString();
-        while (out.startsWith(ExecutionException.class.getName() + ": ")
-            || out.startsWith(ConnectException.class.getName() + ": ")
-            || out.startsWith(WebApplicationApplicationException.class.getName() + ": ")
-            || out.startsWith(RuntimeException.class.getName() + ": "))
-            out = out.substring(out.indexOf(": ") + 2);
-        if (out.endsWith(UNKNOWN_HOST_SUFFIX))
-            out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
-        if (out.startsWith(NotFoundException.class.getName() + ": "))
-            out = "deployer not found";
-        if (out.startsWith(BadGatewayException.class.getName() + ": "))
-            out = "bad deployer gateway";
-        if (out.startsWith(UnknownHostException.class.getName() + ": "))
-            out = "unknown host";
-        if (out.equals("Connection refused (Connection refused)"))
-            out = "connection refused";
-        return out;
-    }
-
 
     public List<Version> fetchVersions(ClusterNode node, Deployment deployment) {
         return doFetchVersions(node, deployment).stream().map(s -> toVersion(deployment, s)).collect(toList());
@@ -192,6 +162,16 @@ public class Controller {
         undeploy(node, name);
     }
 
+    public void balance(DeploymentId id) {
+        ClusterNode node = id.node(clusters());
+        ingress(node.getStage()).addToLoadBalancerFor(id.deploymentName(), node);
+    }
+
+    public void unbalance(DeploymentId id) {
+        ClusterNode node = id.node(clusters());
+        ingress(node.getStage()).removeFromLoadBalancer(id.deploymentName(), node);
+    }
+
     private void undeploy(ClusterNode node, String name) {
         ingress(node.getStage()).removeFromLoadBalancer(name, node);
         Audits audits = deployer.undeploy(node, name);
@@ -202,20 +182,24 @@ public class Controller {
         String errorPrefix = "expected " + operation + " audit for " + name;
 
         Audit audit = audits.findDeployment(name)
-            .orElseThrow(() -> badRequest().detail(errorPrefix).exception());
+            .orElseThrow(() -> new UnexpectedAuditException(errorPrefix));
 
         String actualOperation = audit.getOperation();
         List<String> expectedOperations = ("deploy".equals(operation))
             ? asList("add", "change") : singletonList("remove");
         if (!expectedOperations.contains(actualOperation))
-            throw badRequest().detail(errorPrefix + " to be in " + expectedOperations + " but is a " + actualOperation).exception();
+            throw new UnexpectedAuditException(errorPrefix + " to be in " + expectedOperations + " but is a " + actualOperation);
 
         Change versionChange = audit.findChange("version")
-            .orElseThrow(() -> badRequest().detail(errorPrefix + " to change version.").exception());
+            .orElseThrow(() -> new UnexpectedAuditException(errorPrefix + " to change version."));
 
         String newVersion = versionChange.getNewValue();
         if (!Objects.equals(newVersion, version))
-            throw badRequest().detail(errorPrefix + " to change version to " + version + ", but changed to " + newVersion + ".").exception();
+            throw new UnexpectedAuditException(errorPrefix + " to change version to " + version + ", but changed to " + newVersion + ".");
         log.debug("audit {} change {} {}", operation, name, versionChange);
+    }
+
+    public static class UnexpectedAuditException extends RuntimeException {
+        UnexpectedAuditException(String message) { super(message);}
     }
 }

@@ -1,8 +1,8 @@
 package com.github.t1.kubee.boundary.cli.config;
 
+import com.github.t1.kubee.boundary.gateway.Clusters;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
 import com.github.t1.kubee.control.ClusterReconditioner;
-import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;

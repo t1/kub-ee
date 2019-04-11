@@ -18,6 +18,14 @@ class DeploymentMenu extends React.Component {
                 <span className='icon ion-md-remove-circle version-icon'/>
                 undeploy
             </li>
+            <li onClick={() => balance(this.props.group)}>
+                <span className='icon ion-md-eye version-icon'/>
+                balance
+            </li>
+            <li onClick={() => unbalance(this.props.group)}>
+                <span className='icon ion-md-eye-off version-icon'/>
+                unbalance
+            </li>
         </ul>
     }
 
@@ -120,6 +128,24 @@ function deploy(where, version) {
 
     return post(where, 'mode=deploy&version=' + version.name, refreshIcon, 'deployed', () => {
         refreshIcon.parentNode.removeChild(refreshIcon);
+    });
+}
+
+function balance(where) {
+    console.debug('balance', where);
+    const undeployIcon = cellIcon(where, 'balancing');
+
+    return post(where, 'mode=balance', undeployIcon, 'eye', () => {
+        // TODO update status
+    });
+}
+
+function unbalance(where) {
+    console.debug('unbalance', where);
+    const undeployIcon = cellIcon(where, 'unbalancing');
+
+    return post(where, 'mode=unbalance', undeployIcon, 'eye-off', () => {
+        // TODO update status
     });
 }
 

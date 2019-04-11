@@ -1,7 +1,7 @@
 package com.github.t1.kubee.entity;
 
+import com.github.t1.kubee.boundary.gateway.Clusters;
 import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
-import com.github.t1.kubee.control.Clusters;
 import com.github.t1.kubee.entity.Cluster.HealthConfig;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.entity.VersionStatus.unbalanced;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClusterTest {
@@ -45,13 +46,18 @@ public class ClusterTest {
             .healthConfig(HEALTH_CONFIG).build(),
         Cluster.builder().host("server-b.server.lan").slot(SLOT_2)
             .stage().name("DEV").prefix("").suffix("test").count(2).indexLength(2)
-            .loadBalancerConfig("reload", "set-user-id-script").add()
+            .loadBalancerConfig("reload", "set-user-id-script")
+            .add()
             .stage(QA)
-            .stage(PROD)
+            .stage().name("PROD").count(5).indexLength(2)
+            .loadBalancerConfig("reload", "docker-kill-hup")
+            .status("2:dummy-app", unbalanced)
+            .add()
             .healthConfig(HEALTH_CONFIG).build(),
         Cluster.builder().host("localhost").slot(SLOT_1)
             .stage().name("PROD").prefix("").suffix("").count(1).indexLength(0)
-            .loadBalancerConfig("reload", "direct").add()
+            .loadBalancerConfig("reload", "direct")
+            .add()
             .healthConfig(HEALTH_CONFIG).build()
     };
 

@@ -18,7 +18,7 @@
        <th rowspan="2">Application</th>
        <th class="stage" colspan="2">DEV</th>
        <th class="stage" colspan="2">QA</th>
-       <th class="stage" colspan="3">PROD</th>
+       <th class="stage" colspan="5">PROD</th>
       </tr>
       <tr>
        <th class="node" id="node:DEV:1">01</th>
@@ -28,6 +28,8 @@
        <th class="node" id="node:PROD:1">01</th>
        <th class="node" id="node:PROD:2">02</th>
        <th class="node" id="node:PROD:3">03</th>
+       <th class="node" id="node:PROD:4">04</th>
+       <th class="node" id="node:PROD:5">05</th>
       </tr>
       <tr>
        <th id="cluster:server-a:1" rowspan="1">server-a:1</th>
@@ -67,6 +69,14 @@
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.3</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-a:1:PROD:4:foo">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-a:1:PROD:5:foo">
+         -
+        </div></td>
       </tr>
       <tr>
        <th id="cluster:server-a:2" rowspan="1">server-a:2</th>
@@ -97,6 +107,14 @@
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
         <div class="deployment not-deployed" id="server-a:2:PROD:3:?">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-a:2:PROD:4:?">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-a:2:PROD:5:?">
          -
         </div></td>
       </tr>
@@ -133,6 +151,14 @@
         <div class="deployment not-deployed" id="server-b:2:PROD:3:bar">
          -
         </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-b:2:PROD:4:bar">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-b:2:PROD:5:bar">
+         -
+        </div></td>
       </tr>
       <tr>
        <th class="deployable-name">baz</th>
@@ -165,6 +191,14 @@
         <div class="deployment not-deployed" id="server-b:2:PROD:3:baz">
          -
         </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-b:2:PROD:4:baz">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="server-b:2:PROD:5:baz">
+         -
+        </div></td>
       </tr>
       <tr>
        <th id="cluster:localhost:1" rowspan="1">localhost:1</th>
@@ -195,6 +229,14 @@
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
         <div class="deployment not-deployed" id="localhost:1:PROD:3:?">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="localhost:1:PROD:4:?">
+         -
+        </div></td>
+       <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
+        <div class="deployment not-deployed" id="localhost:1:PROD:5:?">
          -
         </div></td>
       </tr>
