@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.tools.html.CustomComponent.div;
 import static com.github.t1.kubee.tools.html.CustomComponent.span;
 import static java.util.Collections.singletonList;
@@ -196,13 +197,14 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private CustomComponent cell(Deployment deployment) {
             return div()
-                .className(DEPLOYMENT)
+                .className(DEPLOYMENT, deployment.getStatus().name())
                 .id(deployment.id())
                 .attr("title", deployment.gav())
                 .attr("draggable", "true")
                 .attr("ondragstart", "drag_start(event);")
                 .attr("ondragend", "drag_end(event);")
                 .attr("onclick", "click_handler(event);")
+                .with(span().className(icon(deployment)))
                 .with(span()
                     .className("dropdown")
                     .with(span()
@@ -215,6 +217,10 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
                                 : deployment.getVersion()))
                         .with(span().className("caret")))
                     .with(div().className("dropdown-menu versions-menu")));
+        }
+
+        private String[] icon(Deployment deployment) {
+            return (deployment.getStatus() == running) ? new String[0] : new String[]{"icon", "ion-md-eye-off"};
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {

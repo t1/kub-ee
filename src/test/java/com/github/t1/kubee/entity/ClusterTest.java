@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.entity.VersionStatus.unbalanced;
+import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClusterTest {

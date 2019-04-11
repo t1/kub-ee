@@ -43,7 +43,7 @@ public class Stage implements Comparable<Stage> {
     @Singular("loadBalancerConfig") Map<String, String> loadBalancerConfig;
 
     /** Status of node/application (e.g. <code>0:my-app</code>) to the current status of the application */
-    @Singular("status") Map<String, VersionStatus> status;
+    @Singular("status") Map<String, DeploymentStatus> status;
 
 
     public Stream<ClusterNode> nodes() { return nodes(null); }
@@ -98,11 +98,11 @@ public class Stage implements Comparable<Stage> {
             value.get("index-length").ifPresent(node -> indexLength(node.asInt()));
             value.get("path").ifPresent(node -> path(node.asString()));
             value.get("load-balancer").ifPresent(node -> loadBalancerConfig(node.asStringMap()));
-            value.get("status").ifPresent(node -> status(node.asMapping().stream().collect(toMap(entry -> entry.key().asString(), this::versionStatus))));
+            value.get("status").ifPresent(node -> status(node.asMapping().stream().collect(toMap(entry -> entry.key().asString(), this::deploymentStatus))));
             return this;
         }
 
-        private VersionStatus versionStatus(YamlEntry entry) { return VersionStatus.valueOf(entry.value().asString()); }
+        private DeploymentStatus deploymentStatus(YamlEntry entry) { return DeploymentStatus.valueOf(entry.value().asString()); }
 
         StageBuilder clusterBuilder(ClusterBuilder clusterBuilder) {
             this.clusterBuilder = clusterBuilder;

@@ -9,8 +9,9 @@ public class CustomComponent extends Component {
 
     public CustomComponent(String tag) { this.element = new Element(tag); }
 
-    public CustomComponent className(String className) {
-        element.addClass(className);
+    public CustomComponent className(String... classNames) {
+        for (String className : classNames)
+            element.addClass(className);
         return this;
     }
 

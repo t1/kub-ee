@@ -2,9 +2,12 @@ package com.github.t1.kubee.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.util.Comparator;
+
+import static com.github.t1.kubee.entity.DeploymentStatus.running;
 
 /**
  * Meta data about an application deployed on a cluster node
@@ -29,10 +32,10 @@ public class Deployment implements Comparable<Deployment> {
 
     @Override public String toString() {
         return "Deployment(" + name + ":" + type
-                + "|" + groupId + ":" + artifactId + ":" + version
-                + "|" + node
-                + (hasError() ? "|error=" + error : "")
-                + ")";
+            + "|" + groupId + ":" + artifactId + ":" + version
+            + "|" + node
+            + (hasError() ? "|error=" + error : "")
+            + ")";
     }
 
     public boolean hasError() { return error != null && !error.isEmpty(); }
@@ -43,7 +46,11 @@ public class Deployment implements Comparable<Deployment> {
 
     public String gav() { return groupId + ":" + artifactId + ":" + version; }
 
-    @Override public int compareTo(Deployment that) {
+    @Override public int compareTo(@NonNull Deployment that) {
         return Comparator.comparing(Deployment::getName).compare(this, that);
+    }
+
+    public DeploymentStatus getStatus() {
+        return node.getStage().getStatus().getOrDefault(node.getIndex() + ":" + getName(), running);
     }
 }

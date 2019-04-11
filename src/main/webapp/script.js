@@ -9,22 +9,22 @@ class DeploymentMenu extends React.Component {
         const versions = (this.props.versions) ?
             this.props.versions.map(version => this.renderVersion(version)) :
             <span className="loading-indicator">Loading...</span>;
+        const [balanceAction, balanceIcon, balanceText] = this.props.deploymentStatus === 'unbalanced' ?
+            [() => balance(this.props.group), 'ion-md-eye', 'balance'] :
+            [() => unbalance(this.props.group), 'ion-md-eye-off', 'unbalance'];
+
         return <ul className="list-unstyled deployment-menu">
             {versions}
             <li>
                 <hr/>
             </li>
+            <li onClick={balanceAction}>
+                <span className={'icon ' + balanceIcon + ' version-icon'}/>
+                {balanceText}
+            </li>
             <li onClick={() => undeploy(this.props.group)}>
                 <span className='icon ion-md-remove-circle version-icon'/>
                 undeploy
-            </li>
-            <li onClick={() => balance(this.props.group)}>
-                <span className='icon ion-md-eye version-icon'/>
-                balance
-            </li>
-            <li onClick={() => unbalance(this.props.group)}>
-                <span className='icon ion-md-eye-off version-icon'/>
-                unbalance
             </li>
         </ul>
     }
@@ -74,13 +74,15 @@ function statusIcon(state) {
 }
 
 function click_handler(event) {
-    const cellId = $(event.target).parents('.deployment').attr('id');
+    const parent = $(event.target).parents('.deployment');
+    const cellId = parent.attr('id');
     if (!cellId)
         return;
     const menu = $id(cellId).find('.versions-menu')[0];
 
     if (!menu || menu.hasChildNodes())
         return;
+    const deploymentStatus = (parent.hasClass('unbalanced')) ? 'unbalanced' : 'balanced';
     console.debug('menu', menu, cellId);
 
     ReactDOM.render(
@@ -89,7 +91,7 @@ function click_handler(event) {
     fetchVersions(cellId)
         .then(versions => {
             ReactDOM.render(
-                <DeploymentMenu group={cellId} versions={versions.available}/>, menu);
+                <DeploymentMenu group={cellId} versions={versions.available} deploymentStatus={deploymentStatus}/>, menu);
         });
 }
 

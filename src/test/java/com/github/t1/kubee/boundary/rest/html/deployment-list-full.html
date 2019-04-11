@@ -35,37 +35,44 @@
        <th id="cluster:server-a:1" rowspan="1">server-a:1</th>
        <th class="deployable-name">foo</th>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:DEV:1:foo" title="foo-group:foo-art:1.2.5-SNAPSHOT" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:DEV:1:foo" title="foo-group:foo-art:1.2.5-SNAPSHOT" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.5-SNAPSHOT</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:DEV:2:foo" title="foo-group:foo-art:1.2.5-SNAPSHOT" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:DEV:2:foo" title="foo-group:foo-art:1.2.5-SNAPSHOT" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.5-SNAPSHOT</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:QA:1:foo" title="foo-group:foo-art:1.2.4" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:QA:1:foo" title="foo-group:foo-art:1.2.4" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.4</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:QA:2:foo" title="foo-group:foo-art:1.2.4" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:QA:2:foo" title="foo-group:foo-art:1.2.4" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.4</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:PROD:1:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:PROD:1:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.3</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:PROD:2:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:PROD:2:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.3</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-a:1:PROD:3:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-a:1:PROD:3:foo" title="foo-group:foo-art:1.2.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">1.2.3</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
@@ -122,12 +129,14 @@
        <th id="cluster:server-b:2" rowspan="2">server-b:2</th>
        <th class="deployable-name">bar</th>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-b:2:DEV:1:bar" title="bar-group:bar-art:2.0.1" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-b:2:DEV:1:bar" title="bar-group:bar-art:2.0.1" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">2.0.1</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-b:2:DEV:2:bar" title="bar-group:bar-art:2.0.2" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-b:2:DEV:2:bar" title="bar-group:bar-art:2.0.2" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">2.0.2</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
@@ -167,7 +176,8 @@
          -
         </div></td>
        <td ondragover="drag_over(event);" ondragleave="drag_leave(event);" ondrop="drop_handler(event);">
-        <div class="deployment" id="server-b:2:DEV:2:baz" title="baz-group:baz-art:2.1.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+        <div class="deployment running" id="server-b:2:DEV:2:baz" title="baz-group:baz-art:2.1.3" draggable="true" ondragstart="drag_start(event);" ondragend="drag_end(event);" onclick="click_handler(event);">
+         <span></span>
          <span class="dropdown"><span class="dropdown-toggle" data-toggle="dropdown"><span class="version-name">error-hint</span><span class="caret"></span></span>
           <div class="dropdown-menu versions-menu"></div></span>
         </div></td>
