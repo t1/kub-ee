@@ -47,7 +47,7 @@ public class Controller {
     public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
         return stages.flatMap(stage ->
             ingress(stage).loadBalancers().map(config -> LoadBalancer.builder()
-                .name(config.name())
+                .name(config.applicationName())
                 .method(config.method())
                 .servers(config.endpoints().map(Endpoint::toString).collect(toList()))
                 .build()));
@@ -199,7 +199,7 @@ public class Controller {
         log.debug("audit {} change {} {}", operation, name, versionChange);
     }
 
-    public static class UnexpectedAuditException extends RuntimeException {
+    static class UnexpectedAuditException extends RuntimeException {
         UnexpectedAuditException(String message) { super(message);}
     }
 }

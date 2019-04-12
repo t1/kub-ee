@@ -4,6 +4,7 @@ import com.github.t1.kubee.control.Controller;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
+import com.github.t1.kubee.entity.DeploymentStatus;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.html.CustomComponent;
 import com.github.t1.kubee.tools.html.Html;
@@ -197,7 +198,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
 
         private CustomComponent cell(Deployment deployment) {
             return div()
-                .className(DEPLOYMENT, deployment.getStatus().name())
+                .className(DEPLOYMENT, getStatusOfApp(deployment).name())
                 .id(deployment.id())
                 .attr("title", deployment.gav())
                 .attr("draggable", "true")
@@ -220,7 +221,11 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         }
 
         private String[] icon(Deployment deployment) {
-            return (deployment.getStatus() == running) ? new String[0] : new String[]{"icon", "ion-md-eye-off"};
+            return (getStatusOfApp(deployment) == running) ? new String[0] : new String[]{"icon", "ion-md-eye-off"};
+        }
+
+        private DeploymentStatus getStatusOfApp(Deployment deployment) {
+            return deployment.getNode().getStatusOfApp(deployment.getName());
         }
 
         private boolean on(Cluster cluster, Deployment deployment) {

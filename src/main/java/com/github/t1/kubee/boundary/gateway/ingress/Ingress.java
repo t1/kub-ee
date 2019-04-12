@@ -43,6 +43,8 @@ import static java.util.stream.Collectors.toList;
 @Log
 @NoArgsConstructor(force = true)
 public class Ingress {
+    private static final String LB_SUFFIX = "-lb";
+
     @VisibleForTesting
     static Path NGINX_ETC = Paths.get("/usr/local/etc/nginx");
 
@@ -111,7 +113,7 @@ public class Ingress {
     }
 
     private boolean isReverseProxy(NginxUpstream upstream) {
-        return !upstream.getName().endsWith("-lb") && upstream.getHostPorts().size() == 1;
+        return !upstream.getName().endsWith(LB_SUFFIX) && upstream.getHostPorts().size() == 1;
     }
 
     public void addToLoadBalancerFor(String application, ClusterNode node) {
@@ -168,7 +170,7 @@ public class Ingress {
         String path = trimSlashes(rootLocationProxyPass(server).getPath());
         if (path.isEmpty())
             return false;
-        String upstreamName = path + "-lb";
+        String upstreamName = path + LB_SUFFIX;
         return upstreamFor(server).filter(upstream -> upstream.getName().equals(upstreamName)).isPresent();
     }
 
@@ -191,11 +193,11 @@ public class Ingress {
     }
 
     private boolean hasLoadBalancerFor(String application) {
-        return nginxConfig.upstream(application + "-lb").isPresent();
+        return nginxConfig.upstream(application + LB_SUFFIX).isPresent();
     }
 
     private LoadBalancer getOrCreateLoadBalancerFor(String application) {
-        return new LoadBalancer(application, 80, application + "-lb", application);
+        return new LoadBalancer(application, 80, application + LB_SUFFIX, application);
     }
 
     private Optional<NginxServer> serverFor(NginxUpstream upstream) {
@@ -225,7 +227,11 @@ public class Ingress {
             this.upstream = getOrCreateUpstream(upstreamName);
         }
 
-        public String name() { return upstream.getName(); }
+        public String applicationName() {
+            String upstreamName = upstream.getName();
+            assert upstreamName.endsWith(LB_SUFFIX);
+            return upstreamName.substring(0, upstreamName.length() - LB_SUFFIX.length());
+        }
 
         public String method() { return upstream.getMethod(); }
 
@@ -249,6 +255,7 @@ public class Ingress {
 
         public boolean hasEndpoint(Endpoint endpoint) { return endpoints().anyMatch(endpoint::equals); }
 
+        /** Returns a snapshot of the endpoints, so it can be manipulated */
         public Stream<Endpoint> endpoints() { return upstream.hostPorts().map(Tools::toEndpoint).collect(toList()).stream(); }
 
         public void addOrUpdateEndpoint(Endpoint endpoint) {

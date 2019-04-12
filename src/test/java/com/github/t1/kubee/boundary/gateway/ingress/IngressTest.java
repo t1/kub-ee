@@ -118,8 +118,8 @@ import static org.assertj.core.api.Assertions.tuple;
         Stream<LoadBalancer> loadBalancers = whenIngress().loadBalancers();
 
         assertThat(loadBalancers)
-            .extracting(LoadBalancer::name, LoadBalancer::method, loadBalancer -> loadBalancer.endpoints().collect(toList()))
-            .containsExactly(tuple("dummy-app-lb", "least_conn", singletonList(toEndpoint(WORKER01))));
+            .extracting(LoadBalancer::applicationName, LoadBalancer::method, loadBalancer -> loadBalancer.endpoints().collect(toList()))
+            .containsExactly(tuple("dummy-app", "least_conn", singletonList(toEndpoint(WORKER01))));
     }
 
     @Test void shouldGetReverseProxies() {

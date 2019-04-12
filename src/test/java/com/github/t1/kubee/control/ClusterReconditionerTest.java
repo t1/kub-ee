@@ -10,6 +10,7 @@ import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
+import com.github.t1.kubee.entity.Stage.StageBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,24 +33,28 @@ class ClusterReconditionerTest {
     private static final Endpoint WORKER03 = new Endpoint("worker03", 10003);
     private static final List<Endpoint> WORKERS = asList(WORKER01, WORKER02, WORKER03);
 
+    private static final String APP_NAME = "dummy-app";
+
 
     // <editor-fold desc="Cluster Config">
     private static final Slot SLOT = Slot.builder().name("0").http(8080).https(8443).build();
     private Cluster cluster = null;
-    private final List<ClusterNode> nodes = new ArrayList<>();
 
     private void givenClusterWithNodeCount(int count) {
-        Stage stage = Stage.builder()
+        givenClusterWith(stage().count(count));
+    }
+
+    private void givenClusterWith(StageBuilder stage) {
+        assertThat(cluster).isNull();
+        cluster = Cluster.builder().host("worker").slot(SLOT).stage(stage.build()).build();
+    }
+
+    private StageBuilder stage() {
+        return Stage.builder()
             .name("PROD")
-            .count(count)
             .indexLength(2)
             .loadBalancerConfig("reload", "custom")
-            .loadBalancerConfig("class", ReloadMock.class.getName())
-            .build();
-        cluster = Cluster.builder().host("worker").slot(SLOT).stage(stage).build();
-        for (int i = 0; i < count; i++) {
-            nodes.add(new ClusterNode(cluster, stage, i + 1));
-        }
+            .loadBalancerConfig("class", ReloadMock.class.getName());
     }
     // </editor-fold>
 
@@ -161,9 +167,9 @@ class ClusterReconditionerTest {
 
         @Getter final List<Endpoint> endpoints;
 
-        @Override public String toString() { return name() + ":" + endpoints; }
+        @Override public String toString() { return applicationName() + ":" + endpoints; }
 
-        @Override public String name() { return "dummy-app-lb"; }
+        @Override public String applicationName() { return APP_NAME; }
 
         @Override public String method() { return "least_conn"; }
 
@@ -185,7 +191,7 @@ class ClusterReconditionerTest {
 
         @Override public boolean hasEndpoint(Endpoint endpoint) { return endpoints.contains(endpoint); }
 
-        @Override public Stream<Endpoint> endpoints() { return endpoints.stream(); }
+        @Override public Stream<Endpoint> endpoints() { return new ArrayList<>(endpoints).stream(); }
 
         @Override public void addOrUpdateEndpoint(Endpoint endpoint) {
             if (hasEndpoint(endpoint))
@@ -197,16 +203,28 @@ class ClusterReconditionerTest {
     // </editor-fold>
 
     private ClusterNode findNode(String host) {
-        return nodes.stream().filter(it -> it.host().equals(host)).findAny().orElse(null);
+        return cluster.nodes().filter(it -> it.host().equals(host)).findAny().orElse(null);
     }
 
     private void assertIngress(boolean written, Endpoint... endpoints) {
+        assertIngressWritten(written);
+        assertLoadBalancers(endpoints);
+        assertReverseProxies(endpoints);
+    }
+
+    private void assertIngressWritten(boolean written) {
         if (ingressWritten != written)
             assertThat(ingressBefore).describedAs("expected ingress written " + written).isEqualTo(ingress.toString());
-        assertThat(loadBalancer.endpoints()).describedAs("load balancers").containsExactly(endpoints);
+    }
+
+    private void assertLoadBalancers(Endpoint... endpoints) {
+        assertThat(loadBalancer.endpoints()).describedAs("load balancers").containsOnly(endpoints);
+    }
+
+    private void assertReverseProxies(Endpoint... endpoints) {
         assertThat(reverseProxies).describedAs("reverse proxies").hasSize(endpoints.length);
         for (int i = 0; i < endpoints.length; i++) {
-            ReverseProxy reverseProxy = reverseProxies.get(nodes.get(i));
+            ReverseProxy reverseProxy = reverseProxies.get(cluster.node(cluster.getStages().get(0), i + 1));
             assertThat(new Endpoint(reverseProxy.name(), reverseProxy.getPort()))
                 .describedAs("reverse proxy " + i).isEqualTo(endpoints[i]);
         }
@@ -225,7 +243,18 @@ class ClusterReconditionerTest {
     }
 
 
-    @Test void shouldRunEmpty() {
+    @Test void shouldDoNothingWithoutNodes() {
+        givenClusterWithNodeCount(0);
+        givenContainers();
+        givenIngress();
+
+        recondition();
+
+        assertContainers();
+        assertIngress(false);
+    }
+
+    @Test void shouldDoNothingWithOneNode() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01);
         givenIngress(WORKER01);
@@ -234,6 +263,17 @@ class ClusterReconditionerTest {
 
         assertContainers(WORKER01);
         assertIngress(false, WORKER01);
+    }
+
+    @Test void shouldDoNothingWithTwoNodes() {
+        givenClusterWithNodeCount(2);
+        givenContainers(WORKER01, WORKER02);
+        givenIngress(WORKER01, WORKER02);
+
+        recondition();
+
+        assertContainers(WORKER01, WORKER02);
+        assertIngress(false, WORKER01, WORKER02);
     }
 
     @Test void shouldUpdatePortOfWorker01() {
@@ -380,6 +420,21 @@ class ClusterReconditionerTest {
 
         assertContainers(WORKER01);
         assertIngress(true, WORKER01);
+    }
+
+    @Test void shouldUnbalanceNode() {
+        givenClusterWith(stage()
+            .count(3)
+            .status("2:" + APP_NAME, unbalanced));
+        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenIngress(WORKER01, WORKER02, WORKER03);
+
+        recondition();
+
+        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertIngressWritten(true);
+        assertLoadBalancers(WORKER01, WORKER03);
+        assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }
 
     // TODO multiple stages

@@ -7,6 +7,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Comparator;
 
+import static com.github.t1.kubee.entity.DeploymentStatus.running;
+
 /**
  * A JVM, i.e. one node of one stage of a cluster
  */
@@ -44,5 +46,9 @@ public class ClusterNode implements Comparable<ClusterNode> {
 
     public boolean matchStageNameAndIndex(ClusterNode that) {
         return this.stage.getName().equals(that.stage.getName()) && this.index == that.index;
+    }
+
+    public DeploymentStatus getStatusOfApp(String name) {
+        return getStage().getStatus().getOrDefault(index + ":" + name, running);
     }
 }

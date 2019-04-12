@@ -7,8 +7,6 @@ import lombok.Value;
 
 import java.util.Comparator;
 
-import static com.github.t1.kubee.entity.DeploymentStatus.running;
-
 /**
  * Meta data about an application deployed on a cluster node
  */
@@ -48,9 +46,5 @@ public class Deployment implements Comparable<Deployment> {
 
     @Override public int compareTo(@NonNull Deployment that) {
         return Comparator.comparing(Deployment::getName).compare(this, that);
-    }
-
-    public DeploymentStatus getStatus() {
-        return node.getStage().getStatus().getOrDefault(node.getIndex() + ":" + getName(), running);
     }
 }

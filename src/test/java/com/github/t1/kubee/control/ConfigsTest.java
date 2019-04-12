@@ -31,7 +31,7 @@ class ConfigsTest extends AbstractControllerTest {
 
     @Test void shouldGetOneLoadBalancer() {
         LoadBalancer foo = mock(LoadBalancer.class);
-        given(foo.name()).willReturn("foo");
+        given(foo.applicationName()).willReturn("foo");
         when(ingress.loadBalancers()).thenReturn(Stream.of(foo));
 
         Stream<com.github.t1.kubee.entity.LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of(DEV));
@@ -41,9 +41,9 @@ class ConfigsTest extends AbstractControllerTest {
 
     @Test void shouldGetTwoLoadBalancer() {
         LoadBalancer foo = mock(LoadBalancer.class);
-        given(foo.name()).willReturn("foo");
+        given(foo.applicationName()).willReturn("foo");
         LoadBalancer bar = mock(LoadBalancer.class);
-        given(bar.name()).willReturn("bar");
+        given(bar.applicationName()).willReturn("bar");
         when(ingress.loadBalancers()).thenReturn(Stream.of(foo, bar));
 
         Stream<com.github.t1.kubee.entity.LoadBalancer> loadBalancers = controller.loadBalancers(Stream.of(DEV));

@@ -6,11 +6,15 @@ import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
+import com.github.t1.kubee.entity.DeploymentStatus;
+import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
+import static com.github.t1.kubee.entity.DeploymentStatus.running;
+import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -68,16 +72,34 @@ public class ClusterReconditioner implements Runnable {
 
         private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
             loadBalancer.endpoints().forEach(endpoint -> {
-                Integer actualPort = clusterStatus.port(endpoint.getHost());
-                if (actualPort == null)
-                    return; // will be removed in cleanup
-                if (endpoint.getPort() != actualPort) {
-                    loadBalancer.updatePort(endpoint, actualPort);
+                String host = endpoint.getHost();
+                if (getDeploymentStatus(loadBalancer, host) == unbalanced) {
+                    loadBalancer.removeHost(host);
+                } else {
+                    Integer actualPort = clusterStatus.port(host);
+                    if (actualPort == null)
+                        return; // will be removed in cleanup
+                    if (endpoint.getPort() != actualPort) {
+                        loadBalancer.updatePort(endpoint, actualPort);
+                    }
                 }
             });
             clusterStatus.endpoints()
-                .filter(actualEndpoint -> !loadBalancer.hasEndpoint(actualEndpoint))
+                .filter(it -> needsEndpoint(loadBalancer, it))
                 .forEach(loadBalancer::addOrUpdateEndpoint);
+        }
+
+        private boolean needsEndpoint(LoadBalancer loadBalancer, Endpoint it) {
+            return !loadBalancer.hasEndpoint(it) && getDeploymentStatus(loadBalancer, it.getHost()) == running;
+        }
+
+        private DeploymentStatus getDeploymentStatus(LoadBalancer loadBalancer, String host) {
+            ClusterNode node = findNode(host);
+            return (node == null) ? null : node.getStatusOfApp(loadBalancer.applicationName());
+        }
+
+        private ClusterNode findNode(String host) {
+            return cluster.nodes().filter(n -> n.endpoint().getHost().equals(host)).findAny().orElse(null);
         }
 
         private void cleanupNext(ClusterNode node) {
