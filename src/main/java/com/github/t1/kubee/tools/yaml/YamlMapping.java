@@ -32,6 +32,12 @@ public class YamlMapping {
         return "{\n" + stream().map(YamlEntry::toString).collect(joining(",\n")) + "\n}";
     }
 
+    public boolean isEmpty() { return node == null || node.getValue().isEmpty(); }
+
+    public boolean hasKey(String key) {
+        return stream().anyMatch(entry -> entry.key().asString().equals(key));
+    }
+
     public YamlNode get(String key) {
         return getOptional(key).orElse(NULL_NODE);
     }
@@ -81,7 +87,8 @@ public class YamlMapping {
         return getMapping(key);
     }
 
-    public boolean hasKey(String key) {
-        return stream().anyMatch(entry -> entry.key().asString().equals(key));
+    public void remove(String key) {
+        if (node != null)
+            node.getValue().removeIf(tuple -> ((ScalarNode) tuple.getKeyNode()).getValue().equals(key));
     }
 }

@@ -118,6 +118,7 @@ class DeployTest extends AbstractControllerTest {
         controller.balance(DEPLOYMENT_ID);
 
         verifyAddToLoadBalancer();
+        verify(clusters).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
     @Test void shouldUnbalance() {

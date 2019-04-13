@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static com.github.t1.kubee.TestData.CLUSTER;
 import static com.github.t1.kubee.TestData.NODE1;
+import static com.github.t1.kubee.TestData.NODE2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.contentOf;
 
@@ -30,6 +31,9 @@ class ClustersTest {
         "    load-balancer:\n" +
         "      reload: custom\n" +
         "      class: com.github.t1.kubee.boundary.gateway.ingress.ReloadMock\n";
+    private static final String UNBALANCED_YAML = YAML +
+        "    status:\n" +
+        "      1:app-name: unbalanced\n";
 
     private final Clusters clusters = new Clusters();
 
@@ -41,14 +45,14 @@ class ClustersTest {
     @AfterEach void tearDown() { System.setProperty("user.dir", origUserDir); }
 
     @SneakyThrows(IOException.class)
-    private void givenClusterConfig() {
+    private void givenClusterConfig(String yaml) {
         this.configFile = tmp.resolve("cluster-config.yaml");
         System.setProperty("user.dir", tmp.toString());
-        Files.write(configFile, YAML.getBytes());
+        Files.write(configFile, yaml.getBytes());
     }
 
     @Test void shouldReadClustersFromUserDir() {
-        givenClusterConfig();
+        givenClusterConfig(YAML);
 
         Stream<Cluster> stream = clusters.stream();
 
@@ -56,13 +60,50 @@ class ClustersTest {
     }
 
     @Test void shouldUnbalance() {
-        givenClusterConfig();
+        givenClusterConfig(YAML);
 
         clusters.unbalance(NODE1, "app-name");
 
-        assertThat(contentOf(configFile.toFile())).isEqualTo(
-            YAML +
-                "    status:\n" +
-                "      1:app-name: unbalanced\n");
+        assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
+    }
+
+    @Test void shouldNotUnbalanceWhenAlreadyUnbalanced() {
+        givenClusterConfig(UNBALANCED_YAML);
+
+        clusters.unbalance(NODE1, "app-name");
+
+        assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
+    }
+
+    @Test void shouldBalance() {
+        givenClusterConfig(UNBALANCED_YAML);
+
+        clusters.balance(NODE1, "app-name");
+
+        assertThat(contentOf(configFile.toFile())).isEqualTo(YAML);
+    }
+
+    @Test void shouldBalance1of2nodes() {
+        givenClusterConfig(UNBALANCED_YAML + "      2:app-name: unbalanced\n");
+
+        clusters.balance(NODE2, "app-name");
+
+        assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
+    }
+
+    @Test void shouldBalance1of2apps() {
+        givenClusterConfig(UNBALANCED_YAML + "      1:app2-name: unbalanced\n");
+
+        clusters.balance(NODE1, "app2-name");
+
+        assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
+    }
+
+    @Test void shouldNotBalanceWhenAlreadyBalanced() {
+        givenClusterConfig(YAML);
+
+        clusters.balance(NODE1, "app-name");
+
+        assertThat(contentOf(configFile.toFile())).isEqualTo(YAML);
     }
 }

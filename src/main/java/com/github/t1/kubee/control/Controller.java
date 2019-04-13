@@ -165,6 +165,7 @@ public class Controller {
 
     public void balance(DeploymentId id) {
         ClusterNode node = id.node(clusters());
+        clusters.balance(node, id.deploymentName());
         ingress(node.getStage()).addToLoadBalancerFor(id.deploymentName(), node);
     }
 

@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
@@ -46,11 +47,30 @@ public class Clusters {
     }
 
     public void unbalance(ClusterNode node, String deploymentName) {
+        updateStage(node, deploymentName, stage -> {
+            YamlMapping status = stage.getOrCreateMapping("status");
+            String key = key(node, deploymentName);
+            if (!status.hasKey(key))
+                status.add(key, unbalanced.name());
+        });
+    }
+
+    public void balance(ClusterNode node, String deploymentName) {
+        updateStage(node, deploymentName, stage -> {
+            if (stage.hasKey("status")) {
+                YamlMapping status = stage.getMapping("status");
+                status.remove(key(node, deploymentName));
+                if (status.isEmpty())
+                    stage.remove("status");
+            }
+        });
+    }
+
+    private void updateStage(ClusterNode node, String deploymentName, Consumer<YamlMapping> consumer) {
         YamlDocument document = readDocument(getConfigPath());
         YamlMapping yamlNode = document.asMapping().getMapping(node.getCluster().id());
         YamlMapping stage = yamlNode.getMapping(node.getStage().getName());
-        YamlMapping status = stage.getOrCreateMapping("status");
-        status.add(node.getIndex() + ":" + deploymentName, unbalanced.name());
+        consumer.accept(stage);
         writeDocument(document, getConfigPath());
     }
 
@@ -60,5 +80,9 @@ public class Clusters {
         } catch (IOException e) {
             throw new RuntimeException("can't write cluster config file: " + path, e);
         }
+    }
+
+    private String key(ClusterNode node, String deploymentName) {
+        return node.getIndex() + ":" + deploymentName;
     }
 }
