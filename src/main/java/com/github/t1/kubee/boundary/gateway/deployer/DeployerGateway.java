@@ -29,11 +29,11 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class DeployerGateway {
     private static final int MAX_RETRIES = 10;
-    private static final TypeReference<List<String>> STRING_LIST = new TypeReference<List<String>>() {};
+    static final TypeReference<List<String>> STRING_LIST = new TypeReference<List<String>>() {};
 
     @Inject YamlHttpClient client;
 
-    public String fetchVersion(String deployableName, ClusterNode node) {
+    public String fetchVersion(ClusterNode node, String deployableName) {
         return fetchDeploymentsFrom(node.deployerUri())
             .stream()
             .filter(deployable -> deployable.getName().equals(deployableName))
@@ -42,8 +42,8 @@ public class DeployerGateway {
             .orElse(null);
     }
 
-    public List<String> fetchVersions(URI deployerUri, String groupId, String artifactId) {
-        URI uri = UriBuilder.fromUri(deployerUri)
+    public List<String> fetchVersions(ClusterNode node, String groupId, String artifactId) {
+        URI uri = UriBuilder.fromUri(node.deployerUri())
             .path("/repository/versions")
             .queryParam("artifactId", artifactId)
             .queryParam("groupId", groupId)
@@ -53,7 +53,7 @@ public class DeployerGateway {
     }
 
     @Data
-    private static class Deployables {
+    static class Deployables {
         @JsonProperty
         private Map<String, Deployable> deployables;
     }
@@ -77,7 +77,7 @@ public class DeployerGateway {
         private String error;
     }
 
-    public Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
+    public Stream<Deployment> fetchDeployables(ClusterNode node) {
         return fetchDeploymentsFrom(node.deployerUri())
             .stream()
             .map(deployable ->

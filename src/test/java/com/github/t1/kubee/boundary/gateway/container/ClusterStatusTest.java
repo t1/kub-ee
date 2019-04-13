@@ -30,7 +30,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldGetNoEndpoint() {
-        containers.given();
+        containers.givenEndpoints();
 
         List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
 
@@ -38,7 +38,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldGetOneEndpoint() {
-        containers.given(WORKER1);
+        containers.givenEndpoints(WORKER1);
 
         List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
 
@@ -46,7 +46,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldGetThreeEndpoints() {
-        containers.given(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
 
         List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
 
@@ -54,7 +54,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldGetPort2() {
-        containers.given(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
 
         Integer port = whenStatus().port(WORKER2.getHost());
 
@@ -62,7 +62,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldGetNullPortForUnknownHost() {
-        containers.given(WORKER1);
+        containers.givenEndpoints(WORKER1);
 
         Integer port = whenStatus().port(WORKER2.getHost());
 
@@ -70,7 +70,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldNotScale() {
-        containers.given(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
 
         List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
 
@@ -78,7 +78,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldScaleOneUp() {
-        containers.given(WORKER1, WORKER2);
+        containers.givenEndpoints(WORKER1, WORKER2);
 
         List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
 
@@ -86,7 +86,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldScaleTwoUp() {
-        containers.given(WORKER1);
+        containers.givenEndpoints(WORKER1);
 
         List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
 
@@ -94,7 +94,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldScaleOneDown() {
-        containers.given(WORKER1, WORKER2, WORKER3, WORKER4);
+        containers.givenEndpoints(WORKER1, WORKER2, WORKER3, WORKER4);
 
         List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
 
@@ -102,7 +102,7 @@ class ClusterStatusTest {
     }
 
     @Test void shouldScaleTwoDown() {
-        containers.given(WORKER1, WORKER2, WORKER3, WORKER4, WORKER5);
+        containers.givenEndpoints(WORKER1, WORKER2, WORKER3, WORKER4, WORKER5);
 
         List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
 

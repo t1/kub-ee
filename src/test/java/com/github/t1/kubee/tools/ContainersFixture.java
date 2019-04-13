@@ -8,7 +8,6 @@ import lombok.experimental.Accessors;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.mockito.BDDMockito;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +20,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 @Accessors(chain = true)
@@ -41,22 +41,22 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback 
 
     @Override public void beforeEach(ExtensionContext context) { ProcessInvoker.INSTANCE = proc; }
 
-    public void given(Endpoint... workers) {
+    public void givenEndpoints(Endpoint... workers) {
         List<String> containerIds = new ArrayList<>();
         for (int i = 0; i < workers.length; i++) {
             String containerId = UUID.randomUUID().toString();
             containerIds.add(containerId);
-            BDDMockito.given(proc.invoke("docker", "ps", "--all", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + port))
+            given(proc.invoke("docker", "ps", "--all", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + port))
                 .willReturn("0.0.0.0:" + workers[i].getPort() + "->" + port + "/tcp\tdocker_worker_" + (i + 1));
         }
-        BDDMockito.given(proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", "worker"))
+        given(proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", "worker"))
             .willReturn(join("\n", containerIds));
-        BDDMockito.given(proc.invoke(eq(dockerComposeDir), eq("docker-compose"), eq("up"), eq("--detach"), eq("--scale"), anyString()))
+        given(proc.invoke(eq(dockerComposeDir), eq("docker-compose"), eq("up"), eq("--detach"), eq("--scale"), anyString()))
             .will(i -> {
                 String scaleExpression = i.getArgument(5);
                 assertThat(scaleExpression).startsWith("worker=");
                 int scale = Integer.parseInt(scaleExpression.substring(7));
-                given(WORKERS.subList(0, scale).toArray(new Endpoint[0]));
+                givenEndpoints(WORKERS.subList(0, scale).toArray(new Endpoint[0]));
                 return "dummy-scale-output";
             });
     }

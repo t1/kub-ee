@@ -71,7 +71,7 @@ public class Controller {
 
     private Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {
         try {
-            return deployer.fetchDeployablesFrom(node);
+            return deployer.fetchDeployables(node);
         } catch (Exception e) {
             String error = errorString(e);
             log.debug("GET from deployer on {} threw: {}", node, error);
@@ -96,7 +96,7 @@ public class Controller {
         String groupId = deployment.getGroupId();
         String artifactId = deployment.getArtifactId();
         try {
-            return deployer.fetchVersions(node.deployerUri(), groupId, artifactId);
+            return deployer.fetchVersions(node, groupId, artifactId);
         } catch (NotFoundException e) {
             log.info("no versions found for {}:{} on {}", groupId, artifactId, node);
             return singletonList(deployment.getVersion());
@@ -121,7 +121,7 @@ public class Controller {
     }
 
     private void deploy(ClusterNode node, String name, String versionAfter) {
-        String versionBefore = deployer.fetchVersion(name, node);
+        String versionBefore = deployer.fetchVersion(node, name);
 
         boolean healthyBefore = healthGateway.fetch(node, name);
         if (!healthyBefore)

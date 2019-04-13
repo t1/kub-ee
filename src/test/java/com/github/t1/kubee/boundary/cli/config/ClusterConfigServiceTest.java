@@ -2,6 +2,7 @@ package com.github.t1.kubee.boundary.cli.config;
 
 import com.github.t1.kubee.tools.ContainersFixture;
 import com.github.t1.kubee.tools.SystemOutExtension;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -36,10 +37,15 @@ class ClusterConfigServiceTest {
     @RegisterExtension ContainersFixture containers = new ContainersFixture();
     @RegisterExtension SystemOutExtension system = new SystemOutExtension();
 
-    @BeforeEach void before() throws IOException {
+    @BeforeEach void before() {
         containers.setDockerComposeDir(tmp).setPort(8080);
         clusterConfig = tmp.resolve("cluster-config.yaml");
-        Files.write(clusterConfig, CLUSTER_CONFIG.getBytes());
+        writeClusterConfig(CLUSTER_CONFIG);
+    }
+
+    @SneakyThrows(IOException.class)
+    private void writeClusterConfig(String clusterConfig) {
+        Files.write(this.clusterConfig, clusterConfig.getBytes());
     }
 
     private void assertResult(Integer status, String out, String err) {
@@ -56,7 +62,7 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldRunOnce() {
-        containers.given(WORKER1);
+        containers.givenEndpoints(WORKER1);
 
         ClusterConfigService.main("--once", "--cluster-config=" + clusterConfig, "--docker-compose-dir=" + containers.getDockerComposeDir());
 
@@ -69,7 +75,7 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldRunUntilStop() {
-        containers.given(WORKER1);
+        containers.givenEndpoints(WORKER1);
         ClusterConfigService service = new ClusterConfigService(clusterConfig, containers.getDockerComposeDir(), true);
 
         new Thread(() -> {

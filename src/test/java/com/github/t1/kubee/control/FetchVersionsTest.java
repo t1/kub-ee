@@ -24,21 +24,21 @@ class FetchVersionsTest extends AbstractControllerTest {
 
     @Test void shouldFetchOneVersion() {
         List<String> versionStrings = asList("1.0.0", "1.0.1", "1.0.2");
-        when(controller.deployer.fetchVersions(DEV01.deployerUri(), "app-group", "app-artifact"))
-                .thenReturn(versionStrings);
+        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+            .thenReturn(versionStrings);
 
         List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
 
         assertThat(versions).containsExactly(
-                new Version("1.0.0", undeployed),
-                new Version("1.0.1", deployed),
-                new Version("1.0.2", undeployed)
+            new Version("1.0.0", undeployed),
+            new Version("1.0.1", deployed),
+            new Version("1.0.2", undeployed)
         );
     }
 
     @Test void shouldFetchNotFoundVersionDummy() {
-        when(controller.deployer.fetchVersions(DEV01.deployerUri(), "app-group", "app-artifact"))
-                .thenThrow(new NotFoundException("app not found"));
+        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+            .thenThrow(new NotFoundException("app not found"));
 
         List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
 
@@ -46,8 +46,8 @@ class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test void shouldFetchUnknownHostVersionDummy() {
-        when(controller.deployer.fetchVersions(DEV01.deployerUri(), "app-group", "app-artifact"))
-                .thenThrow(new ProcessingException(new UnknownHostException("dummy")));
+        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+            .thenThrow(new ProcessingException(new UnknownHostException("dummy")));
 
         List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
 
@@ -56,7 +56,7 @@ class FetchVersionsTest extends AbstractControllerTest {
 
     @Test void shouldFailToFetchVersion() {
         RuntimeException dummy = new RuntimeException("dummy");
-        when(controller.deployer.fetchVersions(DEV01.deployerUri(), "app-group", "app-artifact")).thenThrow(dummy);
+        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact")).thenThrow(dummy);
 
         Throwable throwable = catchThrowable(() -> controller.fetchVersions(DEV01, DEPLOYMENT));
 
@@ -65,7 +65,7 @@ class FetchVersionsTest extends AbstractControllerTest {
 
     @Test void shouldFailToFetchVersionFromProcessingException() {
         ProcessingException dummy = new ProcessingException(new RuntimeException("dummy"));
-        when(controller.deployer.fetchVersions(DEV01.deployerUri(), "app-group", "app-artifact")).thenThrow(dummy);
+        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact")).thenThrow(dummy);
 
         Throwable throwable = catchThrowable(() -> controller.fetchVersions(DEV01, DEPLOYMENT));
 

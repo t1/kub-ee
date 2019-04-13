@@ -26,7 +26,7 @@ class DeployTest extends AbstractControllerTest {
     private String versionAfter = "1.0.2";
 
     @BeforeEach void setup() {
-        given(deployer.fetchVersion(APPLICATION_NAME, DEV01)).will(i -> versionBefore);
+        given(deployer.fetchVersion(DEV01, APPLICATION_NAME)).will(i -> versionBefore);
     }
 
     private void givenHealthy(Boolean value, Boolean... values) {
@@ -58,8 +58,8 @@ class DeployTest extends AbstractControllerTest {
 
 
     @AfterEach void assertNoMore() {
-        verify(deployer, atLeast(0)).fetchVersion(APPLICATION_NAME, DEV01);
-        verify(deployer, atLeast(0)).fetchVersion(APPLICATION_NAME, UNBALANCED_NODE);
+        verify(deployer, atLeast(0)).fetchVersion(DEV01, APPLICATION_NAME);
+        verify(deployer, atLeast(0)).fetchVersion(UNBALANCED_NODE, APPLICATION_NAME);
         verify(clusters, atLeast(0)).stream();
         verifyNoMoreInteractions(deployer, ingress, clusters);
     }
