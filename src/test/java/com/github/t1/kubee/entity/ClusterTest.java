@@ -1,6 +1,6 @@
 package com.github.t1.kubee.entity;
 
-import com.github.t1.kubee.boundary.gateway.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
 import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
 import com.github.t1.kubee.entity.Cluster.HealthConfig;
 import lombok.SneakyThrows;

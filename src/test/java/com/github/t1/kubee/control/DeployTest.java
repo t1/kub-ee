@@ -1,6 +1,5 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.control.Controller.UnexpectedAuditException;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.DeploymentId;
@@ -17,29 +16,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class DeployTest extends AbstractControllerTest {
-    private static final DeploymentId DEPLOYMENT_ID = new DeploymentId(DEV01.id() + ":foo");
+    private static final DeploymentId DEPLOYMENT_ID = new DeploymentId(DEV01.id() + ":" + APPLICATION_NAME);
 
-    private DeployerGateway deployer;
     private String versionBefore = "1.0.0";
     private String versionAfter = "1.0.2";
 
     @BeforeEach void setup() {
-        deployer = controller.deployer;
-        given(deployer.fetchVersion("foo", DEV01)).will(i -> versionBefore);
+        given(deployer.fetchVersion(APPLICATION_NAME, DEV01)).will(i -> versionBefore);
     }
 
     private void givenHealthy(Boolean value, Boolean... values) {
-        given(controller.healthGateway.fetch(DEV01, "foo")).willReturn(value, values);
+        given(healthGateway.fetch(DEV01, APPLICATION_NAME)).willReturn(value, values);
     }
 
     private BDDMyOngoingStubbing<Audits> givenDeploy() { return givenDeploy(versionAfter); }
 
     private BDDMyOngoingStubbing<Audits> givenDeploy(String version) {
-        return given(deployer.deploy(DEV01, "foo", version));
+        return given(deployer.deploy(DEV01, APPLICATION_NAME, version));
     }
 
     private BDDMyOngoingStubbing<Audits> givenUndeploy() {
-        return given(deployer.undeploy(DEV01, "foo"));
+        return given(deployer.undeploy(DEV01, APPLICATION_NAME));
     }
 
     private Audits audit(String operation, String oldVersion, String newVersion) {
@@ -47,7 +44,7 @@ class DeployTest extends AbstractControllerTest {
             + "audits:\n"
             + "- !<deployable>\n"
             + "  operation: " + operation + "\n"
-            + "  name: foo\n"
+            + "  name: " + APPLICATION_NAME + "\n"
             + "  changes:\n"
             + ((oldVersion == null && newVersion == null) ? "" : "  - name: version\n")
             + ((oldVersion == null) ? "" : "    old-value: " + oldVersion + "\n")
@@ -57,9 +54,9 @@ class DeployTest extends AbstractControllerTest {
 
 
     private void verifyDeployAndRollback() {
-        verify(deployer).deploy(DEV01, "foo", versionAfter);
-        verify(deployer).undeploy(DEV01, "foo");
-        verify(deployer).deploy(DEV01, "foo", versionBefore);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
     }
 
     private void verifyRemoveAndAddToLoadBalancer() {
@@ -68,16 +65,17 @@ class DeployTest extends AbstractControllerTest {
     }
 
     private void verifyAddToLoadBalancer() {
-        verify(ingress).addToLoadBalancerFor("foo", DEV01);
+        verify(ingress).addToLoadBalancerFor(APPLICATION_NAME, DEV01);
     }
 
     private void verifyRemoveFromLoadBalancer() {
-        verify(ingress).removeFromLoadBalancer("foo", DEV01);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @AfterEach void assertNoMore() {
-        verify(deployer, atLeast(0)).fetchVersion("foo", DEV01);
-        verifyNoMoreInteractions(deployer, ingress);
+        verify(deployer, atLeast(0)).fetchVersion(APPLICATION_NAME, DEV01);
+        verify(clusters, atLeast(0)).stream();
+        verifyNoMoreInteractions(deployer, ingress, clusters);
     }
 
 
@@ -88,7 +86,7 @@ class DeployTest extends AbstractControllerTest {
 
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
-        verify(deployer).deploy(DEV01, "foo", versionAfter);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
         verifyAddToLoadBalancer();
     }
 
@@ -98,7 +96,7 @@ class DeployTest extends AbstractControllerTest {
 
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
-        verify(deployer).deploy(DEV01, "foo", versionAfter);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
         verifyRemoveAndAddToLoadBalancer();
     }
 
@@ -109,8 +107,8 @@ class DeployTest extends AbstractControllerTest {
 
         controller.deploy(DEPLOYMENT_ID, versionBefore);
 
-        verify(deployer).undeploy(DEV01, "foo");
-        verify(deployer).deploy(DEV01, "foo", versionBefore);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
         verifyRemoveAndAddToLoadBalancer();
     }
 
@@ -128,6 +126,7 @@ class DeployTest extends AbstractControllerTest {
         controller.unbalance(DEPLOYMENT_ID);
 
         verifyRemoveFromLoadBalancer();
+        verify(clusters).unbalance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
     @Test void shouldUndeploy() {
@@ -136,7 +135,7 @@ class DeployTest extends AbstractControllerTest {
 
         controller.undeploy(DEPLOYMENT_ID);
 
-        verify(deployer).undeploy(DEV01, "foo");
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
         verifyRemoveFromLoadBalancer();
     }
 
@@ -150,7 +149,7 @@ class DeployTest extends AbstractControllerTest {
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
-            .hasMessageContaining("expected deploy audit for foo");
+            .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME);
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
@@ -162,7 +161,7 @@ class DeployTest extends AbstractControllerTest {
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
-            .hasMessageContaining("expected deploy audit for foo");
+            .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME);
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
@@ -174,7 +173,7 @@ class DeployTest extends AbstractControllerTest {
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
-            .hasMessageContaining("expected deploy audit for foo to change version.");
+            .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME + " to change version.");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
@@ -186,7 +185,7 @@ class DeployTest extends AbstractControllerTest {
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
-            .hasMessageContaining("expected deploy audit for foo to change version to 1.0.2, but changed to 1.0.3.");
+            .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME + " to change version to 1.0.2, but changed to 1.0.3.");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
@@ -198,7 +197,7 @@ class DeployTest extends AbstractControllerTest {
         Throwable throwable = catchThrowable(() -> controller.deploy(DEPLOYMENT_ID, versionAfter));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
-            .hasMessage("foo@1.0.2 on server-a:1:DEV:1 flipped from healthy to unhealthy");
+            .hasMessage(APPLICATION_NAME + "@1.0.2 on server-a:1:DEV:1 flipped from healthy to unhealthy");
         verifyDeployAndRollback();
         verifyRemoveAndAddToLoadBalancer();
     }
@@ -209,7 +208,7 @@ class DeployTest extends AbstractControllerTest {
 
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
-        verify(deployer).deploy(DEV01, "foo", versionAfter);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
         verifyRemoveAndAddToLoadBalancer();
     }
 }

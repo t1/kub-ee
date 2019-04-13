@@ -1,5 +1,6 @@
 package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
 import com.github.t1.kubee.entity.Audits;
@@ -37,7 +38,7 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Stateless
 public class Controller {
-    @Inject List<Cluster> clusters;
+    @Inject Clusters clusters;
     @Inject DeployerGateway deployer;
     @Inject HealthGateway healthGateway;
 
@@ -169,6 +170,7 @@ public class Controller {
 
     public void unbalance(DeploymentId id) {
         ClusterNode node = id.node(clusters());
+        clusters.unbalance(node, id.deploymentName());
         ingress(node.getStage()).removeFromLoadBalancer(id.deploymentName(), node);
     }
 

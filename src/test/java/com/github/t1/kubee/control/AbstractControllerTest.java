@@ -1,5 +1,6 @@
 package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
@@ -10,18 +11,23 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.github.t1.kubee.entity.ClusterTest.CLUSTERS;
 import static com.github.t1.kubee.entity.ClusterTest.DEV;
-import static java.util.Arrays.asList;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 public abstract class AbstractControllerTest {
+    static final String APPLICATION_NAME = "dummy-app";
     static final ClusterNode DEV01 = CLUSTERS[0].node(DEV, 1);
     static final Deployment DEPLOYMENT = Deployment
-        .builder().name("foo").node(DEV01).groupId("foo-group").artifactId("foo-artifact").version("1.0.1").build();
+        .builder().name(APPLICATION_NAME).node(DEV01).groupId("app-group").artifactId("app-artifact").version("1.0.1").build();
 
     Controller controller = new Controller();
+    Clusters clusters;
+    DeployerGateway deployer;
+    HealthGateway healthGateway;
 
     private Function<Stage, Ingress> originalIngressBuilder;
     Ingress ingress = mock(Ingress.class);
@@ -31,9 +37,11 @@ public abstract class AbstractControllerTest {
         originalIngressBuilder = Ingress.BUILDER;
         Ingress.BUILDER = stage -> ingress;
 
-        controller.clusters = asList(CLUSTERS);
-        controller.deployer = mock(DeployerGateway.class);
-        controller.healthGateway = mock(HealthGateway.class);
+        this.clusters = controller.clusters = mock(Clusters.class);
+        this.deployer = controller.deployer = mock(DeployerGateway.class);
+        this.healthGateway = controller.healthGateway = mock(HealthGateway.class);
+
+        given(clusters.stream()).will(i -> Stream.of(CLUSTERS));
     }
 
     @AfterEach

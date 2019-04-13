@@ -22,26 +22,25 @@ import static org.yaml.snakeyaml.nodes.NodeId.sequence;
 public class YamlNode {
     static final YamlNode NULL_NODE = new YamlNode(null);
 
-    private final Node node;
+    protected final Node node;
 
     @Override public String toString() {
         if (node == null)
-            return "NullNode";
+            return "";
         StringBuilder out = new StringBuilder();
-        out.append(node.getNodeId()).append(":");
         switch (node.getNodeId()) {
-        case scalar:
-            out.append('\'').append(asString()).append('\'');
-            break;
-        case sequence:
-            out.append(asSequence());
-            break;
-        case mapping:
-            out.append(asMapping());
-            break;
-        case anchor:
-            out.append("anchor");
-            break;
+            case scalar:
+                out.append('\'').append(asString()).append('\'');
+                break;
+            case sequence:
+                out.append(asSequence());
+                break;
+            case mapping:
+                out.append(asMapping());
+                break;
+            case anchor:
+                out.append("anchor");
+                break;
         }
         return out.toString();
     }
@@ -91,7 +90,7 @@ public class YamlNode {
         if (isEmpty())
             return EMPTY_MAPPING;
         assert node == null || node.getNodeId() == mapping : "expected " + this + " to be a " + mapping;
-        return new YamlMapping((node == null) ? emptyList() : ((MappingNode) node).getValue());
+        return new YamlMapping((MappingNode) node);
     }
 
     public Map<String, String> asStringMap() { return asMapping().asStringMap(); }

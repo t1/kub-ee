@@ -70,7 +70,7 @@ public class Cluster implements Comparable<Cluster> {
     private static class ClusterBuilderContext {
         private final Consumer<String> warnings;
         private final Map<String, Slot> slots = new HashMap<>();
-        private final HealthConfigBuilder health = HealthConfig.builder();
+        private HealthConfigBuilder health;
         private int indexLength = 0;
 
         public Stream<Cluster> from(YamlEntry entry) {
@@ -94,7 +94,7 @@ public class Cluster implements Comparable<Cluster> {
                     .host(key)
                     .slot(slot)
                     .readStages(entry.value(), indexLength)
-                    .healthConfig(health.build())
+                    .healthConfig((health == null) ? null : health.build())
                     .build());
             }
         }
@@ -110,6 +110,8 @@ public class Cluster implements Comparable<Cluster> {
                     indexLength = value.asInt();
                     break;
                 case "health":
+                    if (health == null)
+                        health = HealthConfig.builder();
                     health.path(value.asMapping().get("path").asStringOr(""));
                     break;
                 default:

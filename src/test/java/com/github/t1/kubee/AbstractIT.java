@@ -1,7 +1,7 @@
 package com.github.t1.kubee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.t1.kubee.boundary.gateway.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;

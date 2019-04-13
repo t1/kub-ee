@@ -2,10 +2,7 @@ package com.github.t1.kubee.boundary.gateway.ingress;
 
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
-import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
-import com.github.t1.kubee.entity.Slot;
-import com.github.t1.kubee.entity.Stage;
 import com.github.t1.nginx.HostPort;
 import com.github.t1.nginx.NginxConfig;
 import com.github.t1.nginx.NginxConfig.NginxServer;
@@ -24,6 +21,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.TestData.NODE1;
+import static com.github.t1.kubee.TestData.NODE2;
+import static com.github.t1.kubee.TestData.PROXY_SETTINGS;
+import static com.github.t1.kubee.TestData.SLOT;
+import static com.github.t1.kubee.TestData.STAGE;
+import static com.github.t1.kubee.TestData.WORKER01;
+import static com.github.t1.kubee.TestData.WORKER02;
 import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.NGINX_ETC;
 import static com.github.t1.kubee.tools.Tools.toEndpoint;
 import static java.util.Arrays.asList;
@@ -34,20 +38,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent") class IngressTest {
-    private static final HostPort WORKER01 = HostPort.valueOf("worker-prod1:10001");
-    private static final HostPort WORKER02 = HostPort.valueOf("worker-prod2:10002");
-    private static final String PROXY_SETTINGS = "proxy_set_header Host      $host;\n" +
-        "            proxy_set_header X-Real-IP $remote_addr;";
-
-    private static final Stage STAGE = Stage.builder().name("PROD").suffix("-prod").count(2)
-        .loadBalancerConfig("reload", "custom")
-        .loadBalancerConfig("class", ReloadMock.class.getName())
-        .build();
-    private static final Slot SLOT = Slot.builder().name("0").http(8080).build();
-    private static final Cluster CLUSTER = Cluster.builder().host("worker").slot(SLOT).build();
-    private static final ClusterNode NODE1 = new ClusterNode(CLUSTER, STAGE, 1);
-    private static final ClusterNode NODE2 = new ClusterNode(CLUSTER, STAGE, 2);
-
     private Path origConfigPath;
     @TempDir Path nginxEtc;
     private Path configPath;
