@@ -128,7 +128,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldFailToAddUnknownNodeToLoadBalancer() {
         givenNginx(WORKER01);
 
-        Throwable throwable = catchThrowable(() -> whenIngress().addToLoadBalancerFor("dummy-app", NODE2));
+        Throwable throwable = catchThrowable(() -> whenIngress().addToLoadBalancer("dummy-app", NODE2));
 
         assertThat(throwable).isInstanceOf(IllegalStateException.class).hasMessage("no reverse proxy found for worker-prod2 in [worker-prod1]");
         verifyNotReloaded();
@@ -137,7 +137,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldAddNodeToLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().addToLoadBalancerFor("dummy-app", NODE2);
+        whenIngress().addToLoadBalancer("dummy-app", NODE2);
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
         verifyReloaded();

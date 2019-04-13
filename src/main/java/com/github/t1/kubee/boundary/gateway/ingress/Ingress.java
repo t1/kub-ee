@@ -116,7 +116,7 @@ public class Ingress {
         return !upstream.getName().endsWith(LB_SUFFIX) && upstream.getHostPorts().size() == 1;
     }
 
-    public void addToLoadBalancerFor(String application, ClusterNode node) {
+    public void addToLoadBalancer(String application, ClusterNode node) {
         if (!hasReverseProxyFor(node))
             throw new IllegalStateException("no reverse proxy found for " + node.host() + " in " + toString(reverseProxies()));
         int port = getOrCreateReverseProxyFor(node).getPort();

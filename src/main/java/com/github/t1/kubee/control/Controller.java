@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.ingress;
+import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.entity.VersionStatus.deployed;
 import static com.github.t1.kubee.entity.VersionStatus.undeployed;
 import static com.github.t1.kubee.tools.Tools.errorString;
@@ -153,7 +154,8 @@ public class Controller {
             throw e;
         } finally {
             // TODO don't add when the deploy failed!
-            ingress(node.getStage()).addToLoadBalancerFor(name, node);
+            if (node.getStatusOfApp(name) == running)
+                ingress(node.getStage()).addToLoadBalancer(name, node);
         }
     }
 
@@ -167,7 +169,7 @@ public class Controller {
     public void balance(DeploymentId id) {
         ClusterNode node = id.node(clusters());
         clusters.balance(node, id.deploymentName());
-        ingress(node.getStage()).addToLoadBalancerFor(id.deploymentName(), node);
+        ingress(node.getStage()).addToLoadBalancer(id.deploymentName(), node);
     }
 
     public void unbalance(DeploymentId id) {

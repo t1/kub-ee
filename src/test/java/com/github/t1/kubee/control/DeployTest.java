@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class DeployTest extends AbstractControllerTest {
     private static final DeploymentId DEPLOYMENT_ID = new DeploymentId(DEV01.id() + ":" + APPLICATION_NAME);
+    private static final ClusterNode UNBALANCED_NODE = CLUSTERS[2].node(CLUSTERS[2].getStages().get(2), 2);
 
     private String versionBefore = "1.0.0";
     private String versionAfter = "1.0.2";
@@ -56,27 +57,9 @@ class DeployTest extends AbstractControllerTest {
     }
 
 
-    private void verifyDeployAndRollback() {
-        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
-        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
-        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
-    }
-
-    private void verifyRemoveAndAddToLoadBalancer() {
-        verifyRemoveFromLoadBalancer();
-        verifyAddToLoadBalancer();
-    }
-
-    private void verifyAddToLoadBalancer() {
-        verify(ingress).addToLoadBalancerFor(APPLICATION_NAME, DEV01);
-    }
-
-    private void verifyRemoveFromLoadBalancer() {
-        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
-    }
-
     @AfterEach void assertNoMore() {
         verify(deployer, atLeast(0)).fetchVersion(APPLICATION_NAME, DEV01);
+        verify(deployer, atLeast(0)).fetchVersion(APPLICATION_NAME, UNBALANCED_NODE);
         verify(clusters, atLeast(0)).stream();
         verifyNoMoreInteractions(deployer, ingress, clusters);
     }
@@ -90,7 +73,7 @@ class DeployTest extends AbstractControllerTest {
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
         verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
-        verifyAddToLoadBalancer();
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldDeployUpdate() {
@@ -100,7 +83,8 @@ class DeployTest extends AbstractControllerTest {
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
         verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
-        verifyRemoveAndAddToLoadBalancer();
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldRedeploy() {
@@ -112,7 +96,8 @@ class DeployTest extends AbstractControllerTest {
 
         verify(deployer).undeploy(DEV01, APPLICATION_NAME);
         verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
-        verifyRemoveAndAddToLoadBalancer();
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
         verify(clusters, never()).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
@@ -121,7 +106,7 @@ class DeployTest extends AbstractControllerTest {
 
         controller.balance(DEPLOYMENT_ID);
 
-        verifyAddToLoadBalancer();
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
         verify(clusters).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
@@ -130,8 +115,17 @@ class DeployTest extends AbstractControllerTest {
 
         controller.unbalance(DEPLOYMENT_ID);
 
-        verifyRemoveFromLoadBalancer();
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
         verify(clusters).unbalance(DEV01, DEPLOYMENT_ID.deploymentName());
+    }
+
+    @Test void shouldDeployUnbalanced() {
+        givenHealthy(true);
+        given(deployer.deploy(UNBALANCED_NODE, APPLICATION_NAME, versionAfter)).willReturn(audit("change", versionBefore, versionAfter));
+
+        controller.deploy(new DeploymentId(UNBALANCED_NODE.id() + ":" + APPLICATION_NAME), versionAfter);
+
+        verify(deployer).deploy(UNBALANCED_NODE, APPLICATION_NAME, versionAfter);
     }
 
     @Test void shouldUndeploy() {
@@ -141,20 +135,19 @@ class DeployTest extends AbstractControllerTest {
         controller.undeploy(DEPLOYMENT_ID);
 
         verify(deployer).undeploy(DEV01, APPLICATION_NAME);
-        verifyRemoveFromLoadBalancer();
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
         verify(clusters).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
     @Test void shouldUndeployUnbalanced() {
         givenHealthy(true);
-        ClusterNode node = CLUSTERS[2].node(CLUSTERS[2].getStages().get(2), 2);
-        given(deployer.undeploy(node, APPLICATION_NAME)).willReturn(audit("remove", versionBefore, null));
+        given(deployer.undeploy(UNBALANCED_NODE, APPLICATION_NAME)).willReturn(audit("remove", versionBefore, null));
 
-        controller.undeploy(new DeploymentId(node.id() + ":" + APPLICATION_NAME));
+        controller.undeploy(new DeploymentId(UNBALANCED_NODE.id() + ":" + APPLICATION_NAME));
 
-        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, node);
-        verify(deployer).undeploy(node, APPLICATION_NAME);
-        verify(clusters).balance(node, DEPLOYMENT_ID.deploymentName());
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, UNBALANCED_NODE);
+        verify(deployer).undeploy(UNBALANCED_NODE, APPLICATION_NAME);
+        verify(clusters).balance(UNBALANCED_NODE, DEPLOYMENT_ID.deploymentName());
     }
 
     @Test void shouldRollbackAfterDeployWithMissingAudit() {
@@ -167,8 +160,11 @@ class DeployTest extends AbstractControllerTest {
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME);
-        verifyDeployAndRollback();
-        verifyRemoveAndAddToLoadBalancer();
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldRollbackAfterDeployWithWrongAuditOperation() {
@@ -179,8 +175,11 @@ class DeployTest extends AbstractControllerTest {
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME);
-        verifyDeployAndRollback();
-        verifyRemoveAndAddToLoadBalancer();
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldRollbackAfterDeployWithoutAuditVersionChange() {
@@ -191,8 +190,11 @@ class DeployTest extends AbstractControllerTest {
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME + " to change version.");
-        verifyDeployAndRollback();
-        verifyRemoveAndAddToLoadBalancer();
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldRollbackAfterDeployWithWrongVersionChange() {
@@ -203,8 +205,11 @@ class DeployTest extends AbstractControllerTest {
 
         assertThat(throwable).isExactlyInstanceOf(UnexpectedAuditException.class)
             .hasMessageContaining("expected deploy audit for " + APPLICATION_NAME + " to change version to 1.0.2, but changed to 1.0.3.");
-        verifyDeployAndRollback();
-        verifyRemoveAndAddToLoadBalancer();
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldRollbackAfterDeployFlipsToUnhealthy() {
@@ -215,8 +220,11 @@ class DeployTest extends AbstractControllerTest {
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
             .hasMessage(APPLICATION_NAME + "@1.0.2 on server-a:1:DEV:1 flipped from healthy to unhealthy");
-        verifyDeployAndRollback();
-        verifyRemoveAndAddToLoadBalancer();
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
+        verify(deployer).undeploy(DEV01, APPLICATION_NAME);
+        verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 
     @Test void shouldNotRollbackWhenDeployStaysUnhealthy() {
@@ -226,6 +234,7 @@ class DeployTest extends AbstractControllerTest {
         controller.deploy(DEPLOYMENT_ID, versionAfter);
 
         verify(deployer).deploy(DEV01, APPLICATION_NAME, versionAfter);
-        verifyRemoveAndAddToLoadBalancer();
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, DEV01);
+        verify(ingress).addToLoadBalancer(APPLICATION_NAME, DEV01);
     }
 }
