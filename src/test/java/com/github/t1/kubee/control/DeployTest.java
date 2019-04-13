@@ -2,16 +2,19 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.control.Controller.UnexpectedAuditException;
 import com.github.t1.kubee.entity.Audits;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.DeploymentId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
+import static com.github.t1.kubee.entity.ClusterTest.CLUSTERS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -110,6 +113,7 @@ class DeployTest extends AbstractControllerTest {
         verify(deployer).undeploy(DEV01, APPLICATION_NAME);
         verify(deployer).deploy(DEV01, APPLICATION_NAME, versionBefore);
         verifyRemoveAndAddToLoadBalancer();
+        verify(clusters, never()).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
     @Test void shouldBalance() {
@@ -138,8 +142,20 @@ class DeployTest extends AbstractControllerTest {
 
         verify(deployer).undeploy(DEV01, APPLICATION_NAME);
         verifyRemoveFromLoadBalancer();
+        verify(clusters).balance(DEV01, DEPLOYMENT_ID.deploymentName());
     }
 
+    @Test void shouldUndeployUnbalanced() {
+        givenHealthy(true);
+        ClusterNode node = CLUSTERS[2].node(CLUSTERS[2].getStages().get(2), 2);
+        given(deployer.undeploy(node, APPLICATION_NAME)).willReturn(audit("remove", versionBefore, null));
+
+        controller.undeploy(new DeploymentId(node.id() + ":" + APPLICATION_NAME));
+
+        verify(ingress).removeFromLoadBalancer(APPLICATION_NAME, node);
+        verify(deployer).undeploy(node, APPLICATION_NAME);
+        verify(clusters).balance(node, DEPLOYMENT_ID.deploymentName());
+    }
 
     @Test void shouldRollbackAfterDeployWithMissingAudit() {
         givenHealthy(true);

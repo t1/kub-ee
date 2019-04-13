@@ -30,7 +30,7 @@ public class ClusterTest {
         .loadBalancerConfig("reload", "service")
         .loadBalancerConfig("port", "12345")
         .build();
-    private static final Stage PROD = Stage.builder().name("PROD").prefix("").suffix("").count(3).indexLength(2)
+    public static final Stage PROD = Stage.builder().name("PROD").prefix("").suffix("").count(3).indexLength(2)
         .loadBalancerConfig("reload", "direct").build();
 
     public static final Cluster[] CLUSTERS = {
@@ -38,7 +38,8 @@ public class ClusterTest {
             .stage(DEV)
             .stage(QA)
             .stage(PROD)
-            .healthConfig(HEALTH_CONFIG).build(),
+            .healthConfig(HEALTH_CONFIG)
+            .build(),
         Cluster.builder().host("server-a.server.lan").slot(SLOT_2)
             .stage(DEV)
             .stage(QA)
@@ -53,12 +54,14 @@ public class ClusterTest {
             .loadBalancerConfig("reload", "docker-kill-hup")
             .status("2:dummy-app", unbalanced)
             .add()
-            .healthConfig(HEALTH_CONFIG).build(),
+            .healthConfig(HEALTH_CONFIG)
+            .build(),
         Cluster.builder().host("localhost").slot(SLOT_1)
             .stage().name("PROD").prefix("").suffix("").count(1).indexLength(0)
             .loadBalancerConfig("reload", "direct")
             .add()
-            .healthConfig(HEALTH_CONFIG).build()
+            .healthConfig(HEALTH_CONFIG)
+            .build()
     };
 
     @SneakyThrows(URISyntaxException.class)

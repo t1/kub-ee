@@ -161,6 +161,7 @@ public class Controller {
         ClusterNode node = id.node(clusters());
         String name = id.deploymentName();
         undeploy(node, name);
+        clusters.balance(node, name);
     }
 
     public void balance(DeploymentId id) {

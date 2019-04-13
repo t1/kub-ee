@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -27,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 @Logged(level = INFO)
 @Slf4j
 public class DeployerGateway {
+    private static final int MAX_RETRIES = 10;
     private static final TypeReference<List<String>> STRING_LIST = new TypeReference<List<String>>() {};
 
     @Inject YamlHttpClient client;
@@ -127,6 +129,23 @@ public class DeployerGateway {
         URI uri = node.deployerUri();
         String parameterName = deploymentName + "." + key;
         log.debug("POST {}={} to {}", parameterName, value, uri);
-        return client.POST(uri, new Form(parameterName, value), Audits::parseYaml);
+        for (int i = 0; i < MAX_RETRIES; i++) {
+            try {
+                return client.POST(uri, new Form(parameterName, value), Audits::parseYaml);
+            } catch (ProcessingException e) {
+                if (e.getCause().getClass().getName().equals("org.apache.http.NoHttpResponseException")
+                    && e.getCause().getMessage().endsWith(" failed to respond")) {
+                    log.warn(e.getCause().getMessage() + ". retry " + (i + 1) + " of " + (MAX_RETRIES - 1));
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
+        throw new RuntimeException("failed " + MAX_RETRIES + " times");
     }
 }
