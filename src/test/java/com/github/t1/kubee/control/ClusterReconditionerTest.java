@@ -1,6 +1,7 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
@@ -26,6 +27,8 @@ import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 class ClusterReconditionerTest {
     private static final Endpoint WORKER01 = new Endpoint("worker01", 10001);
@@ -94,9 +97,9 @@ class ClusterReconditionerTest {
     private String ingressBefore;
     private boolean ingressWritten = false;
 
-    private void givenIngress(Endpoint... workers) {
-        givenReverseProxyFor(workers);
-        givenAppLoadBalancer(workers);
+    private void givenIngress(Endpoint... endpoints) {
+        givenReverseProxyFor(endpoints);
+        givenAppLoadBalancer(endpoints);
         this.ingressBefore = ingress.toString();
     }
 
@@ -119,21 +122,21 @@ class ClusterReconditionerTest {
     };
 
     // <editor-fold desc="Reverse Proxy">
-    private void givenReverseProxyFor(Endpoint... workers) {
+    private void givenReverseProxyFor(Endpoint... endpoints) {
         assert ingressBefore == null;
-        for (Endpoint worker : workers) {
-            ReverseProxy reverseProxy = getOrCreateReverseProxyFor(worker);
+        for (Endpoint endpoint : endpoints) {
+            ReverseProxy reverseProxy = getOrCreateReverseProxyFor(endpoint);
             if (reverseProxy != null)
-                reverseProxies.put(findNode(worker.getHost()), reverseProxy);
+                reverseProxies.put(findNode(endpoint.getHost()), reverseProxy);
         }
     }
 
-    private ReverseProxy getOrCreateReverseProxyFor(Endpoint worker) {
-        ClusterNode node = findNode(worker.getHost());
+    private ReverseProxy getOrCreateReverseProxyFor(Endpoint endpoint) {
+        ClusterNode node = findNode(endpoint.getHost());
         if (node == null)
             return null;
         ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
-        reverseProxy.setPort(worker.getPort());
+        reverseProxy.setPort(endpoint.getPort());
         return reverseProxy;
     }
 
@@ -150,13 +153,17 @@ class ClusterReconditionerTest {
 
         @Override public String name() { return from.getHost(); }
     }
+
+    private ClusterNode findNode(String host) {
+        return cluster.nodes().filter(it -> it.host().equals(host)).findAny().orElse(null);
+    }
     // </editor-fold>
 
     // <editor-fold desc="Load Balancer">
-    private void givenAppLoadBalancer(Endpoint... workers) {
+    private void givenAppLoadBalancer(Endpoint... endpoints) {
         assert ingressBefore == null;
         assert loadBalancer == null;
-        this.loadBalancer = new LoadBalancerMock(new ArrayList<>(asList(workers)));
+        this.loadBalancer = new LoadBalancerMock(new ArrayList<>(asList(endpoints)));
     }
 
     private class LoadBalancerMock extends LoadBalancer {
@@ -202,15 +209,15 @@ class ClusterReconditionerTest {
     }
     // </editor-fold>
 
-    private ClusterNode findNode(String host) {
-        return cluster.nodes().filter(it -> it.host().equals(host)).findAny().orElse(null);
-    }
-
     private void assertIngressNotWritten(Endpoint... endpoints) {
-        if (ingressWritten)
-            assertThat(ingressBefore).describedAs("expected ingress not written").isEqualTo(ingress.toString());
+        assertIngressWasNotWritten();
         assertLoadBalancers(endpoints);
         assertReverseProxies(endpoints);
+    }
+
+    private void assertIngressWasNotWritten() {
+        if (ingressWritten)
+            assertThat(ingressBefore).describedAs("expected ingress not written").isEqualTo(ingress.toString());
     }
 
     private void assertIngressWritten(Endpoint... endpoints) {
@@ -238,11 +245,30 @@ class ClusterReconditionerTest {
     // </editor-fold>
 
 
+    // <editor-fold desc="Deployer Gateway">
+    private DeployerGateway deployerGateway = mock(DeployerGateway.class);
+
+    private void givenDeployedVersions(Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints)
+            givenDeployedVersion(endpoint.getHost());
+    }
+
+    private void givenDeployedVersion(String host) {
+        given(this.deployerGateway.fetchVersion(findNode(host), APP_NAME)).willReturn("1.0.1");
+    }
+    // </editor-fold>
+
+    private void givenDeployedContainers(Endpoint... endpoints) {
+        givenContainers(endpoints);
+        givenDeployedVersions(endpoints);
+    }
+
+
     private void recondition() {
         Function<Stage, Ingress> originalBuilder = Ingress.BUILDER;
         Ingress.BUILDER = stage -> ingress;
         try {
-            new ClusterReconditioner(singletonMap(cluster, clusterStatus)).run();
+            new ClusterReconditioner(singletonMap(cluster, clusterStatus), deployerGateway).run();
         } finally {
             Ingress.BUILDER = originalBuilder;
         }
@@ -251,7 +277,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldDoNothingWithoutNodes() {
         givenClusterWithNodeCount(0);
-        givenContainers();
+        givenDeployedContainers();
         givenIngress();
 
         recondition();
@@ -262,7 +288,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldDoNothingWithOneNode() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01);
 
         recondition();
@@ -273,7 +299,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldDoNothingWithTwoNodes() {
         givenClusterWithNodeCount(2);
-        givenContainers(WORKER01, WORKER02);
+        givenDeployedContainers(WORKER01, WORKER02);
         givenIngress(WORKER01, WORKER02);
 
         recondition();
@@ -285,7 +311,7 @@ class ClusterReconditionerTest {
     @Test void shouldUpdatePortOfWorker01() {
         givenClusterWithNodeCount(1);
         Endpoint movedEndpoint = WORKER01.withPort(20000);
-        givenContainers(movedEndpoint);
+        givenDeployedContainers(movedEndpoint);
         givenIngress(WORKER01);
 
         recondition();
@@ -297,7 +323,7 @@ class ClusterReconditionerTest {
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
         givenClusterWithNodeCount(3);
         Endpoint movedEndpoint = WORKER02.withPort(20000);
-        givenContainers(WORKER01, movedEndpoint, WORKER03);
+        givenDeployedContainers(WORKER01, movedEndpoint, WORKER03);
         givenIngress(WORKER01, WORKER02, WORKER03);
 
         recondition();
@@ -308,7 +334,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldAddNodeToEmptyIngress() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress();
 
         recondition();
@@ -319,7 +345,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldAddNodeToIngressWithOne() {
         givenClusterWithNodeCount(2);
-        givenContainers(WORKER01, WORKER02);
+        givenDeployedContainers(WORKER01, WORKER02);
         givenIngress(WORKER01);
 
         recondition();
@@ -330,7 +356,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldAddTwoNodeToIngressWithOne() {
         givenClusterWithNodeCount(3);
-        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
         givenIngress(WORKER01);
 
         recondition();
@@ -341,7 +367,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldRemoveLastNodeFromIngress() {
         givenClusterWithNodeCount(0);
-        givenContainers();
+        givenDeployedContainers();
         givenIngress(WORKER01);
 
         recondition();
@@ -352,7 +378,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldRemoveNodeFromIngressWithTwo() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01, WORKER02);
 
         recondition();
@@ -363,7 +389,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldRemoveTwoNodesFromIngress() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01, WORKER02, WORKER03);
 
         recondition();
@@ -375,40 +401,46 @@ class ClusterReconditionerTest {
 
     @Test void shouldScaleContainersFrom0to1() {
         givenClusterWithNodeCount(1);
-        givenContainers();
+        givenDeployedContainers();
         givenIngress();
 
         recondition();
 
         assertContainers(WORKER01);
-        assertIngressWritten(WORKER01);
+        assertIngressWasWritten();
+        assertLoadBalancers(); // not deployed, yet
+        assertReverseProxies(WORKER01);
     }
 
     @Test void shouldScaleContainersFrom1to2() {
         givenClusterWithNodeCount(2);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01);
 
         recondition();
 
         assertContainers(WORKER01, WORKER02);
-        assertIngressWritten(WORKER01, WORKER02);
+        assertIngressWasWritten();
+        assertLoadBalancers(WORKER01); // not deployed, yet
+        assertReverseProxies(WORKER01, WORKER02);
     }
 
     @Test void shouldScaleContainersFrom1to3() {
         givenClusterWithNodeCount(3);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01);
 
         recondition();
 
         assertContainers(WORKER01, WORKER02, WORKER03);
-        assertIngressWritten(WORKER01, WORKER02, WORKER03);
+        assertIngressWasWritten();
+        assertLoadBalancers(WORKER01);  // not deployed, yet
+        assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }
 
     @Test void shouldScaleContainersFrom1to0() {
         givenClusterWithNodeCount(0);
-        givenContainers(WORKER01);
+        givenDeployedContainers(WORKER01);
         givenIngress(WORKER01);
 
         recondition();
@@ -419,7 +451,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldScaleContainersFrom2to1() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01, WORKER02);
+        givenDeployedContainers(WORKER01, WORKER02);
         givenIngress(WORKER01, WORKER02);
 
         recondition();
@@ -430,7 +462,7 @@ class ClusterReconditionerTest {
 
     @Test void shouldScaleContainersFrom3to1() {
         givenClusterWithNodeCount(1);
-        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
         givenIngress(WORKER01, WORKER02, WORKER03);
 
         recondition();
@@ -443,13 +475,29 @@ class ClusterReconditionerTest {
         givenClusterWith(stage()
             .count(3)
             .status("2:" + APP_NAME, unbalanced));
-        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
         givenIngress(WORKER01, WORKER02, WORKER03);
 
         recondition();
 
         assertContainers(WORKER01, WORKER02, WORKER03);
         assertIngressWasWritten();
+        assertLoadBalancers(WORKER01, WORKER03);
+        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+    }
+
+    @Test void shouldNotAddLoadBalancerNodeWhenApplicationIsNotDeployed() {
+        givenClusterWithNodeCount(3);
+        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenDeployedVersions(WORKER01, WORKER03);
+        givenReverseProxyFor(WORKER01, WORKER02, WORKER03);
+        givenAppLoadBalancer(WORKER01, WORKER03);
+        this.ingressBefore = ingress.toString();
+
+        recondition();
+
+        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertIngressWasNotWritten();
         assertLoadBalancers(WORKER01, WORKER03);
         assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }

@@ -1,6 +1,7 @@
 package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
@@ -24,6 +25,7 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class ClusterReconditioner implements Runnable {
     private final Map<Cluster, ClusterStatus> clusters;
+    private final DeployerGateway deployerGateway;
 
     @Override public void run() {
         clusters.forEach(this::reconditionCluster);
@@ -35,7 +37,7 @@ public class ClusterReconditioner implements Runnable {
             .forEach(StageReconditioner::recondition);
     }
 
-    private static class StageReconditioner {
+    private class StageReconditioner {
         private final Cluster cluster;
         private final Stage stage;
         private final ClusterStatus clusterStatus;
@@ -71,35 +73,7 @@ public class ClusterReconditioner implements Runnable {
         }
 
         private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
-            loadBalancer.endpoints().forEach(endpoint -> {
-                String host = endpoint.getHost();
-                if (getDeploymentStatus(loadBalancer, host) == unbalanced) {
-                    loadBalancer.removeHost(host);
-                } else {
-                    Integer actualPort = clusterStatus.port(host);
-                    if (actualPort == null)
-                        return; // will be removed in cleanup
-                    if (endpoint.getPort() != actualPort) {
-                        loadBalancer.updatePort(endpoint, actualPort);
-                    }
-                }
-            });
-            clusterStatus.endpoints()
-                .filter(it -> needsEndpoint(loadBalancer, it))
-                .forEach(loadBalancer::addOrUpdateEndpoint);
-        }
-
-        private boolean needsEndpoint(LoadBalancer loadBalancer, Endpoint it) {
-            return !loadBalancer.hasEndpoint(it) && getDeploymentStatus(loadBalancer, it.getHost()) == running;
-        }
-
-        private DeploymentStatus getDeploymentStatus(LoadBalancer loadBalancer, String host) {
-            ClusterNode node = findNode(host);
-            return (node == null) ? null : node.getStatusOfApp(loadBalancer.applicationName());
-        }
-
-        private ClusterNode findNode(String host) {
-            return cluster.nodes().filter(n -> n.endpoint().getHost().equals(host)).findAny().orElse(null);
+            new LoadBalancerReconditioner(loadBalancer).recondition();
         }
 
         private void cleanupNext(ClusterNode node) {
@@ -121,6 +95,52 @@ public class ClusterReconditioner implements Runnable {
 
             if (lookForMore) {
                 cleanupNext(next);
+            }
+        }
+
+        @RequiredArgsConstructor
+        private class LoadBalancerReconditioner {
+            private final LoadBalancer loadBalancer;
+
+            void recondition() {
+                loadBalancer.endpoints().forEach(endpoint -> {
+                    String host = endpoint.getHost();
+                    if (getConfiguredDeploymentStatus(host) == unbalanced) {
+                        loadBalancer.removeHost(host);
+                    } else {
+                        Integer actualPort = clusterStatus.port(host);
+                        if (actualPort == null)
+                            return; // will be removed in cleanup
+                        if (endpoint.getPort() != actualPort) {
+                            loadBalancer.updatePort(endpoint, actualPort);
+                        }
+                    }
+                });
+                clusterStatus.endpoints()
+                    .filter(this::needsEndpoint)
+                    .forEach(loadBalancer::addOrUpdateEndpoint);
+            }
+
+            private boolean needsEndpoint(Endpoint endpoint) {
+                return !loadBalancer.hasEndpoint(endpoint)
+                    && getConfiguredDeploymentStatus(endpoint.getHost()) == running
+                    && isDeployed(endpoint);
+            }
+
+            private DeploymentStatus getConfiguredDeploymentStatus(String host) {
+                ClusterNode node = findNode(host);
+                return (node == null) ? null : node.getStatusOfApp(loadBalancer.applicationName());
+            }
+
+            private ClusterNode findNode(String host) {
+                return cluster.nodes().filter(n -> n.endpoint().getHost().equals(host)).findAny().orElse(null);
+            }
+
+            private boolean isDeployed(Endpoint endpoint) {
+                if (deployerGateway == null)
+                    return true; // don't know better
+                String version = deployerGateway.fetchVersion(findNode(endpoint.getHost()), loadBalancer.applicationName());
+                return version != null;
             }
         }
     }

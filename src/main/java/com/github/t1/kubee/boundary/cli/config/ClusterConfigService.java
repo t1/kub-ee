@@ -116,7 +116,7 @@ public class ClusterConfigService {
             reconditioner.run();
             System.out.println("recondition done");
         } catch (RuntimeException e) {
-            System.out.println("recondition failed " + e.getMessage());
+            System.out.println("recondition failed " + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage()));
             log.log(SEVERE, "can't recondition", e);
         }
     }
@@ -126,7 +126,7 @@ public class ClusterConfigService {
         Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
         for (Cluster cluster : clusters)
             containerStatuses.put(cluster, new ClusterStatus(cluster, dockerComposeDir));
-        return new ClusterReconditioner(containerStatuses);
+        return new ClusterReconditioner(containerStatuses, null);
     }
 
     void stop() { continues = false; }

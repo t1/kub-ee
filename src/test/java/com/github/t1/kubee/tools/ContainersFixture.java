@@ -1,7 +1,7 @@
 package com.github.t1.kubee.tools;
 
-import com.github.t1.kubee.boundary.cli.ProcessInvoker;
 import com.github.t1.kubee.entity.Endpoint;
+import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

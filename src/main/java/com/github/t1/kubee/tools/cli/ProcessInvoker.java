@@ -1,4 +1,4 @@
-package com.github.t1.kubee.boundary.cli;
+package com.github.t1.kubee.tools.cli;
 
 import lombok.SneakyThrows;
 

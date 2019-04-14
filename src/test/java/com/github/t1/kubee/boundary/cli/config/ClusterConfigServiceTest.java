@@ -40,12 +40,12 @@ class ClusterConfigServiceTest {
     @BeforeEach void before() {
         containers.setDockerComposeDir(tmp).setPort(8080);
         clusterConfig = tmp.resolve("cluster-config.yaml");
-        writeClusterConfig(CLUSTER_CONFIG);
+        writeClusterConfig();
     }
 
     @SneakyThrows(IOException.class)
-    private void writeClusterConfig(String clusterConfig) {
-        Files.write(this.clusterConfig, clusterConfig.getBytes());
+    private void writeClusterConfig() {
+        Files.write(this.clusterConfig, CLUSTER_CONFIG.getBytes());
     }
 
     private void assertResult(Integer status, String out, String err) {
@@ -95,4 +95,6 @@ class ClusterConfigServiceTest {
                 "end loop",
             null);
     }
+
+    // TODO make the DeployerGateway work from the CLI, too (JAX-RS client is not on the classpath)
 }
