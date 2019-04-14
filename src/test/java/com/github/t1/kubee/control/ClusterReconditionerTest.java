@@ -206,15 +206,21 @@ class ClusterReconditionerTest {
         return cluster.nodes().filter(it -> it.host().equals(host)).findAny().orElse(null);
     }
 
-    private void assertIngress(boolean written, Endpoint... endpoints) {
-        assertIngressWritten(written);
+    private void assertIngressNotWritten(Endpoint... endpoints) {
+        if (ingressWritten)
+            assertThat(ingressBefore).describedAs("expected ingress not written").isEqualTo(ingress.toString());
         assertLoadBalancers(endpoints);
         assertReverseProxies(endpoints);
     }
 
-    private void assertIngressWritten(boolean written) {
-        if (ingressWritten != written)
-            assertThat(ingressBefore).describedAs("expected ingress written " + written).isEqualTo(ingress.toString());
+    private void assertIngressWritten(Endpoint... endpoints) {
+        assertIngressWasWritten();
+        assertLoadBalancers(endpoints);
+        assertReverseProxies(endpoints);
+    }
+
+    private void assertIngressWasWritten() {
+        assertThat(ingressWritten).describedAs("expected ingress written").isTrue();
     }
 
     private void assertLoadBalancers(Endpoint... endpoints) {
@@ -251,7 +257,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers();
-        assertIngress(false);
+        assertIngressNotWritten();
     }
 
     @Test void shouldDoNothingWithOneNode() {
@@ -262,7 +268,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(false, WORKER01);
+        assertIngressNotWritten(WORKER01);
     }
 
     @Test void shouldDoNothingWithTwoNodes() {
@@ -273,7 +279,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, WORKER02);
-        assertIngress(false, WORKER01, WORKER02);
+        assertIngressNotWritten(WORKER01, WORKER02);
     }
 
     @Test void shouldUpdatePortOfWorker01() {
@@ -285,7 +291,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(movedEndpoint);
-        assertIngress(true, movedEndpoint);
+        assertIngressWritten(movedEndpoint);
     }
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
@@ -297,18 +303,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, movedEndpoint, WORKER03);
-        assertIngress(true, WORKER01, movedEndpoint, WORKER03);
-    }
-
-    @Test void shouldAddWorkerNodesServer() {
-        givenClusterWithNodeCount(2);
-        givenContainers(WORKER01, WORKER02);
-        givenIngress(WORKER01);
-
-        recondition();
-
-        assertContainers(WORKER01, WORKER02);
-        assertIngress(true, WORKER01, WORKER02);
+        assertIngressWritten(WORKER01, movedEndpoint, WORKER03);
     }
 
     @Test void shouldAddNodeToEmptyIngress() {
@@ -319,10 +314,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
-    @Test void shouldAddNodeToIngress() {
+    @Test void shouldAddNodeToIngressWithOne() {
         givenClusterWithNodeCount(2);
         givenContainers(WORKER01, WORKER02);
         givenIngress(WORKER01);
@@ -330,10 +325,32 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, WORKER02);
-        assertIngress(true, WORKER01, WORKER02);
+        assertIngressWritten(WORKER01, WORKER02);
     }
 
-    @Test void shouldRemoveNodeFromIngress() {
+    @Test void shouldAddTwoNodeToIngressWithOne() {
+        givenClusterWithNodeCount(3);
+        givenContainers(WORKER01, WORKER02, WORKER03);
+        givenIngress(WORKER01);
+
+        recondition();
+
+        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertIngressWritten(WORKER01, WORKER02, WORKER03);
+    }
+
+    @Test void shouldRemoveLastNodeFromIngress() {
+        givenClusterWithNodeCount(0);
+        givenContainers();
+        givenIngress(WORKER01);
+
+        recondition();
+
+        assertContainers();
+        assertIngressWritten();
+    }
+
+    @Test void shouldRemoveNodeFromIngressWithTwo() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01);
         givenIngress(WORKER01, WORKER02);
@@ -341,7 +358,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
     @Test void shouldRemoveTwoNodesFromIngress() {
@@ -352,11 +369,11 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
 
-    @Test void shouldScale0to1() {
+    @Test void shouldScaleContainersFrom0to1() {
         givenClusterWithNodeCount(1);
         givenContainers();
         givenIngress();
@@ -364,10 +381,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
-    @Test void shouldScale1to2() {
+    @Test void shouldScaleContainersFrom1to2() {
         givenClusterWithNodeCount(2);
         givenContainers(WORKER01);
         givenIngress(WORKER01);
@@ -375,10 +392,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, WORKER02);
-        assertIngress(true, WORKER01, WORKER02);
+        assertIngressWritten(WORKER01, WORKER02);
     }
 
-    @Test void shouldScale1to3() {
+    @Test void shouldScaleContainersFrom1to3() {
         givenClusterWithNodeCount(3);
         givenContainers(WORKER01);
         givenIngress(WORKER01);
@@ -386,10 +403,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, WORKER02, WORKER03);
-        assertIngress(true, WORKER01, WORKER02, WORKER03);
+        assertIngressWritten(WORKER01, WORKER02, WORKER03);
     }
 
-    @Test void shouldScale1to0() {
+    @Test void shouldScaleContainersFrom1to0() {
         givenClusterWithNodeCount(0);
         givenContainers(WORKER01);
         givenIngress(WORKER01);
@@ -397,10 +414,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers();
-        assertIngress(true);
+        assertIngressWritten();
     }
 
-    @Test void shouldScale2to1() {
+    @Test void shouldScaleContainersFrom2to1() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01, WORKER02);
         givenIngress(WORKER01, WORKER02);
@@ -408,10 +425,10 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
-    @Test void shouldScale3to1() {
+    @Test void shouldScaleContainersFrom3to1() {
         givenClusterWithNodeCount(1);
         givenContainers(WORKER01, WORKER02, WORKER03);
         givenIngress(WORKER01, WORKER02, WORKER03);
@@ -419,7 +436,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01);
-        assertIngress(true, WORKER01);
+        assertIngressWritten(WORKER01);
     }
 
     @Test void shouldUnbalanceNode() {
@@ -432,7 +449,7 @@ class ClusterReconditionerTest {
         recondition();
 
         assertContainers(WORKER01, WORKER02, WORKER03);
-        assertIngressWritten(true);
+        assertIngressWasWritten();
         assertLoadBalancers(WORKER01, WORKER03);
         assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }
