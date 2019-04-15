@@ -46,13 +46,13 @@ public class HealthGatewayIT {
     @Test void shouldNotFetchHealthWithoutHealthConfig() {
         Cluster clusterWithoutConfig = CLUSTER.toBuilder().healthConfig(null).build();
 
-        boolean healthy = gateway.fetch(clusterWithoutConfig.node(DEV, 1), "application");
+        boolean healthy = gateway.fetch(clusterWithoutConfig.node(DEV.getName(), 1), "application");
 
         assertThat(healthy).isTrue();
     }
 
     @Test void shouldFetchHealth() {
-        boolean healthy = gateway.fetch(CLUSTER.node(DEV, 1), "application");
+        boolean healthy = gateway.fetch(CLUSTER.node(DEV.getName(), 1), "application");
         assertThat(healthy).isTrue();
     }
 
@@ -60,7 +60,7 @@ public class HealthGatewayIT {
         boolean healthy;
         try {
             HealthGatewayIT.healthy = false;
-            healthy = gateway.fetch(CLUSTER.node(DEV, 1), "application");
+            healthy = gateway.fetch(CLUSTER.node(DEV.getName(), 1), "application");
         } finally {
             HealthGatewayIT.healthy = true;
         }

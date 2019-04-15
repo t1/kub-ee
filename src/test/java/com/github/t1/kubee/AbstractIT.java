@@ -1,7 +1,7 @@
 package com.github.t1.kubee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;
@@ -49,7 +49,7 @@ public abstract class AbstractIT {
             .fill("slot-2-port", WORKER_2.baseUri().getPort())
             .write(CLUSTER_CONFIG_PATH);
 
-        List<Cluster> clusters = Clusters.readFrom(CLUSTER_CONFIG_PATH);
+        List<Cluster> clusters = new ClusterStore(CLUSTER_CONFIG_PATH).getClusters();
         CLUSTER_1 = clusters.get(0);
         CLUSTER_2 = clusters.get(1);
 

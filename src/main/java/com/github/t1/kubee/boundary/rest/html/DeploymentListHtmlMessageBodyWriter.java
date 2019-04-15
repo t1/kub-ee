@@ -199,7 +199,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
         private CustomComponent cell(Deployment deployment) {
             return div()
                 .className(DEPLOYMENT, getStatusOfApp(deployment).name())
-                .id(deployment.id())
+                .id(deployment.id().toString())
                 .attr("title", deployment.gav())
                 .attr("draggable", "true")
                 .attr("ondragstart", "drag_start(event);")

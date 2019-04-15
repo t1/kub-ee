@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
@@ -13,19 +13,20 @@ import org.junit.jupiter.api.BeforeEach;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.entity.ClusterTest.CLUSTERS;
-import static com.github.t1.kubee.entity.ClusterTest.DEV;
+import static com.github.t1.kubee.TestData.APPLICATION_NAME;
+import static com.github.t1.kubee.TestData.CLUSTERS;
+import static com.github.t1.kubee.TestData.CLUSTER_A1;
+import static com.github.t1.kubee.TestData.VERSION_101;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 public abstract class AbstractControllerTest {
-    static final String APPLICATION_NAME = "dummy-app";
-    static final ClusterNode DEV01 = CLUSTERS[0].node(DEV, 1);
+    static final ClusterNode DEV01 = CLUSTER_A1.node("DEV", 1);
     static final Deployment DEPLOYMENT = Deployment
-        .builder().name(APPLICATION_NAME).node(DEV01).groupId("app-group").artifactId("app-artifact").version("1.0.1").build();
+        .builder().node(DEV01).name(APPLICATION_NAME).groupId("app-group").artifactId("app-artifact").version(VERSION_101).build();
 
     Controller controller = new Controller();
-    Clusters clusters;
+    ClusterStore clusterStore;
     DeployerGateway deployer;
     HealthGateway healthGateway;
 
@@ -37,11 +38,11 @@ public abstract class AbstractControllerTest {
         originalIngressBuilder = Ingress.BUILDER;
         Ingress.BUILDER = stage -> ingress;
 
-        this.clusters = controller.clusters = mock(Clusters.class);
+        this.clusterStore = controller.clusterStore = mock(ClusterStore.class);
         this.deployer = controller.deployer = mock(DeployerGateway.class);
         this.healthGateway = controller.healthGateway = mock(HealthGateway.class);
 
-        given(clusters.stream()).will(i -> Stream.of(CLUSTERS));
+        given(clusterStore.clusters()).will(i -> Stream.of(CLUSTERS));
     }
 
     @AfterEach

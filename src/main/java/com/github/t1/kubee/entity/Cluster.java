@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 
+import javax.ws.rs.BadRequestException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -42,8 +43,9 @@ public class Cluster implements Comparable<Cluster> {
 
     public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
 
-    public ClusterNode node(Stage stage, int index) {
-        return stage.nodes(this)
+    public ClusterNode node(String stage, int index) {
+        return stage(stage).orElseThrow(() -> new StageNotFoundException(stage, getSimpleName()))
+            .nodes(this)
             .filter(node -> node.getIndex() == index)
             .findAny()
             .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
@@ -144,5 +146,11 @@ public class Cluster implements Comparable<Cluster> {
     @lombok.Builder
     public static class HealthConfig {
         String path;
+    }
+
+    public static class StageNotFoundException extends BadRequestException {
+        StageNotFoundException(String stageName, String clusterName) {
+            super("stage '" + stageName + "' not found in cluster '" + clusterName + "'");
+        }
     }
 }

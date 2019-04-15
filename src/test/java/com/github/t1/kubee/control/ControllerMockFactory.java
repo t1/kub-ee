@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;
 
@@ -12,8 +12,8 @@ public class ControllerMockFactory {
 
     public static Controller create(List<Cluster> clusters) {
         Controller controller = new Controller();
-        controller.clusters = new Clusters() {
-            @Override public Stream<Cluster> stream() { return clusters.stream(); }
+        controller.clusterStore = new ClusterStore() {
+            @Override public Stream<Cluster> clusters() { return clusters.stream(); }
         };
         return controller;
     }

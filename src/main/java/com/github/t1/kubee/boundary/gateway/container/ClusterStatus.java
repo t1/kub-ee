@@ -28,7 +28,7 @@ public class ClusterStatus {
     private final Path dockerComposeDir;
     private final List<Endpoint> actualContainers;
 
-    public ClusterStatus(
+    ClusterStatus(
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeDir
     ) {

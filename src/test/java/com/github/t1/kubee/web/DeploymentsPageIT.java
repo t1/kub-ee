@@ -35,7 +35,7 @@ public class DeploymentsPageIT extends AbstractIT {
 
     private VersionCell deployerCell() { return page.findDeploymentCell(node11(), "deployer"); }
 
-    private ClusterNode node11() { return CLUSTER_1.node(PROD, 1); }
+    private ClusterNode node11() { return CLUSTER_1.node("PROD", 1); }
 
 
     @Test
@@ -55,12 +55,12 @@ public class DeploymentsPageIT extends AbstractIT {
         assertThat(dummyCell()).is(open);
 
         assertThat(dummyCell().menu())
-                .hasSize(5)
-                .has(versionMenuItem("minus", "1.2.1", "undeployed"), atIndex(0))
-                .has(versionMenuItem("minus", "1.2.2", "undeployed"), atIndex(1))
-                .has(versionMenuItem("ok-circle", "1.2.3", "deployed"), atIndex(2))
-                .has(versionMenuItem(null, null, null), atIndex(3))
-                .has(versionMenuItem("ban-circle", null, null), atIndex(4));
+            .hasSize(5)
+            .has(versionMenuItem("minus", "1.2.1", "undeployed"), atIndex(0))
+            .has(versionMenuItem("minus", "1.2.2", "undeployed"), atIndex(1))
+            .has(versionMenuItem("ok-circle", "1.2.3", "deployed"), atIndex(2))
+            .has(versionMenuItem(null, null, null), atIndex(3))
+            .has(versionMenuItem("ban-circle", null, null), atIndex(4));
     }
 
     @Test
@@ -71,12 +71,12 @@ public class DeploymentsPageIT extends AbstractIT {
         assertThat(dummyCell()).is(closed);
 
         assertThat(deployerCell().menu())
-                .hasSize(5)
-                .has(versionMenuItem("minus", "2.9.1", "undeployed"), atIndex(0))
-                .has(versionMenuItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
-                .has(versionMenuItem("minus", "2.9.3", "undeployed"), atIndex(2))
-                .has(versionMenuItem(null, null, null), atIndex(3))
-                .has(versionMenuItem("ban-circle", null, null), atIndex(4));
+            .hasSize(5)
+            .has(versionMenuItem("minus", "2.9.1", "undeployed"), atIndex(0))
+            .has(versionMenuItem("ok-circle", "2.9.2", "deployed"), atIndex(1))
+            .has(versionMenuItem("minus", "2.9.3", "undeployed"), atIndex(2))
+            .has(versionMenuItem(null, null, null), atIndex(3))
+            .has(versionMenuItem("ban-circle", null, null), atIndex(4));
         assertThat(dummyCell().menu()).describedAs("still").hasSize(5);
     }
 
@@ -89,7 +89,7 @@ public class DeploymentsPageIT extends AbstractIT {
 
     @Test
     public void shouldUndeployDummyAppFrom2() {
-        VersionCell dummy2 = page.findDeploymentCell(CLUSTER_2.node(PROD, 1), "dummy");
+        VersionCell dummy2 = page.findDeploymentCell(CLUSTER_2.node("PROD", 1), "dummy");
         dummy2.clickToggle();
 
         dummy2.undeployMenuItem().click();
@@ -99,11 +99,11 @@ public class DeploymentsPageIT extends AbstractIT {
 
     @Test
     public void shouldDragDeployment() {
-        WebElement to = page.findDeployment(CLUSTER_2.node(PROD, 1), "dummy");
+        WebElement to = page.findDeployment(CLUSTER_2.node("PROD", 1), "dummy");
         DRIVER.buildAction()
-              .clickAndHold(page.findDeployment(node11(), "dummy"))
-              .moveToElement(to)
-              .release(to)
-              .build().perform();
+            .clickAndHold(page.findDeployment(node11(), "dummy"))
+            .moveToElement(to)
+            .release(to)
+            .build().perform();
     }
 }

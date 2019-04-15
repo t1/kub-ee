@@ -1,15 +1,15 @@
 package com.github.t1.kubee.boundary.gateway.container;
 
-import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Endpoint;
-import com.github.t1.kubee.entity.Slot;
-import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.ContainersFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.List;
 
+import static com.github.t1.kubee.tools.ContainersFixture.CLUSTER;
+import static com.github.t1.kubee.tools.ContainersFixture.SLOT;
+import static com.github.t1.kubee.tools.ContainersFixture.STAGE;
 import static com.github.t1.kubee.tools.ContainersFixture.WORKER1;
 import static com.github.t1.kubee.tools.ContainersFixture.WORKER2;
 import static com.github.t1.kubee.tools.ContainersFixture.WORKER3;
@@ -19,10 +19,6 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClusterStatusTest {
-    private static final Slot SLOT = Slot.builder().build();
-    private static final Stage STAGE = Stage.builder().name("PROD").count(3).build();
-    private static final Cluster CLUSTER = Cluster.builder().host("worker").slot(SLOT).stage(STAGE).build();
-
     @RegisterExtension ContainersFixture containers = new ContainersFixture().setPort(SLOT.getHttp());
 
     private ClusterStatus whenStatus() {

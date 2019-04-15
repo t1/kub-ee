@@ -9,8 +9,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import static com.github.t1.kubee.entity.ClusterTest.SLOT_0;
-import static com.github.t1.kubee.entity.ClusterTest.SLOT_1;
+import static com.github.t1.kubee.TestData.SLOT_0;
+import static com.github.t1.kubee.TestData.SLOT_1;
 import static com.github.t1.kubee.tools.html.Html.BOOTSTRAP_CSS;
 import static com.github.t1.kubee.tools.html.Html.ICONS_CSS;
 import static java.nio.charset.StandardCharsets.UTF_8;

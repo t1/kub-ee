@@ -1,6 +1,5 @@
 package com.github.t1.kubee.boundary.rest.html;
 
-import com.github.t1.kubee.boundary.rest.Boundary;
 import com.github.t1.kubee.boundary.rest.BoundaryMockFactory;
 import com.github.t1.kubee.entity.Stage;
 import org.jsoup.Jsoup;
@@ -20,8 +19,7 @@ class StageListHtmlMessageBodyWriterTest {
     private final StageListHtmlMessageBodyWriter writer = new StageListHtmlMessageBodyWriter();
 
     @Test void shouldWriteHtml() throws Exception {
-        Boundary boundary = BoundaryMockFactory.createWithClusters();
-        List<Stage> stages = boundary.getStages();
+        List<Stage> stages = BoundaryMockFactory.createWithClusters().getStages();
         OutputStream out = new ByteArrayOutputStream();
 
         writer.writeTo(stages, null, null, null, null, null, out);

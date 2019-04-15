@@ -1,6 +1,9 @@
 package com.github.t1.kubee.tools;
 
+import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Endpoint;
+import com.github.t1.kubee.entity.Slot;
+import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.cli.ProcessInvoker;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,6 +28,10 @@ import static org.mockito.Mockito.mock;
 
 @Accessors(chain = true)
 public class ContainersFixture implements BeforeEachCallback, AfterEachCallback {
+    public static final Slot SLOT = Slot.builder().build();
+    public static final Stage STAGE = Stage.builder().name("PROD").count(3).build();
+    public static final Cluster CLUSTER = Cluster.builder().host("worker").slot(SLOT).stage(STAGE).build();
+
     public static final Endpoint WORKER1 = new Endpoint("worker1", 32769);
     public static final Endpoint WORKER2 = new Endpoint("worker2", 32770);
     public static final Endpoint WORKER3 = new Endpoint("worker3", 32771);

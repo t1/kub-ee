@@ -10,16 +10,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BoundaryMockFactory {
-    public static Boundary createWithClusters() {
-        Boundary boundary = new Boundary();
+    public static RestBoundary createWithClusters() {
+        RestBoundary boundary = new RestBoundary();
         boundary.controller = ControllerMockFactory.createWithClusters();
         return boundary;
     }
 
-    public static Boundary createWithBaseUri(URI baseUri) {
+    public static RestBoundary createWithBaseUri(URI baseUri) {
         UriInfo uriInfo = mock(UriInfo.class);
         when(uriInfo.getBaseUriBuilder()).then(i -> new JerseyUriBuilder().uri(baseUri));
-        Boundary boundary = new Boundary();
+        RestBoundary boundary = new RestBoundary();
         boundary.uriInfo = uriInfo;
         return boundary;
     }

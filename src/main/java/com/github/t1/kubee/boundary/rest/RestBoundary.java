@@ -1,5 +1,6 @@
 package com.github.t1.kubee.boundary.rest;
 
+import com.github.t1.kubee.control.ClusterReconditioner;
 import com.github.t1.kubee.control.Controller;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
@@ -41,10 +42,11 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Path("/")
 @Stateless
-public class Boundary {
+public class RestBoundary {
     @Context UriInfo uriInfo;
 
     @Inject Controller controller;
+    @Inject ClusterReconditioner reconditioner;
 
     @GET public List<Link> getLinks() {
         return asList(
@@ -59,7 +61,7 @@ public class Boundary {
 
     private Link link(String title) {
         String method = "get" + title.replace(" ", "");
-        UriBuilder href = uriInfo.getBaseUriBuilder().path(Boundary.class, method);
+        UriBuilder href = uriInfo.getBaseUriBuilder().path(RestBoundary.class, method);
         String rel = title.toLowerCase(US).replaceAll(" ", "-");
         return Link.fromUriBuilder(href).rel(rel).title(title).build();
     }
@@ -172,5 +174,9 @@ public class Boundary {
                 controller.undeploy(id);
                 break;
         }
+    }
+
+    @POST @Path("/recondition") public void postRecondition() {
+        reconditioner.run();
     }
 }

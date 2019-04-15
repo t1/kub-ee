@@ -45,15 +45,10 @@ public class DeploymentId {
         String stageName = split[2];
         int index = Integer.valueOf(split[3]);
 
-        Cluster cluster = clusters.filter(c -> c.getSimpleName().equals(clusterName))
+        return clusters.filter(c -> c.getSimpleName().equals(clusterName))
                                   .filter(c -> c.getSlot().getName().equals(slotName))
                                   .findFirst()
-                                  .orElseThrow(() -> new ClusterNotFoundException(clusterName));
-
-        Stage stage = cluster.stage(stageName)
-                             .orElseThrow(() -> new StageNotFoundException(stageName));
-
-        return cluster.node(stage, index);
+                                  .orElseThrow(() -> new ClusterNotFoundException(clusterName)).node(stageName, index);
     }
 
     private String[] split() {
@@ -65,10 +60,6 @@ public class DeploymentId {
     }
 
     public static class ClusterNotFoundException extends BadRequestException {
-        public ClusterNotFoundException(String clusterName) { super("cluster not found: '" + clusterName + "'"); }
-    }
-
-    public static class StageNotFoundException extends BadRequestException {
-        public StageNotFoundException(String stageName) { super("stage not found: '" + stageName + "'"); }
+        ClusterNotFoundException(String clusterName) { super("cluster not found: '" + clusterName + "'"); }
     }
 }

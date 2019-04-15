@@ -1,6 +1,8 @@
 package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
@@ -10,9 +12,11 @@ import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.DeploymentStatus;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Map;
+import javax.inject.Inject;
 
 import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
@@ -22,16 +26,17 @@ import static java.util.stream.Collectors.toList;
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale it up or down as specified.
  * Then look at the load balancer config, and update it as specified in the (updated) docker-compose file.
  */
-@RequiredArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class ClusterReconditioner implements Runnable {
-    private final Map<Cluster, ClusterStatus> clusters;
-    private final DeployerGateway deployerGateway;
+    @Inject ClusterStore clusterStore;
+    @Inject DeployerGateway deployerGateway;
+    @Inject ClusterStatusGateway clusterStatusGateway;
 
-    @Override public void run() {
-        clusters.forEach(this::reconditionCluster);
-    }
+    @Override public void run() { clusterStore.clusters().forEach(this::reconditionCluster); }
 
-    private void reconditionCluster(Cluster cluster, ClusterStatus clusterStatus) {
+    private void reconditionCluster(Cluster cluster) {
+        ClusterStatus clusterStatus = clusterStatusGateway.clusterStatus(cluster);
         cluster.stages()
             .map(stage -> new StageReconditioner(cluster, stage, clusterStatus))
             .forEach(StageReconditioner::recondition);

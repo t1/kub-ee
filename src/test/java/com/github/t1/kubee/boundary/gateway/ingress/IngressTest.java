@@ -1,5 +1,6 @@
 package com.github.t1.kubee.boundary.gateway.ingress;
 
+import com.github.t1.kubee.TestData;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
 import com.github.t1.kubee.entity.ClusterNode;
@@ -24,7 +25,6 @@ import java.util.stream.Stream;
 import static com.github.t1.kubee.TestData.NODE1;
 import static com.github.t1.kubee.TestData.NODE2;
 import static com.github.t1.kubee.TestData.PROXY_SETTINGS;
-import static com.github.t1.kubee.TestData.SLOT;
 import static com.github.t1.kubee.TestData.STAGE;
 import static com.github.t1.kubee.TestData.WORKER01;
 import static com.github.t1.kubee.TestData.WORKER02;
@@ -71,7 +71,7 @@ import static org.assertj.core.api.Assertions.tuple;
             String upstreamName = worker.getHost();
             nginxConfig
                 .addUpstream(NginxUpstream.named(upstreamName).setMethod("least_conn").addHostPort(worker))
-                .addServer(NginxServer.named(upstreamName).setListen(SLOT.getHttp())
+                .addServer(NginxServer.named(upstreamName).setListen(TestData.SLOT_0.getHttp())
                     .addLocation(NginxServerLocation.named("/").setProxyPass(URI.create("http://" + upstreamName + "/"))
                         .setAfter("proxy_set_header Host      $host;\n" +
                             "            proxy_set_header X-Real-IP $remote_addr;")));

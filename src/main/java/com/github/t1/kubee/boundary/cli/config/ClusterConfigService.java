@@ -1,9 +1,8 @@
 package com.github.t1.kubee.boundary.cli.config;
 
-import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
-import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
+import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.control.ClusterReconditioner;
-import com.github.t1.kubee.entity.Cluster;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
 
@@ -15,9 +14,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -112,21 +109,15 @@ public class ClusterConfigService {
     private void recondition() {
         try {
             System.out.println("recondition start");
-            ClusterReconditioner reconditioner = buildReconditioner();
+            ClusterStore clusterStore = new ClusterStore(clusterConfigPath);
+            ClusterStatusGateway clusterStatusGateway = new ClusterStatusGateway(dockerComposeDir);
+            ClusterReconditioner reconditioner = new ClusterReconditioner(clusterStore, null, clusterStatusGateway);
             reconditioner.run();
             System.out.println("recondition done");
         } catch (RuntimeException e) {
             System.out.println("recondition failed " + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage()));
             log.log(SEVERE, "can't recondition", e);
         }
-    }
-
-    private ClusterReconditioner buildReconditioner() {
-        List<Cluster> clusters = Clusters.readFrom(clusterConfigPath);
-        Map<Cluster, ClusterStatus> containerStatuses = new LinkedHashMap<>();
-        for (Cluster cluster : clusters)
-            containerStatuses.put(cluster, new ClusterStatus(cluster, dockerComposeDir));
-        return new ClusterReconditioner(containerStatuses, null);
     }
 
     void stop() { continues = false; }

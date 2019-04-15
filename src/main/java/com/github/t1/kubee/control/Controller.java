@@ -1,6 +1,6 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.boundary.gateway.clusters.Clusters;
+import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
 import com.github.t1.kubee.entity.Audits;
@@ -39,12 +39,12 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Stateless
 public class Controller {
-    @Inject Clusters clusters;
+    @Inject ClusterStore clusterStore;
     @Inject DeployerGateway deployer;
     @Inject HealthGateway healthGateway;
 
 
-    public Stream<Cluster> clusters() { return clusters.stream(); }
+    public Stream<Cluster> clusters() { return clusterStore.clusters(); }
 
     public Stream<LoadBalancer> loadBalancers(Stream<Stage> stages) {
         return stages.flatMap(stage ->
@@ -163,18 +163,18 @@ public class Controller {
         ClusterNode node = id.node(clusters());
         String name = id.deploymentName();
         undeploy(node, name);
-        clusters.balance(node, name);
+        clusterStore.balance(node, name);
     }
 
     public void balance(DeploymentId id) {
         ClusterNode node = id.node(clusters());
-        clusters.balance(node, id.deploymentName());
+        clusterStore.balance(node, id.deploymentName());
         ingress(node.getStage()).addToLoadBalancer(id.deploymentName(), node);
     }
 
     public void unbalance(DeploymentId id) {
         ClusterNode node = id.node(clusters());
-        clusters.unbalance(node, id.deploymentName());
+        clusterStore.unbalance(node, id.deploymentName());
         ingress(node.getStage()).removeFromLoadBalancer(id.deploymentName(), node);
     }
 

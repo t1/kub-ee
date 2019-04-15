@@ -40,7 +40,7 @@ public class Deployment implements Comparable<Deployment> {
 
     @JsonIgnore public String getSlotName() { return node.getCluster().getSlot().getName(); }
 
-    public String id() { return node.id() + ":" + name; }
+    public DeploymentId id() { return new DeploymentId(node.id() + ":" + name); }
 
     public String gav() { return groupId + ":" + artifactId + ":" + version; }
 

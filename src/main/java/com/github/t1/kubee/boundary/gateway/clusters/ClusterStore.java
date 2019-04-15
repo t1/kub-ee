@@ -4,6 +4,8 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
 import com.github.t1.kubee.tools.yaml.YamlMapping;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import javax.enterprise.context.RequestScoped;
 import java.io.IOException;
@@ -17,18 +19,25 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.entity.Cluster.readAllFrom;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @RequestScoped
-public class Clusters {
-    public static List<Cluster> readFrom(Path path) {
-        return Cluster.readAllFrom(readDocument(path), System.err::println);
+@AllArgsConstructor
+@NoArgsConstructor
+public class ClusterStore {
+    Path clusterConfigPath;
+
+    public Stream<Cluster> clusters() { return getClusters().stream(); }
+
+    public List<Cluster> getClusters() {
+        return readAllFrom(readDocument(getConfigPath()), System.err::println);
     }
 
-    public Stream<Cluster> stream() { return readFrom(getConfigPath()).stream(); }
-
     private Path getConfigPath() {
+        if (clusterConfigPath != null)
+            return clusterConfigPath;
         String file = System.getProperty("kub-ee.cluster-config");
         if (file != null)
             return Paths.get(file);
