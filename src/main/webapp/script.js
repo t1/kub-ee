@@ -138,7 +138,10 @@ function balance(where) {
     const undeployIcon = cellIcon(where, 'balancing');
 
     return post(where, 'mode=balance', undeployIcon, 'eye', () => {
-        // TODO update status
+        const cell = $id(where);
+        cell.removeClass('unbalanced');
+        const icon = cell.find('.ion-md-eye-off');
+        if (icon) $(icon).remove();
     });
 }
 
@@ -147,7 +150,11 @@ function unbalance(where) {
     const undeployIcon = cellIcon(where, 'unbalancing');
 
     return post(where, 'mode=unbalance', undeployIcon, 'eye-off', () => {
-        // TODO update status
+        const cell = $id(where);
+        cell.addClass('unbalanced');
+        const icon = document.createElement('span');
+        icon.className = 'icon ion-md-eye-off';
+        cell.prepend(icon);
     });
 }
 
@@ -172,7 +179,7 @@ function post(where, body, icon, status, faded) {
         .then(response => {
             console.debug('got response', response);
             if (response.status !== NO_CONTENT) {
-                response.json().then(json => console.debug("error detail", json));
+                response.json().then(json => console.debug('error detail', json));
                 throw new Error('unexpected response: ' + response.status);
             }
             icon.className = versionIconClasses({status: status});
@@ -214,7 +221,7 @@ let sourceId;
 
 function drag_start(event) {
     sourceId = event.currentTarget.id;
-    event.dataTransfer.effectAllowed = "copyMove";
+    event.dataTransfer.effectAllowed = 'copyMove';
     event.dataTransfer.setData('text', event.currentTarget.className + ':' + sourceId);
     $id(sourceId).parent().addClass('drag-source');
 }
