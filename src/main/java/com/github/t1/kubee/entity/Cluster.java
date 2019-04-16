@@ -25,7 +25,9 @@ import static com.github.t1.kubee.entity.Slot.DEFAULT_SLOT;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A set of slots on slots and machines, forming one physical cluster per stage.
+ * A set of slots on stages and machines, forming a physical cluster per stage.
+ *
+ * TODO document file format
  */
 @Value
 @Builder(toBuilder = true)

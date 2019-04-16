@@ -1,25 +1,21 @@
 package com.github.t1.kubee.boundary.gateway.container;
 
+import com.github.t1.kubee.boundary.config.DockerComposeDir;
 import com.github.t1.kubee.entity.Cluster;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
-import java.util.Optional;
 
 @NoArgsConstructor
-@SuppressWarnings("CdiInjectionPointsInspection")
+@AllArgsConstructor
 public class ClusterStatusGateway {
-    @Inject @ConfigProperty private Optional<Path> dockerComposeDir;
-
-    public ClusterStatusGateway(Path dockerComposeDir) {
-        this.dockerComposeDir = Optional.ofNullable(dockerComposeDir);
-    }
+    @Inject @DockerComposeDir private Path dockerComposeDir;
 
     public ClusterStatus clusterStatus(Cluster cluster) {
-        if (!dockerComposeDir.isPresent())
+        if (dockerComposeDir == null)
             throw new RuntimeException("no docker compose dir configured");
-        return new ClusterStatus(cluster, dockerComposeDir.get());
+        return new ClusterStatus(cluster, dockerComposeDir);
     }
 }
