@@ -11,6 +11,7 @@ import com.github.t1.nginx.NginxConfig.NginxServerLocation;
 import com.github.t1.nginx.NginxConfig.NginxUpstream;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
@@ -147,7 +148,7 @@ public class Ingress {
         }
 
         public void setPort(int port) {
-            log.info("Add port of ReverseProxy " + upstream.getName() + " to " + port);
+            log.info("Set port of ReverseProxy " + upstream.getName() + " to " + port);
             List<HostPort> hostPorts = upstream.getHostPorts();
             if (hostPorts.size() > 1)
                 throw new IllegalStateException("expected no more than one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
@@ -163,10 +164,11 @@ public class Ingress {
     public Stream<LoadBalancer> loadBalancers() {
         return nginxConfig.servers()
             .filter(this::hasLoadBalancerUpstream)
-            .map(LoadBalancer::new);
+            .map(LoadBalancer::new)
+            .collect(toList()).stream(); // copy to protect from ConcurrentModificationException
     }
 
-    private Boolean hasLoadBalancerUpstream(NginxServer server) {
+    private Boolean hasLoadBalancerUpstream(@NonNull NginxServer server) {
         String path = trimSlashes(rootLocationProxyPass(server).getPath());
         if (path.isEmpty())
             return false;
@@ -204,11 +206,11 @@ public class Ingress {
         return nginxConfig.servers().filter(server -> upstreamFor(server).map(u -> u == upstream).orElse(false)).findAny();
     }
 
-    private Optional<NginxUpstream> upstreamFor(NginxServer server) {
+    private Optional<NginxUpstream> upstreamFor(@NonNull NginxServer server) {
         return nginxConfig.upstream(rootLocationProxyPass(server).getHost());
     }
 
-    private URI rootLocationProxyPass(NginxServer server) {
+    private URI rootLocationProxyPass(@NonNull NginxServer server) {
         return server.location("/").orElseThrow(IllegalStateException::new).getProxyPass();
     }
 
@@ -255,7 +257,7 @@ public class Ingress {
 
         public boolean hasEndpoint(Endpoint endpoint) { return endpoints().anyMatch(endpoint::equals); }
 
-        /** Returns a snapshot of the endpoints, so it can be manipulated */
+        /** Returns a snapshot of the endpoints, so it can be manipulated (ConcurrentModificationException) */
         public Stream<Endpoint> endpoints() { return upstream.hostPorts().map(Tools::toEndpoint).collect(toList()).stream(); }
 
         public void addOrUpdateEndpoint(Endpoint endpoint) {

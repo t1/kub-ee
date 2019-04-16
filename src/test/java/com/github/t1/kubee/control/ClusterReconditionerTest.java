@@ -502,6 +502,21 @@ class ClusterReconditionerTest {
         assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }
 
+    @Test void shouldUnbalanceLastNode() {
+        givenClusterWith(stage()
+            .count(3)
+            .status("1:" + APP_NAME, unbalanced));
+        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
+        givenIngress(WORKER01);
+
+        recondition();
+
+        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertIngressWasApplied();
+        assertLoadBalancers(WORKER02, WORKER03);
+        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+    }
+
     @Test void shouldNotAddLoadBalancerNodeWhenApplicationIsNotDeployed() {
         givenClusterWithNodeCount(3);
         givenContainers(WORKER01, WORKER02, WORKER03);

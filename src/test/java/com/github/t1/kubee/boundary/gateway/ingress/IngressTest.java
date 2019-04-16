@@ -66,7 +66,7 @@ import static org.assertj.core.api.Assertions.tuple;
         return nginxConfig;
     }
 
-    private void addReverseProxy(NginxConfig nginxConfig, HostPort... workers) {
+    private NginxConfig addReverseProxy(NginxConfig nginxConfig, HostPort... workers) {
         for (HostPort worker : workers) {
             String upstreamName = worker.getHost();
             nginxConfig
@@ -76,6 +76,7 @@ import static org.assertj.core.api.Assertions.tuple;
                         .setAfter("proxy_set_header Host      $host;\n" +
                             "            proxy_set_header X-Real-IP $remote_addr;")));
         }
+        return nginxConfig;
     }
 
     private NginxConfig removeNode(NginxConfig config, ClusterNode node) {
@@ -158,6 +159,15 @@ import static org.assertj.core.api.Assertions.tuple;
         whenIngress().removeFromLoadBalancer("dummy-app", NODE2);
 
         assertThat(actualNginxConfig()).isEqualTo(removeNode(nginxConfig(WORKER01, WORKER02), NODE2));
+        verifyReloaded();
+    }
+
+    @Test void shouldRemoveLastNodeFromLoadBalancer() {
+        givenNginx(WORKER01);
+
+        whenIngress().removeFromLoadBalancer("dummy-app", NODE1);
+
+        assertThat(actualNginxConfig()).isEqualTo(addReverseProxy(NginxConfig.create(), WORKER01));
         verifyReloaded();
     }
 
