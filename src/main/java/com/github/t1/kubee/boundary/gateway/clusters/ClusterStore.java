@@ -4,10 +4,11 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.tools.yaml.YamlDocument;
 import com.github.t1.kubee.tools.yaml.YamlMapping;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -24,10 +26,14 @@ import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @RequestScoped
-@AllArgsConstructor
 @NoArgsConstructor
+@SuppressWarnings("CdiInjectionPointsInspection")
 public class ClusterStore {
-    Path clusterConfigPath;
+    @Inject @ConfigProperty Optional<Path> clusterConfigPath = Optional.empty();
+
+    public ClusterStore(Path clusterConfigPath) {
+        this.clusterConfigPath = Optional.ofNullable(clusterConfigPath);
+    }
 
     public Stream<Cluster> clusters() { return getClusters().stream(); }
 
@@ -36,11 +42,8 @@ public class ClusterStore {
     }
 
     private Path getConfigPath() {
-        if (clusterConfigPath != null)
-            return clusterConfigPath;
-        String file = System.getProperty("kub-ee.cluster-config");
-        if (file != null)
-            return Paths.get(file);
+        if (clusterConfigPath.isPresent())
+            return clusterConfigPath.get();
         String root = System.getProperty("jboss.server.config.dir");
         if (root == null)
             root = System.getProperty("user.dir");
@@ -56,7 +59,7 @@ public class ClusterStore {
     }
 
     public void unbalance(ClusterNode node, String deploymentName) {
-        updateStage(node, deploymentName, stage -> {
+        updateStage(node, stage -> {
             YamlMapping status = stage.getOrCreateMapping("status");
             String key = key(node, deploymentName);
             if (!status.hasKey(key))
@@ -65,7 +68,7 @@ public class ClusterStore {
     }
 
     public void balance(ClusterNode node, String deploymentName) {
-        updateStage(node, deploymentName, stage -> {
+        updateStage(node, stage -> {
             if (stage.hasKey("status")) {
                 YamlMapping status = stage.getMapping("status");
                 status.remove(key(node, deploymentName));
@@ -75,7 +78,7 @@ public class ClusterStore {
         });
     }
 
-    private void updateStage(ClusterNode node, String deploymentName, Consumer<YamlMapping> consumer) {
+    private void updateStage(ClusterNode node, Consumer<YamlMapping> consumer) {
         YamlDocument document = readDocument(getConfigPath());
         YamlMapping yamlNode = document.asMapping().getMapping(node.getCluster().id());
         YamlMapping stage = yamlNode.getMapping(node.getStage().getName());
