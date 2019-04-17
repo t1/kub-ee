@@ -8,8 +8,7 @@ Manage the applications on multiple Java EE clusters.
    They are DNS-named `worker-qa-01`, `worker-qa-02`, `worker-01`, and `worker-02`. _(done)_
 1. He deploys [nginx](http://nginx.org) and Kub-EE on a machine that acts as load balancers (LB). _(done)_
 1. He deploys [The Deployer](https://github.com/t1/deployer) on the worker JBoss machines and
-    * configures the clusters, slots, nodes, and stages in Kub-EE _(done)_, or
-    * configures The Deployers to report to Kub-EE instance, including their stage. _(todo)_
+   configures the clusters, slots, nodes, and stages in Kub-EE _(done)_
 1. He browses to Kub-EE and sees a matrix like this:
 <table>
  <tbody>
@@ -85,13 +84,16 @@ Manage the applications on multiple Java EE clusters.
 1. He chooses to update all, and sees the numbers of the different versions within the cell as the rollout progresses. _(todo)_
 1. He configures a minimum and maximum load for one service on one stage,
    and Kub-EE automatically deploys or undeploys instances on more or less nodes to stay in that load range. _(todo)_
+1. Rollouts from, e.g., a CI/CD pipeline are triggered via an API. _(todo)_
+
+Note that The Deployer not only deploys artifacts, but also bundles with configuration items like Datasources, Log-Handlers, etc.
 
 
 ## Conventions
 
 We follow the convention-over-configuration principle, so things simply work for a standard setup.
-If following these conventions do not suffice for a special case, we'll have to add a configuration point,
-but doing so prematurely would add extra complexity we'd rather like to avoid before we have such a real-world use case.
+If following these conventions does not suffice for a special case, we'll have to add a configuration point,
+but doing so prematurely would add extra complexity we'd rather like to avoid before we have a real-world use case.
 
 1. An application `foo` can be (un)deployed with `foo.state` (`deployed` or `undeployed`).
 1. A different version of an application `foo` can be deployed with `foo.version`.
@@ -111,9 +113,3 @@ Here's how to translate the terms:
 | Pod | Bundle | Bundles can be nested and provide live templating, which Pods don't. |
 | Kubelet | The Deployer | The Deployer is unaware of Kub-EE |
 | Worker/Docker Host | JEE Container | Multiple JEE containers can run on one machine by using a different port offset (typically by 100s), called Slots |
-
-
-## Ideas For The Deployer
-
-* Health and load metrics; by app & total
-* Web-Sockets to push audits (maybe even watch others deploy/undeploy)
