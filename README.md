@@ -51,28 +51,28 @@ Manage the applications on multiple Java EE clusters.
     * The node is removed from the app LB (incl. a reload). _(done)_
     * All currently running requests are finished (JBoss feature).
     * The matrix cell shows an icon to indicate that it's not in the LB. _(done)_
-1. He opens a menu in a unbalanced matrix cell and picks `balance`:
-    * The node is added from the app LB (incl. a reload). _(done)_
+1. He opens a menu in an unbalanced matrix cell and picks `balance`:
+    * The node is added to the app LB (incl. a reload). _(done)_
     * The unbalanced icon is removed from the matrix cell. _(done)_
-1. He opens a menu in one matrix cell and picks `undeploy`:
+1. He opens a menu in a matrix cell and picks `undeploy`:
     * The node is removed from the app LB (incl. a reload). _(done)_
     * All currently running requests are finished (JBoss feature).
     * The application is undeployed. _(done)_
     * The version is removed from the matrix cell. _(done)_
     * If the app on the node was unbalanced, it's not any more. _(done)_
-1. He opens a matrix cell menu and sees a list of all available versions.
+1. He opens a matrix cell menu and sees a list of all available versions. _(done)_
    He picks a different version:
-    * The health of the app on the node is recorded. _(done)_
-    * The node is removed from the app LB (incl. a reload). _(done))
+    * If configured to, the health of the app on the node is recorded. _(done)_
+    * The node is removed from the app LB (incl. a reload). _(done)_
     * All currently running requests are finished (JBoss feature).
-    * The new version is deployed (the Deployer pulls it from a maven repository). _(done)_
+    * The new version is deployed (The Deployer pulls it from a maven repository). _(done)_
     * The health of the app on the node is checked again, and if it's gone from green to red, the previous version is restored. _(done)_
-    * If the app on the node is not unbalanced, it's re-added to the app LB (incl. reload). _(done)_
+    * Unless the app on the node is unbalanced, it's re-added to the app LB (incl. reload). _(done)_
 1. If the deployments to a stage are done with a CI/CD pipeline, this menu only contains the current
-   and the fallback version for rollbacks. _(todo)_
+   and the previous versions for rollbacks. _(todo)_
 1. He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB. _(done)_
 1. He drags a cell from one machine to another and it gets deployed on the target and undeployed on the source;
-   the LB is updated accordingly. _(done)_
+   the LB is updated accordingly. _(broken)_
 1. He switches to a _compact_ view that collapses the node indexes on the top so he only sees the stages;
    the cells show the number of instances of an application on this stage;
    if there are different versions on the nodes of one stage, both are displayed. _(todo)_
