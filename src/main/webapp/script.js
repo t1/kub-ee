@@ -316,7 +316,7 @@ function drop_handler(event) {
                 status: 'deploying'
             });
             break;
-        case 'move':
+        case 'copyMove':
             const id = sourceId;
             cellIcon(sourceId, 'undeployee');
             deploy(targetId, {

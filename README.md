@@ -72,7 +72,7 @@ Manage the applications on multiple Java EE clusters.
    and the previous versions for rollbacks. _(todo)_
 1. He option-drags a cell from one machine to another and it gets deployed on the target and added to the LB. _(done)_
 1. He drags a cell from one machine to another and it gets deployed on the target and undeployed on the source;
-   the LB is updated accordingly. _(broken)_
+   the LB is updated accordingly. _(done)_
 1. He switches to a _compact_ view that collapses the node indexes on the top so he only sees the stages;
    the cells show the number of instances of an application on this stage;
    if there are different versions on the nodes of one stage, both are displayed. _(todo)_
