@@ -1,4 +1,4 @@
-FROM deployer/wildfly:2.10.2-SNAPSHOT
+FROM deployer/wildfly
 
 COPY deployer.config.yaml ${JBOSS_HOME}/standalone/configuration/deployer.config.yaml
 COPY deployer.root.bundle ${JBOSS_HOME}/standalone/configuration/deployer.root.bundle
