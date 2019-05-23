@@ -10,7 +10,7 @@
     <name>Kub-EE</name>
 
     <properties>
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.9.9</jackson.version>
         <react.version>16.8.5</react.version>
     </properties>
 
