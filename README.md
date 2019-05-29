@@ -1,3 +1,5 @@
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=t1/kub-ee)](https://dependabot.com)
+
 # Kub-EE
 
 Manage the applications on multiple Java EE clusters.
