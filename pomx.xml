@@ -11,7 +11,7 @@
         <react.version>16.8.6</react.version>
     </properties>
 
-    <profile>com.github.t1:profile-javaee:7.0.0-SNAPSHOT</profile>
+    <profile>com.github.t1:profile-javaee:8.0.0-SNAPSHOT</profile>
     <profile>com.github.t1:profile-t1:1.0.0-SNAPSHOT</profile>
 
     <build>

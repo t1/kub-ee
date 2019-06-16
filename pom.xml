@@ -264,7 +264,7 @@
                 </property>
             </activation>
             <properties>
-                <com.github.t1.profile-javaee.version>7.0.0-SNAPSHOT</com.github.t1.profile-javaee.version>
+                <com.github.t1.profile-javaee.version>8.0.0-SNAPSHOT</com.github.t1.profile-javaee.version>
                 <failOnMissingWebXml>false</failOnMissingWebXml>
             </properties>
             <build>
@@ -289,13 +289,13 @@
                 <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>
-            <version>7.0</version>
+            <version>8.0.1</version>
             <scope>provided</scope>
         </dependency>
                 <dependency>
             <groupId>org.eclipse.microprofile</groupId>
             <artifactId>microprofile</artifactId>
-            <version>2.2</version>
+            <version>3.0</version>
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
@@ -364,8 +364,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${java.specification.version}</source>
-                    <target>${java.specification.version}</target>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
                     <encoding>utf8</encoding>
@@ -392,7 +390,9 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <banVunerableDependencies implementation="org.sonatype.ossindex.maven.enforcer.BanVulnerableDependencies"/>
+                                <banVunerableDependencies implementation="org.sonatype.ossindex.maven.enforcer.BanVulnerableDependencies">
+                                    <scope>compile,runtime,test</scope>
+                                </banVunerableDependencies>
                                 <requireMavenVersion>
                                     <version>3.5.2</version>
                                 </requireMavenVersion>
