@@ -393,9 +393,6 @@
                                 <banVunerableDependencies implementation="org.sonatype.ossindex.maven.enforcer.BanVulnerableDependencies">
                                     <scope>compile,runtime</scope>
                                 </banVunerableDependencies>
-                                <requireMavenVersion>
-                                    <version>3.6.1</version>
-                                </requireMavenVersion>
                             </rules>
                         </configuration>
                     </execution>
