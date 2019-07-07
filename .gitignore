@@ -1,8 +1,10 @@
 .idea/
+cluster-config.yaml
+deployer.config.yaml
+deployer.root.bundle
 kub-ee.iml
-target/
-/cluster-config.yaml
-/nginx.conf
-nginxqa.conf
 nginx-mib.conf
+nginx.conf
+nginxqa.conf
 src/test/node/deployments.html
+target/
