@@ -1,10 +1,7 @@
-.idea/
-cluster-config.yaml
-deployer.config.yaml
-deployer.root.bundle
-kub-ee.iml
-nginx-mib.conf
-nginx.conf
-nginxqa.conf
-src/test/node/deployments.html
-target/
+/.idea/
+/cluster-config.yaml
+/deployer.config.yaml
+/deployer.root.bundle
+/kub-ee.iml
+/nginx.conf
+/target/
