@@ -126,7 +126,7 @@
 
         <compile>
             <jar>com.fasterxml.jackson.core:jackson-databind:2.9.9.1</jar><!-- TODO use variable again after next update -->
-            <jar>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson.version}</jar>
+            <jar>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.0.pr1</jar><!-- TODO use variable again after next update -->
             <jar>org.jsoup:jsoup:1.12.1</jar>
             <jar>com.github.t1:logging-interceptor:3.2.3</jar>
             <jar>com.github.t1: nginx-config-model:1.0.0-SNAPSHOT</jar>
