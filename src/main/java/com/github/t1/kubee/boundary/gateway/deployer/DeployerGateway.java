@@ -1,7 +1,6 @@
 package com.github.t1.kubee.boundary.gateway.deployer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
@@ -29,7 +28,6 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class DeployerGateway {
     private static final int MAX_RETRIES = 10;
-    static final TypeReference<List<String>> STRING_LIST = new TypeReference<List<String>>() {};
 
     @Inject YamlHttpClient client;
 
@@ -49,7 +47,8 @@ public class DeployerGateway {
             .queryParam("groupId", groupId)
             .build();
         log.debug("GET versions from {}", uri);
-        return client.GET(uri, STRING_LIST);
+        //noinspection unchecked
+        return (List<String>) client.GET(uri, List.class);
     }
 
     @Data

@@ -5,9 +5,10 @@ import com.github.t1.kubee.entity.Cluster.HealthConfig;
 import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
 import io.dropwizard.testing.junit5.DropwizardClientExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -15,8 +16,9 @@ import javax.ws.rs.core.Response;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(DropwizardExtensionsSupport.class)
 public class HealthGatewayIT {
-    @RegisterExtension static final DropwizardClientExtension SERVICE = new DropwizardClientExtension(HealthMockBoundary.class);
+    private static final DropwizardClientExtension SERVICE = new DropwizardClientExtension(HealthMockBoundary.class);
 
     private static boolean healthy = true;
 

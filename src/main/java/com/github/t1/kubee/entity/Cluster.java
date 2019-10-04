@@ -144,7 +144,7 @@ public class Cluster implements Comparable<Cluster> {
     }
 
     @lombok.Value
-    @lombok.experimental.Wither
+    @lombok.With
     @lombok.Builder
     public static class HealthConfig {
         String path;

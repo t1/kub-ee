@@ -2,14 +2,14 @@ package com.github.t1.kubee.entity;
 
 import lombok.NonNull;
 import lombok.Value;
-import lombok.experimental.Wither;
+import lombok.With;
 
 import java.net.URI;
 import java.util.Comparator;
 
 /** A hostname-port pair */
 @Value
-@Wither
+@With
 public class Endpoint implements Comparable<Endpoint> {
     String host;
     int port;

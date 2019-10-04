@@ -1,10 +1,7 @@
 package com.github.t1.kubee.tools.http;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ServerErrorException;
@@ -16,11 +13,9 @@ import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.net.URI;
 import java.util.function.Function;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.github.t1.kubee.tools.http.ProblemDetail.badGateway;
 import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
@@ -32,15 +27,11 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 @SuppressWarnings({"SameParameterValue", "WeakerAccess"})
 @Slf4j
 public class YamlHttpClient {
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory())
-        .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .findAndRegisterModules();
+    private static final Yaml YAML = new Yaml();
 
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
     private final Client httpClient = ClientBuilder.newClient();
-
-    public <T> T GET(URI uri, TypeReference<T> type) { return GET(uri, yaml -> parse(yaml, type)); }
 
     public <T> T GET(URI uri, Class<T> type) { return GET(uri, yaml -> parse(yaml, type)); }
 
@@ -60,8 +51,7 @@ public class YamlHttpClient {
             .target(uri)
             .request()
             .accept(APPLICATION_YAML_TYPE);
-        Response response = method.apply(invocation);
-        try {
+        try (Response response = method.apply(invocation)) {
             String contentType = response.getHeaderString("Content-Type");
             String body = response.readEntity(String.class).replace("\r\n", "\n");
             if (NOT_FOUND.getStatusCode() == response.getStatus()) {
@@ -77,14 +67,10 @@ public class YamlHttpClient {
             if (!APPLICATION_YAML_TYPE.toString().equals(contentType))
                 throw badGateway().detail("expected " + APPLICATION_YAML_TYPE + " but got " + contentType + ": " + body).exception();
             return body;
-        } finally {
-            response.close();
         }
     }
 
-    @SneakyThrows(IOException.class) private <T> T parse(String string, TypeReference<T> type) { return YAML.readValue(string, type); }
-
-    @SneakyThrows(IOException.class) private <T> T parse(String string, Class<T> type) { return YAML.readValue(string, type); }
+    private <T> T parse(String string, Class<T> type) { return YAML.loadAs(string, type); }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
 

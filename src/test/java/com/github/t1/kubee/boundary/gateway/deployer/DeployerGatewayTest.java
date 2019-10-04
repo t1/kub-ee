@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.TestData.NODE1;
-import static com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.STRING_LIST;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +102,7 @@ class DeployerGatewayTest {
 
     @Test
     void shouldFetchVersions() {
-        given(yamlClient.GET(VERSIONS_URI, STRING_LIST)).willReturn(VERSIONS);
+        given(yamlClient.GET(VERSIONS_URI, List.class)).willReturn(VERSIONS);
 
         List<String> versions = gateway.fetchVersions(NODE1, GROUP_ID, ARTIFACT_ID);
 
