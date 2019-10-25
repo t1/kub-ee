@@ -66,7 +66,7 @@ public class Controller {
     public Stream<Deployment> fetchDeploymentsOn(ClusterNode node) {
         log.debug("fetch deployments from {}:", node);
         return fetchDeployablesFrom(node)
-            .peek(deployable -> log.debug("  - {}", deployable.getName()));
+            .peek(deployable -> log.debug("  - {}", deployable));
     }
 
     private Stream<Deployment> fetchDeployablesFrom(ClusterNode node) {

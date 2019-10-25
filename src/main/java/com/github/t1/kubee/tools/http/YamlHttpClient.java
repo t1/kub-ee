@@ -1,9 +1,9 @@
 package com.github.t1.kubee.tools.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ServerErrorException;
@@ -18,26 +18,21 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.function.Function;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.github.t1.kubee.tools.http.ProblemDetail.badGateway;
 import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
- * Wraps a JAX-RS {@link Client} with requesting and parsing the response as YAML.
+ * Wraps a JAX-RS {@link Client} with requesting and parsing the response as YAML and proper error handling.
  */
 @SuppressWarnings({"SameParameterValue", "WeakerAccess"})
 @Slf4j
 public class YamlHttpClient {
-    private static final Yaml YAML;
-
-    static {
-        Constructor constructor = new Constructor();
-        PropertyUtils propertyUtils = new PropertyUtils();
-        propertyUtils.setSkipMissingProperties(true);
-        constructor.setPropertyUtils(propertyUtils);
-        YAML = new Yaml(constructor);
-    }
+    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory())
+        .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .findAndRegisterModules();
 
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
@@ -80,7 +75,14 @@ public class YamlHttpClient {
         }
     }
 
-    private <T> T parse(String string, Class<T> type) { return YAML.loadAs(string, type); }
+    private <T> T parse(String string, Class<T> type) {
+        try {
+            return YAML.readValue(string, type);
+        } catch (JsonProcessingException e) {
+            log.debug("{}: {} from deserialize to {} string\n{}", e.getClass().getSimpleName(), e.getMessage(), type, string);
+            throw new RuntimeException("can't deserialize to " + type, e);
+        }
+    }
 
     private String statusInfo(Response response) { return response.getStatus() + " " + response.getStatusInfo(); }
 
