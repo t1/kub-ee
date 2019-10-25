@@ -90,7 +90,7 @@ class IngressReloader {
             if (!inTime)
                 return "could not reload nginx in time";
             if (process.exitValue() != 0)
-                return "nginx reload with error";
+                return "nginx reload with error " + process.exitValue();
             return null;
         } catch (InterruptedException | IOException e) {
             log.log(WARNING, "reload failed", e);

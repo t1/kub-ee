@@ -1,15 +1,10 @@
 package com.github.t1.kubee.boundary.gateway.deployer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient;
 import com.github.t1.log.Logged;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -51,31 +46,6 @@ public class DeployerGateway {
         return (List<String>) client.GET(uri, List.class);
     }
 
-    @Data
-    static class Deployables {
-        @JsonProperty
-        private Map<String, Deployable> deployables;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class Deployable {
-        @JsonProperty
-        private String name;
-        @JsonProperty("group-id")
-        private String groupId;
-        @JsonProperty("artifact-id")
-        private String artifactId;
-        @JsonProperty
-        private String type;
-        @JsonProperty
-        private String version;
-        @JsonProperty
-        private String error;
-    }
-
     public Stream<Deployment> fetchDeployables(ClusterNode node) {
         return fetchDeploymentsFrom(node.deployerUri())
             .stream()
@@ -95,12 +65,12 @@ public class DeployerGateway {
 
     List<Deployable> fetchDeploymentsFrom(URI uri) {
         log.debug("GET deployments from {}", uri);
-        Deployables deployables = client.GET(uri, Deployables.class);
-        return toDeployableList(deployables);
+        DeployerResponse deployerResponse = client.GET(uri, DeployerResponse.class);
+        return toDeployableList(deployerResponse);
     }
 
-    private List<Deployable> toDeployableList(Deployables deployables) {
-        return deployables
+    private List<Deployable> toDeployableList(DeployerResponse deployerResponse) {
+        return deployerResponse
             .getDeployables()
             .entrySet()
             .stream()
@@ -111,7 +81,7 @@ public class DeployerGateway {
 
     private Deployable flatten(Map.Entry<String, Deployable> entry) {
         Deployable deployable = entry.getValue();
-        deployable.name = entry.getKey();
+        deployable.setName(entry.getKey());
         return deployable;
     }
 

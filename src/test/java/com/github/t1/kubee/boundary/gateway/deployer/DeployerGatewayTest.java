@@ -1,7 +1,5 @@
 package com.github.t1.kubee.boundary.gateway.deployer;
 
-import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.Deployable;
-import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.Deployables;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient;
@@ -77,8 +75,8 @@ class DeployerGatewayTest {
 
     @AfterEach void noMore() { verifyNoMoreInteractions(yamlClient); }
 
-    private Deployables deployables() {
-        Deployables deployables = new Deployables();
+    private DeployerResponse deployables() {
+        DeployerResponse deployables = new DeployerResponse();
         deployables.setDeployables(new LinkedHashMap<>());
         Deployable deployable = Deployable.builder()
             .name(APP_NAME)
@@ -93,7 +91,7 @@ class DeployerGatewayTest {
 
     @Test
     void shouldFetchVersion() {
-        given(yamlClient.GET(DEPLOYER_URI, Deployables.class)).willReturn(deployables());
+        given(yamlClient.GET(DEPLOYER_URI, DeployerResponse.class)).willReturn(deployables());
 
         String version = gateway.fetchVersion(NODE1, APP_NAME);
 
@@ -111,7 +109,7 @@ class DeployerGatewayTest {
 
     @Test
     void shouldFetchDeployables() {
-        given(yamlClient.GET(DEPLOYER_URI, Deployables.class)).willReturn(deployables());
+        given(yamlClient.GET(DEPLOYER_URI, DeployerResponse.class)).willReturn(deployables());
 
         Stream<Deployment> deployments = gateway.fetchDeployables(NODE1);
 

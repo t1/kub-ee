@@ -1,7 +1,10 @@
-/.idea/
 /cluster-config.yaml
 /deployer.config.yaml
 /deployer.root.bundle
-/kub-ee.iml
 /nginx.conf
+/standalone.xml
+
+/.idea/
+/kub-ee.iml
+
 /target/

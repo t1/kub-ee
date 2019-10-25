@@ -82,7 +82,7 @@ public class NginxReloadService {
         if (!inTime)
             return "could not reload nginx in time";
         if (process.exitValue() != 0)
-            return "nginx reload with error";
+            return "nginx reload with error " + process.exitValue();
         return "reloaded";
     }
 

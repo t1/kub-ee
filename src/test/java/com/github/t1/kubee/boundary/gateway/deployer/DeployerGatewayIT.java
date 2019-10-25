@@ -1,6 +1,5 @@
 package com.github.t1.kubee.boundary.gateway.deployer;
 
-import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.Deployable;
 import com.github.t1.testtools.OrderedJUnitRunner;
 import com.github.t1.testtools.WebArchiveBuilder;
 import com.github.t1.testtools.WildflySwarmTestRule;

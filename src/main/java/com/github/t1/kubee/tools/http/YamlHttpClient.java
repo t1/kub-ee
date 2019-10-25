@@ -2,6 +2,8 @@ package com.github.t1.kubee.tools.http;
 
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ServerErrorException;
@@ -27,7 +29,15 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 @SuppressWarnings({"SameParameterValue", "WeakerAccess"})
 @Slf4j
 public class YamlHttpClient {
-    private static final Yaml YAML = new Yaml();
+    private static final Yaml YAML;
+
+    static {
+        Constructor constructor = new Constructor();
+        PropertyUtils propertyUtils = new PropertyUtils();
+        propertyUtils.setSkipMissingProperties(true);
+        constructor.setPropertyUtils(propertyUtils);
+        YAML = new Yaml(constructor);
+    }
 
     private static final MediaType APPLICATION_YAML_TYPE = MediaType.valueOf("application/yaml");
 
