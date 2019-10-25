@@ -1,8 +1,4 @@
-/cluster-config.yaml
-/deployer.config.yaml
-/deployer.root.bundle
-/nginx.conf
-/standalone.xml
+/.links/
 
 /.idea/
 /kub-ee.iml
