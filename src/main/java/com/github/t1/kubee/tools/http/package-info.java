@@ -1,7 +1,7 @@
 @DependsUpon(packagesOf = {
-    org.yaml.snakeyaml.Yaml.class,
-    org.yaml.snakeyaml.constructor.Constructor.class,
-    org.yaml.snakeyaml.introspector.PropertyUtils.class,
+    com.fasterxml.jackson.core.JsonProcessingException.class,
+    com.fasterxml.jackson.databind.ObjectMapper.class,
+    com.fasterxml.jackson.dataformat.yaml.YAMLFactory.class,
 })
 package com.github.t1.kubee.tools.http;
 
