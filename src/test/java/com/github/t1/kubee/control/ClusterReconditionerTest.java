@@ -58,6 +58,7 @@ class ClusterReconditionerTest {
     private StageBuilder stage() {
         return Stage.builder()
             .name("PROD")
+            .provider("docker-compose")
             .indexLength(2)
             .loadBalancerConfig("reload", "custom")
             .loadBalancerConfig("class", ReloadMock.class.getName());
