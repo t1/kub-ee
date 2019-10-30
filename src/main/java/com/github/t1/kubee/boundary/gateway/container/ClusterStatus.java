@@ -84,7 +84,7 @@ public class ClusterStatus {
 
     public List<Endpoint> scale(Stage stage) {
         if (actualContainers.size() != stage.getCount())
-            scale(stage.nodeBaseName(cluster), stage.getCount());
+            scale(stage.getPrefix() + cluster.getSimpleName() + stage.getSuffix(), stage.getCount());
         return actualContainers;
     }
 

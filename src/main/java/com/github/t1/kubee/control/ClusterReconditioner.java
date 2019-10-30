@@ -68,6 +68,8 @@ public class ClusterReconditioner implements Runnable {
         }
 
         private void reconditionReverseProxy(ClusterNode node) {
+            if (!node.getStage().getProvider().equals("docker-compose"))
+                return;
             Integer actualPort = clusterStatus.port(node.endpoint().getHost());
             if (actualPort == null)
                 throw new IllegalStateException("expected " + node + " to be running");

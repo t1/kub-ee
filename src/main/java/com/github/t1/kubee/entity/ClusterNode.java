@@ -31,12 +31,7 @@ public class ClusterNode implements Comparable<ClusterNode> {
 
     public URI uri() { return URI.create("http://" + host() + ":" + port()); }
 
-    public String host() {
-        return ""
-            + stage.nodeBaseName(cluster)
-            + stage.formattedIndex(index)
-            + ((cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName());
-    }
+    public String host() { return stage.host(cluster, index); }
 
     public int port() { return cluster.getSlot().getHttp(); }
 

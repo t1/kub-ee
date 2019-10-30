@@ -79,7 +79,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             this.deployments = deployments;
 
             this.mergedStages = mergedStages();
-            this.mergedNodes = mergedStages.stream().flatMap(Stage::nodes).collect(toList());
+            this.mergedNodes = mergedStages.stream().flatMap(stage -> stage.nodes(null)).collect(toList());
 
             header();
             tableHeader();

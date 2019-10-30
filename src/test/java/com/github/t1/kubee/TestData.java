@@ -26,7 +26,7 @@ public class TestData {
     public static final String PROXY_SETTINGS = "proxy_set_header Host      $host;\n" +
         "            proxy_set_header X-Real-IP $remote_addr;";
 
-    public static final Stage STAGE = Stage.builder().name("PROD").suffix("-prod").count(2)
+    public static final Stage STAGE = Stage.builder().name("PROD").provider("docker-compose").suffix("-prod").count(2)
         .loadBalancerConfig("reload", "custom")
         .loadBalancerConfig("class", ReloadMock.class.getName())
         .build();
