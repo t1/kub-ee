@@ -1,20 +1,32 @@
 ---
+scenario:
+  name: default
 dependency:
   name: galaxy
+
 driver:
   name: vagrant
   provider:
     name: virtualbox
-lint:
-  name: yamllint
 platforms:
-  - name: instance
-    box: ubuntu/xenial64
+  - name: vagrant-ubuntu
+    box: ubuntu/bionic64
+    memory: 512
+    cpus: 1
+
 provisioner:
   name: ansible
   lint:
     name: ansible-lint
+    enabled: false # missing `platfomrs: [...]`
+
+lint:
+  name: yamllint
 verifier:
   name: testinfra
+  env:
+    PYTHONWARNINGS: "ignore:.*U.*mode is deprecated:DeprecationWarning"
   lint:
     name: flake8
+  options:
+    v: 1 # show which tests where executed in test output
