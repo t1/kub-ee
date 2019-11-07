@@ -1,18 +1,15 @@
 ---
 scenario:
-  name: vagrant
+  name: default
 dependency:
   name: galaxy
 
 driver:
-  name: vagrant
-  provider:
-    name: virtualbox
+  name: docker
 platforms:
-  - name: vagrant-ubuntu
-    box: ubuntu/bionic64
-    memory: 512
-    cpus: 1
+  - name: docker-ubuntu
+    image: ubuntu:bionic
+    privileged: true
 lint:
   name: yamllint
 
@@ -22,7 +19,7 @@ provisioner:
     name: ansible-lint
     enabled: false # missing `platforms: [...]`
   playbooks:
-    converge: ../playbook.yml
+    converge: ../playbook.yaml
 
 verifier:
   name: testinfra

@@ -1,0 +1,28 @@
+---
+dependencies:
+  - src: inkatze.wildfly
+
+galaxy_info:
+  author: t1
+  description: Wildfly container running the Deployer, ready to act as a worker in a kub-ee cluster
+  license: Apache
+  min_ansible_version: 2.8
+
+  # platforms:
+  # - name: Fedora
+  #   versions:
+  #   - all
+  #   - 25
+  # - name: SomePlatform
+  #   versions:
+  #   - all
+  #   - 1.0
+  #   - 7
+  #   - 99.99
+
+  galaxy_tags:
+    - jee
+    - java-ee
+    - jakarta-ee
+    - deployer
+    - kub-ee

@@ -4,6 +4,8 @@ import \
 import \
     testinfra.utils.ansible_runner
 
+# TODO complete README.md
+
 testinfra_hosts = testinfra.utils.ansible_runner.\
     AnsibleRunner(os.environ['MOLECULE_INVENTORY_FILE']).\
     get_hosts('all')
@@ -17,13 +19,11 @@ def test_hosts_file(host):
     assert f.group == 'root'
 
 
-def test_is_docker_installed(host):
-    package_docker = host.package('docker-ce')
+def test_wildfly_is_installed(host):
+    assert host.package('java-1.8.0-openjdk-headless').is_installed
+    host.file('/opt/wildfly-9.0.1.Final/bin/standalone.sh')
 
-    assert package_docker.is_installed
 
-
-def test_run_hello_world_container_successfully(host):
-    hello_world_ran = host.run("docker run hello-world")
-
-    assert 'Hello from Docker!' in hello_world_ran.stdout
+# TODO implement
+# def test_wildfly_is_running(host):
+#     process = host.process.get(user="root", comm="wildfly")

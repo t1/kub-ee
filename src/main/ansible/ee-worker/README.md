@@ -1,7 +1,7 @@
-Role Name
+ee-worker
 =========
 
-A brief description of the role goes here.
+A [Jakarta-EE](https://jakarta.ee) container (namely [Wildfly](https://wildfly.org)) running the [Deployer](https://github.com/t1/deployer), ready to act as a worker in a [kub-ee](https://github.com/t1/kub-ee) cluster.
 
 Requirements
 ------------
@@ -39,7 +39,7 @@ passed in as parameters) is always nice for users too:
 License
 -------
 
-BSD
+Apache 2.0
 
 Author Information
 ------------------
