@@ -1,0 +1,4 @@
+---
+- hosts: appservers
+  roles:
+    - role: t1.jee_app_server

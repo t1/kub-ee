@@ -1,6 +1,0 @@
----
-- hosts: appservers
-  become: yes
-
-  roles:
-    - { role: inkatze.wildfly }
