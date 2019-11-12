@@ -2,47 +2,7 @@
 - name: WildFly with Docker
   hosts: all
 
-  vars:
-    DEPLOYER_VERSION: 3.0.0-SNAPSHOT
-    DEPLOYER_WAR: /opt/wildfly/standalone/deployments/deployer.war
-
   roles:
-  - role: t1.jee_app_server
+  - role: t1.jee_worker
 
   tasks:
-  - name: Copy deployer.config.yaml
-    become: True
-    copy:
-      src: deployer.config.yaml
-      dest: /opt/wildfly/standalone/configuration/
-      owner: wildfly
-      group: wildfly
-    notify:
-    - restart deployer
-
-  - name: Copy deployer.root.bundle
-    become: True
-    copy:
-      src: deployer.root.bundle
-      dest: /opt/wildfly/standalone/configuration/
-      owner: wildfly
-      group: wildfly
-
-  - name: Copy deployer.war
-    become: True
-    copy:
-      src: ~/.m2/repository/com/github/t1/deployer/{{ DEPLOYER_VERSION }}/deployer-{{ DEPLOYER_VERSION }}.war
-      dest: '{{ DEPLOYER_WAR }}'
-      owner: wildfly
-      group: wildfly
-
-  handlers:
-  - name: restart wildfly
-    service:
-      name: wildfly
-      state: restarted
-  - name: restart deployer
-    become: True
-    file:
-      path: '{{ DEPLOYER_WAR }}'
-      state: touch

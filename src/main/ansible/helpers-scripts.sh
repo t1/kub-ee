@@ -1,7 +1,7 @@
 
 sudo -u wildfly /opt/wildfly/bin/jboss-cli.sh --connect
 
-sudo -u wildfly tail -f /opt/wildfly/standalone/log/server.log
+sudo -u wildfly tail -f /opt/wildfly/standalone/log/*.log
 
 curl http://localhost:8080/deployer -H'Accept: application/yaml'
 
