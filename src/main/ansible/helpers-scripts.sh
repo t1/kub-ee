@@ -9,4 +9,6 @@ cat /opt/wildfly/standalone/configuration/deployer.root.bundle
 
 curl http://localhost:8080/jolokia
 
+curl http://localhost:8080/deployer -H'Accept: application/yaml'
+
 curl -d "jolokia.version: 1.3.2" -X POST http://localhost:8080/deployer -H'Content-Type: application/yaml' -H'Accept: application/yaml'
