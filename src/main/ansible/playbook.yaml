@@ -1,8 +1,0 @@
----
-- name: WildFly with Docker
-  hosts: all
-
-  roles:
-  - role: t1.jee_worker
-
-  tasks:
