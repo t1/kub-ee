@@ -1,7 +1,9 @@
 
-sudo -u wildfly /opt/wildfly/bin/jboss-cli.sh --connect
+sudo -u wildfly
+/opt/wildfly/bin/jboss-cli.sh --connect
 
-sudo -u wildfly tail -f /opt/wildfly/standalone/log/*.log
+sudo -u wildfly
+tail -f /opt/wildfly/standalone/log/*.log
 
 sudo touch /opt/wildfly/standalone/deployments/deployer.war
 

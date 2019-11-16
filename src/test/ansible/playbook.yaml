@@ -9,9 +9,6 @@
       ping:
 
   roles:
-  - role: t1.jee_worker # TODO publish this role into Galaxy
-    # magic trick:
-    # cd ~/.ansible/roles
-    # ln -s ~/workspace/t1/deployer/src/main/ansible/jee-worker t1.jee_worker
+  - role: t1.jee_worker
 
   tasks:
