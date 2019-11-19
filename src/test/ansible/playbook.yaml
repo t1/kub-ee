@@ -8,7 +8,6 @@
         artifact-id: jolokia-war
       ping:
 
-  roles:
-  - role: t1.jee_worker
-
   tasks:
+  - import_role:
+      name: t1.jee_worker

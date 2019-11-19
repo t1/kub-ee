@@ -1,0 +1,42 @@
+---
+- hosts: localhost
+  name: Create AWS EC2 workers
+  gather_facts: False
+  vars:
+    deployables:
+      jolokia:
+        group-id: org.jolokia
+        artifact-id: jolokia-war
+      ping:
+
+  tasks:
+  - name: Create workers
+    ec2:
+      key_name: aws
+      group: workers
+      instance_type: t2.micro
+      image: ami-080d06f90eb293a27
+      vpc_subnet_id: subnet-eab308a7 # eu-central-1c. see `aws ec2 describe-subnets`
+      wait: true
+      assign_public_ip: true
+      exact_count: 1
+      count_tag:
+        Name: Worker
+      instance_tags:
+        Name: Worker
+    register: ec2
+
+  - name: Collect worker IP addresses
+    add_host: hostname={{ item.public_ip }} groups=ec2hosts
+    loop: "{{ ec2.instances }}"
+
+---
+- hosts: ec2hosts
+  name: Deploy Jolokia
+  user: ec2-user
+  gather_facts: True
+
+  tasks:
+
+  - name: Check NTP service
+    service: name=ntpd state=started
