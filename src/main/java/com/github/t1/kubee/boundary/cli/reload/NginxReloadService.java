@@ -2,6 +2,7 @@ package com.github.t1.kubee.boundary.cli.reload;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.java.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * set-user-ID-on-execution bit set (`chmod +s`) doesn't work on my Mac. Start it like this:<br>
  * <code>sudo java -cp target/classes com.github.t1.kubee.gateway.ingress.NginxReloadService</code>
  */
+@Log
 @RequiredArgsConstructor
 public class NginxReloadService {
     public static final int DEFAULT_PORT = 6060;
@@ -29,7 +31,7 @@ public class NginxReloadService {
             if (arg.startsWith("--port="))
                 port = Integer.parseInt(arg.substring(7));
         }
-        System.out.println("Start NginxReload as " + System.getProperty("user.name") + " listen on port " + port);
+        log.info("Start NginxReload as " + System.getProperty("user.name") + " listen on port " + port);
         new NginxReloadService(port).run();
     }
 
@@ -46,10 +48,10 @@ public class NginxReloadService {
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
             ) {
                 if (clientSocket.getInetAddress().isLoopbackAddress()) {
-                    System.out.println("connected " + clientSocket.getInetAddress());
+                    log.info("connected " + clientSocket.getInetAddress());
                     while (true) {
                         String command = in.readLine();
-                        System.out.println("> " + command);
+                        log.info("> " + command);
                         if (command == null)
                             continue reconnect;
                         switch (command) {
@@ -69,7 +71,7 @@ public class NginxReloadService {
                 } else
                     out.println("can only connect from localhost not from " + clientSocket.getInetAddress());
             } finally {
-                System.out.println("disconnected");
+                log.info("disconnected");
             }
     }
 

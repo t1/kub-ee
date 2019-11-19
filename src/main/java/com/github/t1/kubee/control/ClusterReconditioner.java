@@ -15,6 +15,7 @@ import com.github.t1.kubee.entity.Stage;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 
 import javax.inject.Inject;
 
@@ -26,6 +27,7 @@ import static java.util.stream.Collectors.toList;
  * Takes the cluster-config and checks if the docker-compose is running as defined. If not, scale it up or down as specified.
  * Then look at the load balancer config, and update it as specified in the (updated) docker-compose file.
  */
+@Log
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClusterReconditioner implements Runnable {
@@ -68,8 +70,12 @@ public class ClusterReconditioner implements Runnable {
         }
 
         private void reconditionReverseProxy(ClusterNode node) {
-            if (!"docker-compose".equals(node.getStage().getProvider()))
+            if (!"docker-compose".equals(node.getStage().getProvider())) {
+                log.warning("unsupported provider '" + node.getStage().getProvider() + "' "
+                    + "for stage '" + node.getStage().getName() + "' "
+                    + "in cluster '" + node.getCluster().getSimpleName() + "." + node.getCluster().getDomainName());
                 return;
+            }
             Integer actualPort = clusterStatus.port(node.endpoint().getHost());
             if (actualPort == null)
                 throw new IllegalStateException("expected " + node + " to be running");

@@ -4,7 +4,6 @@ import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.control.ClusterReconditioner;
 import lombok.AllArgsConstructor;
-import lombok.extern.java.Log;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -16,6 +15,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -28,7 +28,6 @@ import static java.util.logging.Level.SEVERE;
  * <code>java -cp target/classes com.github.t1.kubee.gateway.ingress.ClusterConfigService --cluster-config=&lt;path&gt;</code><br>
  * where &lt;path&gt; is the path to the <code>cluster-config.yaml</code> file to watch.
  */
-@Log
 @AllArgsConstructor
 public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
@@ -36,6 +35,7 @@ public class ClusterConfigService {
     private static final String DOCKER_COMPOSE_CONFIG_ARG = "--docker-compose-dir=";
 
     private static final int POLL_TIMEOUT = 100;
+    static Logger log = Logger.getLogger(ClusterConfigService.class.getName());
 
     public static Consumer<Integer> exit = System::exit;
 
@@ -53,13 +53,13 @@ public class ClusterConfigService {
                 dockerComposeDir = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
         }
         if (clusterConfigPath == null || dockerComposeDir == null) {
-            System.err.println("Usage:\n" +
+            log.severe("Usage:\n" +
                 "    `" + ONCE_ARG + "`: to run only once and exit. Otherwise: loop until stopped.\n" +
                 "    `" + CLUSTER_CONFIG_ARG + "<path>`: with the <path> to the `cluster-config.yaml`\n" +
                 "    `" + DOCKER_COMPOSE_CONFIG_ARG + "<path>`: with the <path> to the directory containing the `docker-compose.yaml`\n");
             statusCode = 1;
         } else {
-            System.out.println("Start ClusterConfigService for " + clusterConfigPath);
+            log.info("Start ClusterConfigService for " + clusterConfigPath);
             new ClusterConfigService(clusterConfigPath, dockerComposeDir, !once).loop();
         }
         exit.accept(statusCode);
@@ -76,7 +76,7 @@ public class ClusterConfigService {
             while (continues) {
                 WatchKey key = watcher.poll(POLL_TIMEOUT, MILLISECONDS);
                 if (key != null) {
-                    @SuppressWarnings("unchecked")
+                    @SuppressWarnings({"unchecked", "rawtypes"})
                     List<WatchEvent<Path>> events = (List<WatchEvent<Path>>) (List) key.pollEvents();
                     log.fine("got watch key with " + events.size() + " events");
                     for (WatchEvent<Path> event : events) {
@@ -103,19 +103,19 @@ public class ClusterConfigService {
             Thread.currentThread().interrupt();
             throw new RuntimeException("while watching " + clusterConfigPath, e);
         }
-        System.out.println("end loop");
+        log.info("end loop");
     }
 
     private void recondition() {
         try {
-            System.out.println("recondition start");
+            log.info("recondition start");
             ClusterStore clusterStore = new ClusterStore(clusterConfigPath);
             ClusterStatusGateway clusterStatusGateway = new ClusterStatusGateway(dockerComposeDir);
             ClusterReconditioner reconditioner = new ClusterReconditioner(clusterStore, null, clusterStatusGateway);
             reconditioner.run();
-            System.out.println("recondition done");
+            log.info("recondition done");
         } catch (RuntimeException e) {
-            System.out.println("recondition failed " + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage()));
+            log.warning("recondition failed " + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage()));
             log.log(SEVERE, "can't recondition", e);
         }
     }

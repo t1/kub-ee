@@ -16,10 +16,6 @@ import static com.github.t1.kubee.tools.ContainersFixture.WORKER1;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClusterConfigServiceTest {
-    private static final String USAGE = "Usage:\n" +
-        "    `--once`: to run only once and exit. Otherwise: loop until stopped.\n" +
-        "    `--cluster-config=<path>`: with the <path> to the `cluster-config.yaml`\n" +
-        "    `--docker-compose-dir=<path>`: with the <path> to the directory containing the `docker-compose.yaml`";
     private static final String CLUSTER_CONFIG = "" +
         ":index-length: 2\n" +
         ":slot:0:\n" +
@@ -35,9 +31,12 @@ class ClusterConfigServiceTest {
     private Path clusterConfig;
 
     @RegisterExtension ContainersFixture containers = new ContainersFixture();
-    @RegisterExtension SystemOutExtension system = new SystemOutExtension();
+    private MockLogger mockLogger = new MockLogger();
+    private Integer exitCode;
 
     @BeforeEach void before() {
+        ClusterConfigService.exit = code -> this.exitCode = code;
+        ClusterConfigService.log = mockLogger;
         containers.setDockerComposeDir(tmp).setPort(8080);
         clusterConfig = tmp.resolve("cluster-config.yaml");
         writeClusterConfig();
@@ -48,17 +47,14 @@ class ClusterConfigServiceTest {
         Files.write(this.clusterConfig, CLUSTER_CONFIG.getBytes());
     }
 
-    private void assertResult(Integer status, String out, String err) {
-        assertThat(system.status).isEqualTo(status);
-        assertThat(system.out().trim()).isEqualTo(out);
-        if (err != null)
-            assertThat(system.err().trim()).isEqualTo(err);
-    }
-
     @Test void shouldFailToRunWithoutArgs() {
         ClusterConfigService.main();
 
-        assertResult(1, "", USAGE);
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(mockLogger.getMessages(SEVERE)).isEqualTo("Usage:\n" +
+            "    `--once`: to run only once and exit. Otherwise: loop until stopped.\n" +
+            "    `--cluster-config=<path>`: with the <path> to the `cluster-config.yaml`\n" +
+            "    `--docker-compose-dir=<path>`: with the <path> to the directory containing the `docker-compose.yaml`\n");
     }
 
     @Test void shouldRunOnce() {
@@ -66,12 +62,12 @@ class ClusterConfigServiceTest {
 
         ClusterConfigService.main("--once", "--cluster-config=" + clusterConfig, "--docker-compose-dir=" + containers.getDockerComposeDir());
 
-        assertResult(0, "" +
-                "Start ClusterConfigService for " + clusterConfig + "\n" +
-                "recondition start\n" +
-                "recondition done\n" +
-                "end loop",
-            null);
+        assertThat(exitCode).isEqualTo(0);
+        assertThat(mockLogger.getMessages(INFO)).isEqualTo("" +
+            "Start ClusterConfigService for " + clusterConfig + "\n" +
+            "recondition start\n" +
+            "recondition done\n" +
+            "end loop");
     }
 
     @Test void shouldRunUntilStop() {
@@ -89,11 +85,11 @@ class ClusterConfigServiceTest {
 
         service.loop();
 
-        assertResult(null, "" +
-                "recondition start\n" +
-                "recondition done\n" +
-                "end loop",
-            null);
+        assertThat(exitCode).isEqualTo(null);
+        assertThat(mockLogger.getMessages(INFO)).isEqualTo("" +
+            "recondition start\n" +
+            "recondition done\n" +
+            "end loop");
     }
 
     // TODO make the DeployerGateway work from the CLI, too (JAX-RS client is not on the classpath)

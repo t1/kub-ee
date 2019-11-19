@@ -121,7 +121,7 @@
         </dependency>
 
         <provided>
-            <jar>com.github.t1:test-tools:2.0.0-SNAPSHOT</jar>
+            <jar>com.github.t1:test-tools:2.0.0M3-SNAPSHOT</jar>
         </provided>
 
         <compile>
