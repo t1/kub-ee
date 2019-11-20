@@ -19,7 +19,8 @@ class ClusterStatusGatewayTest {
 
         Throwable throwable = catchThrowable(() -> gateway.clusterStatus(CLUSTER));
 
-        assertThat(throwable).hasMessage("no docker compose dir configured");
+        assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
+            .hasMessage("no docker compose dir configured");
     }
 
     @Test void shouldReadClusterStatus() {

@@ -4,7 +4,7 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
-import com.github.t1.kubee.tools.cli.ProcessInvoker;
+import com.github.t1.kubee.tools.cli.Script;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.toList;
 @NoArgsConstructor(force = true)
 public class ClusterStatus {
     private final Cluster cluster;
-    private final ProcessInvoker proc;
     private final Path dockerComposeDir;
     private final List<Endpoint> actualContainers;
 
@@ -32,7 +31,6 @@ public class ClusterStatus {
         @NonNull Path dockerComposeDir
     ) {
         this.cluster = cluster;
-        this.proc = ProcessInvoker.INSTANCE;
         this.dockerComposeDir = dockerComposeDir;
         this.actualContainers = readDockerStatus();
     }
@@ -45,7 +43,9 @@ public class ClusterStatus {
     }
 
     private Stream<String> readProcessIdsFor(Stage stage) {
-        String output = proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", stage.serviceName(cluster));
+        String output = new Script("docker-compose ps -q " + stage.serviceName(cluster))
+            .workingDirectory(dockerComposeDir)
+            .run().getOutput();
         return output.isEmpty() ? Stream.empty() : Stream.of(output.split("\n"));
     }
 
@@ -63,7 +63,9 @@ public class ClusterStatus {
     }
 
     private DockerInfo readExposedPortFor(String containerId, int publishPort) {
-        String ports = proc.invoke("docker", "ps", "--all", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + publishPort);
+        String ports = new Script("docker ps --all --format \"{{.Ports}}\t{{.Names}}\" " +
+            "--filter id=" + containerId + " --filter publish=" + publishPort)
+            .run().getOutput();
         if (ports.isEmpty())
             throw new RuntimeException("no docker status for container " + containerId);
         if (ports.startsWith("\t"))
@@ -98,8 +100,9 @@ public class ClusterStatus {
 
     private void scale(String name, int count) {
         log.info("Scale '" + name + "' from " + actualContainers.size() + " to " + count);
-        String scaleExpression = name + "=" + count;
-        proc.invoke(dockerComposeDir, "docker-compose", "up", "--detach", "--scale", scaleExpression);
+        new Script("docker-compose up --detach --scale " + name + "=" + count)
+            .workingDirectory(dockerComposeDir)
+            .run();
         actualContainers.clear();
         actualContainers.addAll(readDockerStatus());
     }

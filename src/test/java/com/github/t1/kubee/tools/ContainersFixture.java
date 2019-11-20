@@ -4,7 +4,8 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
-import com.github.t1.kubee.tools.cli.ProcessInvoker;
+import com.github.t1.kubee.tools.cli.Script;
+import com.github.t1.kubee.tools.cli.Script.Result;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,8 +26,6 @@ import java.util.UUID;
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -55,24 +55,35 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
     public static final List<Endpoint> ALL_WORKERS = asList(LOCAL_WORKER, QA_WORKER1, QA_WORKER2,
         PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
 
-    private final ProcessInvoker originalProcessInvoker = ProcessInvoker.INSTANCE;
-    private final ProcessInvoker proc = mock(ProcessInvoker.class);
+    private final Script.Invoker originalProcessInvoker = Script.Invoker.INSTANCE;
+    private final Script.Invoker proc = mock(Script.Invoker.class);
     @Setter @Getter private Path dockerComposeDir = Paths.get("src/test/docker/");
     @Setter private int port = 80;
 
-    @Override public void afterEach(ExtensionContext context) { ProcessInvoker.INSTANCE = originalProcessInvoker; }
+    @Override public void afterEach(ExtensionContext context) { Script.Invoker.INSTANCE = originalProcessInvoker; }
 
-    @Override public void beforeEach(ExtensionContext context) { ProcessInvoker.INSTANCE = proc; }
+    @Override public void beforeEach(ExtensionContext context) { Script.Invoker.INSTANCE = proc; }
 
     public void givenEndpoints(Endpoint... workers) { givenEndpoints(asList(workers)); }
 
     public void givenEndpoints(List<Endpoint> endpoints) {
-        Map<Stage, List<String>> containerIds = givenContainers(endpoints);
-        CLUSTER.stages().forEach(stage -> givenProcessIdsInvocation(containerIds, stage));
+        givenContainers(endpoints);
         givenScaleInvocation();
     }
 
-    private Map<Stage, List<String>> givenContainers(List<Endpoint> endpoints) {
+    public BDDMyOngoingStubbing<Result> givenDockerCompose(String args) {
+        return givenInvocationIn(dockerComposeDir, "docker-compose " + args);
+    }
+
+    public BDDMyOngoingStubbing<Result> givenDocker(String args) {
+        return givenInvocationIn(null, "docker " + args);
+    }
+
+    private BDDMyOngoingStubbing<Result> givenInvocationIn(Path dir, String commandline) {
+        return given(proc.invoke(dir, commandline));
+    }
+
+    private void givenContainers(List<Endpoint> endpoints) {
         Map<Stage, List<String>> containerIds = new LinkedHashMap<>();
         for (Endpoint endpoint : endpoints) {
             String containerId = UUID.randomUUID().toString();
@@ -81,29 +92,32 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
             ids.add(containerId);
             int i = ids.size(); // the actual index of the added container
             String name = stage.serviceName(CLUSTER);
-            given(proc.invoke("docker", "ps", "--all", "--format", "{{.Ports}}\t{{.Names}}", "--filter", "id=" + containerId, "--filter", "publish=" + port))
-                .willReturn("0.0.0.0:" + endpoint.getPort() + "->" + port + "/tcp\tdocker_" + name + "_" + i);
+            givenDocker("ps --all --format \"{{.Ports}}\t{{.Names}}\" --filter id=" + containerId + " --filter publish=" + port)
+                .willReturn(new Result(0, "0.0.0.0:" + endpoint.getPort() + "->" + port + "/tcp\tdocker_" + name + "_" + i));
         }
-        return containerIds;
+        CLUSTER.stages().forEach(stage -> givenProcessIdsInvocation(containerIds, stage));
     }
 
     private void givenProcessIdsInvocation(Map<Stage, List<String>> containerIds, Stage stage) {
         List<String> ids = containerIds.get(stage);
-        given(proc.invoke(dockerComposeDir, "docker-compose", "ps", "-q", stage.serviceName(CLUSTER)))
-            .willReturn((ids == null) ? "" : join("\n", ids));
+        givenDockerCompose("ps -q " + stage.serviceName(CLUSTER))
+            .willReturn(new Result(0, (ids == null) ? "" : join("\n", ids)));
     }
 
     /** when scaling, the running endpoints are re-stubbed */
     private void givenScaleInvocation() {
-        given(proc.invoke(eq(dockerComposeDir), eq("docker-compose"), eq("up"), eq("--detach"), eq("--scale"), anyString()))
-            .will(i -> {
-                String scaleExpression = i.getArgument(5);
-                String[] scaleSplit = scaleExpression.split("=");
-                List<Endpoint> endpoints = endpointsFor(scaleSplit[0]);
-                int scaleValue = Integer.parseInt(scaleExpression.substring(7));
-                givenEndpoints(endpoints.subList(0, scaleValue).toArray(new Endpoint[0]));
-                return "dummy-scale-output";
-            });
+        for (Stage stage : CLUSTER.getStages()) {
+            for (int i = 0; i <= PROD_WORKERS.size(); i++) {
+                int scaleValue = i;
+                String serviceName = stage.serviceName(CLUSTER);
+                givenDockerCompose("up --detach --scale " + serviceName + "=" + scaleValue)
+                    .will(x -> {
+                        List<Endpoint> endpoints = endpointsFor(serviceName);
+                        givenContainers(endpoints.subList(0, scaleValue));
+                        return new Result(0, "dummy-scale-output");
+                    });
+            }
+        }
     }
 
     private List<Endpoint> endpointsFor(String name) {
