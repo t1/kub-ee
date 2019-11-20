@@ -70,6 +70,12 @@ public class Cluster implements Comparable<Cluster> {
         return Comparator.comparing(Cluster::getHost).thenComparing(Cluster::getSlot).compare(this, that);
     }
 
+    public Stage findStage(String name) {
+        return stages()
+            .filter(stage -> stage.serviceName(this).equals(name))
+            .findFirst().orElseThrow(() -> new IllegalArgumentException("unknown stage '" + name + "'"));
+    }
+
     @RequiredArgsConstructor
     private static class ClusterBuilderContext {
         private final Consumer<String> warnings;

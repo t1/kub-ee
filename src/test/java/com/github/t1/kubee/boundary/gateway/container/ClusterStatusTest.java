@@ -6,16 +6,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import static com.github.t1.kubee.tools.ContainersFixture.ALL_WORKERS;
 import static com.github.t1.kubee.tools.ContainersFixture.CLUSTER;
+import static com.github.t1.kubee.tools.ContainersFixture.LOCAL_WORKER;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER1;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER2;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER3;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER4;
+import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER5;
+import static com.github.t1.kubee.tools.ContainersFixture.QA_WORKER1;
+import static com.github.t1.kubee.tools.ContainersFixture.QA_WORKER2;
 import static com.github.t1.kubee.tools.ContainersFixture.SLOT;
-import static com.github.t1.kubee.tools.ContainersFixture.STAGE;
-import static com.github.t1.kubee.tools.ContainersFixture.WORKER1;
-import static com.github.t1.kubee.tools.ContainersFixture.WORKER2;
-import static com.github.t1.kubee.tools.ContainersFixture.WORKER3;
-import static com.github.t1.kubee.tools.ContainersFixture.WORKER4;
-import static com.github.t1.kubee.tools.ContainersFixture.WORKER5;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClusterStatusTest {
@@ -28,80 +32,104 @@ class ClusterStatusTest {
     @Test void shouldGetNoEndpoint() {
         containers.givenEndpoints();
 
-        List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
 
         assertThat(endpoints).isEmpty();
     }
 
     @Test void shouldGetOneEndpoint() {
-        containers.givenEndpoints(WORKER1);
+        containers.givenEndpoints(PROD_WORKER1);
 
-        List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
 
-        assertThat(endpoints).containsExactly(WORKER1);
+        assertThat(endpoints).containsExactly(PROD_WORKER1);
     }
 
     @Test void shouldGetThreeEndpoints() {
-        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
 
-        List<Endpoint> endpoints = whenStatus().endpoints().collect(toList());
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
 
-        assertThat(endpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(endpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
     }
 
     @Test void shouldGetPort2() {
-        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
 
-        Integer port = whenStatus().port(WORKER2.getHost());
+        Integer port = whenStatus().port(PROD_WORKER2.getHost());
 
-        assertThat(port).isEqualTo(WORKER2.getPort());
+        assertThat(port).isEqualTo(PROD_WORKER2.getPort());
     }
 
     @Test void shouldGetNullPortForUnknownHost() {
-        containers.givenEndpoints(WORKER1);
+        containers.givenEndpoints(PROD_WORKER1);
 
-        Integer port = whenStatus().port(WORKER2.getHost());
+        Integer port = whenStatus().port(PROD_WORKER2.getHost());
 
         assertThat(port).isNull();
     }
 
     @Test void shouldNotScale() {
-        containers.givenEndpoints(WORKER1, WORKER2, WORKER3);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
 
-        List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
+        List<Endpoint> scaledEndpoints = whenStatus().scale(PROD);
 
-        assertThat(scaledEndpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(scaledEndpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
     }
 
     @Test void shouldScaleOneUp() {
-        containers.givenEndpoints(WORKER1, WORKER2);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2);
 
-        List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
+        List<Endpoint> scaledEndpoints = whenStatus().scale(PROD);
 
-        assertThat(scaledEndpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(scaledEndpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
     }
 
     @Test void shouldScaleTwoUp() {
-        containers.givenEndpoints(WORKER1);
+        containers.givenEndpoints(PROD_WORKER1);
 
-        List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
+        List<Endpoint> scaledEndpoints = whenStatus().scale(PROD);
 
-        assertThat(scaledEndpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(scaledEndpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
     }
 
     @Test void shouldScaleOneDown() {
-        containers.givenEndpoints(WORKER1, WORKER2, WORKER3, WORKER4);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3, PROD_WORKER4);
 
-        List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
+        List<Endpoint> scaledEndpoints = whenStatus().scale(PROD);
 
-        assertThat(scaledEndpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(scaledEndpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
     }
 
     @Test void shouldScaleTwoDown() {
-        containers.givenEndpoints(WORKER1, WORKER2, WORKER3, WORKER4, WORKER5);
+        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3, PROD_WORKER4, PROD_WORKER5);
 
-        List<Endpoint> scaledEndpoints = whenStatus().scale(STAGE);
+        List<Endpoint> scaledEndpoints = whenStatus().scale(PROD);
 
-        assertThat(scaledEndpoints).containsExactly(WORKER1, WORKER2, WORKER3);
+        assertThat(scaledEndpoints).containsExactly(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
+    }
+
+    @Test void shouldGetOneQaEndpoint() {
+        containers.givenEndpoints(QA_WORKER1);
+
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
+
+        assertThat(endpoints).containsExactly(QA_WORKER1);
+    }
+
+    @Test void shouldGetLocalAndQaEndpoints() {
+        containers.givenEndpoints(LOCAL_WORKER, QA_WORKER1, QA_WORKER2);
+
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
+
+        assertThat(endpoints).containsExactly(LOCAL_WORKER, QA_WORKER1, QA_WORKER2);
+    }
+
+    @Test void shouldGetAllEndpoints() {
+        containers.givenEndpoints(ALL_WORKERS);
+
+        Stream<Endpoint> endpoints = whenStatus().endpoints();
+
+        assertThat(endpoints).containsExactlyElementsOf(ALL_WORKERS);
     }
 }

@@ -73,8 +73,11 @@ public class Stage implements Comparable<Stage> {
     String host(Cluster cluster, int index) { return nodeName(cluster, index) + domainName(cluster); }
 
     private String nodeName(Cluster cluster, int index) {
-        return (nodes != null) ? nodes.get(index - 1) :
-            (prefix + cluster.getSimpleName() + suffix + formattedIndex(index));
+        return (nodes != null) ? nodes.get(index - 1) : (serviceName(cluster) + formattedIndex(index));
+    }
+
+    public String serviceName(Cluster cluster) {
+        return prefix + cluster.getSimpleName() + suffix;
     }
 
     private String domainName(Cluster cluster) {
