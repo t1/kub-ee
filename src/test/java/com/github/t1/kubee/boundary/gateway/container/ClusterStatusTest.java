@@ -184,7 +184,7 @@ class ClusterStatusTest {
         Container container = containers.given(LOCAL_ENDPOINT);
         container.dockerInfo(1, "template: :1: unclosed action");
 
-        Throwable throwable = catchThrowable(this::whenStatus);
+        Throwable throwable = catchThrowable(() -> whenStatus().scale(LOCAL));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
             .hasMessage("'docker ps --all --format {{.Ports}}\t{{.Names}}" +
@@ -197,7 +197,7 @@ class ClusterStatusTest {
         Container container = containers.given(LOCAL_ENDPOINT);
         container.dockerInfo(0, "");
 
-        Throwable throwable = catchThrowable(this::whenStatus);
+        Throwable throwable = catchThrowable(() -> whenStatus().scale(LOCAL));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
             .hasMessage("no docker status for container " + container.getId());
