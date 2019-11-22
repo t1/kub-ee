@@ -2,15 +2,17 @@ package com.github.t1.kubee.tools.cli;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.Value;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Scanner;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor @ToString
 public class Script {
     private final String commandline;
     private Path workingDirectory;
@@ -20,23 +22,26 @@ public class Script {
         return this;
     }
 
-    public Result run() {
-        Result result = runWithoutStatusCheck();
-        if (result.getExitValue() != 0)
-            throw new RuntimeException(commandline + " returned error " + result.getExitValue() + ":\n"
-                + result.getOutput());
-        return result;
+    public String run() {
+        Result result = runWithoutCheck();
+        check(result);
+        return result.getOutput();
     }
 
-    public Result runWithoutStatusCheck() {
+    public Result runWithoutCheck() {
         Result result = Invoker.INSTANCE.invoke(workingDirectory, commandline);
         if (result == null)
-            throw new RuntimeException("run() of '" + commandline + "' returned null... probably a mocking error");
+            throw new RuntimeException("running '" + commandline + "' returned null... probably a mocking error");
         return result;
     }
 
-    @Value
-    public static class Result {
+    public void check(Result result) {
+        if (result.getExitValue() != 0)
+            throw new RuntimeException("'" + commandline + "' returned error " + result.getExitValue() + ":\n"
+                + result.getOutput());
+    }
+
+    @Value public static class Result {
         int exitValue;
         String output;
     }
@@ -47,18 +52,31 @@ public class Script {
     public static class Invoker {
         public static Invoker INSTANCE = new Invoker();
 
-        @SneakyThrows({IOException.class, InterruptedException.class})
         public Result invoke(Path workingDirectory, String commandline) {
+            ProcessBuilder builder = build(workingDirectory, commandline);
+            Process process = run(commandline, builder);
+            return new Result(process.exitValue(), read(process.getInputStream()));
+        }
+
+        private ProcessBuilder build(Path workingDirectory, String commandline) {
             ProcessBuilder builder = new ProcessBuilder(commandline.split(" ")).redirectErrorStream(true);
             if (workingDirectory != null)
                 builder.directory(workingDirectory.toFile());
+            return builder;
+        }
+
+        @SneakyThrows({IOException.class, InterruptedException.class})
+        private Process run(String commandline, ProcessBuilder builder) {
             Process process = builder.start();
             boolean inTime = process.waitFor(10, SECONDS);
             if (!inTime)
                 throw new RuntimeException("could not invoke `" + commandline + "` in time");
-            Scanner scanner = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-            String output = (scanner.hasNext()) ? scanner.next() : "";
-            return new Result(process.exitValue(), output);
+            return process;
+        }
+
+        private String read(InputStream inputStream) {
+            Scanner scanner = new Scanner(inputStream).useDelimiter("\\Z");
+            return (scanner.hasNext()) ? scanner.next() : "";
         }
     }
 }

@@ -45,8 +45,13 @@ public class Cluster implements Comparable<Cluster> {
 
     public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
 
-    public ClusterNode node(String stage, int index) {
-        return stage(stage).orElseThrow(() -> new StageNotFoundException(stage, getSimpleName()))
+    public ClusterNode node(String stageName, int index) {
+        Stage stage = stage(stageName).orElseThrow(() -> new StageNotFoundException(stageName, getSimpleName()));
+        return node(stage, index);
+    }
+
+    public ClusterNode node(Stage stage, int index) {
+        return stage
             .nodes(this)
             .filter(node -> node.getIndex() == index)
             .findAny()

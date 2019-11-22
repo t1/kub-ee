@@ -4,15 +4,14 @@ import com.github.t1.kubee.tools.ContainersFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static com.github.t1.kubee.tools.ContainersFixture.CLUSTER;
-import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER1;
-import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER2;
-import static com.github.t1.kubee.tools.ContainersFixture.SLOT;
+import static com.github.t1.kubee.TestData.CLUSTER;
+import static com.github.t1.kubee.TestData.PROD_ENDPOINT1;
+import static com.github.t1.kubee.TestData.PROD_ENDPOINT2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 class ClusterStatusGatewayTest {
-    @RegisterExtension ContainersFixture containers = new ContainersFixture().setPort(SLOT.getHttp());
+    @RegisterExtension ContainersFixture containers = new ContainersFixture();
 
     @Test void shouldFailToReadClusterStatusWithoutDockerComposeDir() {
         ClusterStatusGateway gateway = new ClusterStatusGateway(null);
@@ -24,11 +23,11 @@ class ClusterStatusGatewayTest {
     }
 
     @Test void shouldReadClusterStatus() {
-        containers.givenEndpoints(PROD_WORKER1, PROD_WORKER2);
+        containers.given(PROD_ENDPOINT1, PROD_ENDPOINT2);
         ClusterStatusGateway gateway = new ClusterStatusGateway(containers.getDockerComposeDir());
 
         ClusterStatus clusterStatus = gateway.clusterStatus(CLUSTER);
 
-        assertThat(clusterStatus.endpoints()).containsExactly(PROD_WORKER1, PROD_WORKER2);
+        assertThat(clusterStatus.endpoints()).containsExactly(PROD_ENDPOINT1, PROD_ENDPOINT2);
     }
 }

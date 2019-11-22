@@ -14,9 +14,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.CLUSTER;
-import static com.github.t1.kubee.TestData.NODE1;
-import static com.github.t1.kubee.TestData.NODE2;
+import static com.github.t1.kubee.TestData.PROD;
+import static com.github.t1.kubee.TestData.PROD01;
+import static com.github.t1.kubee.TestData.PROD02;
 import static com.github.t1.kubee.TestData.SLOT_0;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.util.Collections.singleton;
@@ -26,6 +26,11 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.contentOf;
 
 class ClusterStoreTest {
+    private static final Cluster CLUSTER = Cluster.builder().host("worker")
+        .slot(SLOT_0)
+        .stage(PROD)
+        .build();
+
     private static final String YAML = "" +
         ":index-length: 2\n" +
         ":slot:0:\n" +
@@ -34,9 +39,7 @@ class ClusterStoreTest {
         "worker:0:\n" +
         "  PROD:\n" +
         "    provider: docker-compose\n" +
-        "    suffix: -prod\n" +
-        "    count: 2\n" +
-        "    index-length: 0\n" +
+        "    count: 3\n" +
         "    load-balancer:\n" +
         "      reload: custom\n" +
         "      class: com.github.t1.kubee.boundary.gateway.ingress.ReloadMock\n";
@@ -110,7 +113,7 @@ class ClusterStoreTest {
     @Test void shouldUnbalance() {
         givenClusterConfig(YAML);
 
-        clusterStore.unbalance(NODE1, "app-name");
+        clusterStore.unbalance(PROD01, "app-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
     }
@@ -119,7 +122,7 @@ class ClusterStoreTest {
         givenClusterConfig(YAML);
         Files.setPosixFilePermissions(configFile, singleton(OWNER_READ)); // not write
 
-        Throwable throwable = catchThrowable(() -> clusterStore.unbalance(NODE1, "app-name"));
+        Throwable throwable = catchThrowable(() -> clusterStore.unbalance(PROD01, "app-name"));
 
         assertThat(throwable).hasMessage("can't write cluster config file: " + configFile);
     }
@@ -127,7 +130,7 @@ class ClusterStoreTest {
     @Test void shouldNotUnbalanceWhenAlreadyUnbalanced() {
         givenClusterConfig(UNBALANCED_YAML);
 
-        clusterStore.unbalance(NODE1, "app-name");
+        clusterStore.unbalance(PROD01, "app-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
     }
@@ -135,7 +138,7 @@ class ClusterStoreTest {
     @Test void shouldBalance() {
         givenClusterConfig(UNBALANCED_YAML);
 
-        clusterStore.balance(NODE1, "app-name");
+        clusterStore.balance(PROD01, "app-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(YAML);
     }
@@ -143,7 +146,7 @@ class ClusterStoreTest {
     @Test void shouldBalance1of2nodes() {
         givenClusterConfig(UNBALANCED_YAML + "      2:app-name: unbalanced\n");
 
-        clusterStore.balance(NODE2, "app-name");
+        clusterStore.balance(PROD02, "app-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
     }
@@ -151,7 +154,7 @@ class ClusterStoreTest {
     @Test void shouldBalance1of2apps() {
         givenClusterConfig(UNBALANCED_YAML + "      1:app2-name: unbalanced\n");
 
-        clusterStore.balance(NODE1, "app2-name");
+        clusterStore.balance(PROD01, "app2-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(UNBALANCED_YAML);
     }
@@ -159,7 +162,7 @@ class ClusterStoreTest {
     @Test void shouldNotBalanceWhenAlreadyBalanced() {
         givenClusterConfig(YAML);
 
-        clusterStore.balance(NODE1, "app-name");
+        clusterStore.balance(PROD01, "app-name");
 
         assertThat(contentOf(configFile.toFile())).isEqualTo(YAML);
     }

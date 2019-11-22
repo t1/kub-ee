@@ -11,7 +11,6 @@ import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
-import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.entity.Stage.StageBuilder;
 import lombok.Getter;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.TestData.SLOT_0;
 import static com.github.t1.kubee.TestData.VERSION_101;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.util.Arrays.asList;
@@ -43,7 +43,6 @@ class ClusterReconditionerTest {
 
 
     // <editor-fold desc="Cluster Config">
-    private static final Slot SLOT = Slot.builder().name("0").http(8080).https(8443).build();
     private Cluster cluster = null;
 
     private void givenClusterWithNodeCount(int count) {
@@ -52,7 +51,7 @@ class ClusterReconditionerTest {
 
     private void givenClusterWith(StageBuilder stage) {
         assertThat(cluster).isNull();
-        cluster = Cluster.builder().host("worker").slot(SLOT).stage(stage.build()).build();
+        cluster = Cluster.builder().host("worker").slot(SLOT_0).stage(stage.build()).build();
     }
 
     private StageBuilder stage() {

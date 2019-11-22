@@ -107,7 +107,7 @@ public class RestBoundary {
             .orElseThrow(() -> new NotFoundException("stage not found: '" + name + "'"));
     }
 
-    private Stream<Stage> stages() { return controller.clusters().flatMap(Cluster::stages).sorted().distinct(); }
+    private Stream<Stage> stages() { return controller.clusters().flatMap(Cluster::stages).distinct(); }
 
 
     @GET @Path("/deployments") public List<Deployment> getDeployments() {

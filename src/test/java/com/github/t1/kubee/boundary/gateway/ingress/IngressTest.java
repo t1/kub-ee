@@ -22,10 +22,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.NODE1;
-import static com.github.t1.kubee.TestData.NODE2;
+import static com.github.t1.kubee.TestData.PROD;
+import static com.github.t1.kubee.TestData.PROD01;
+import static com.github.t1.kubee.TestData.PROD02;
 import static com.github.t1.kubee.TestData.PROXY_SETTINGS;
-import static com.github.t1.kubee.TestData.STAGE;
 import static com.github.t1.kubee.TestData.WORKER01;
 import static com.github.t1.kubee.TestData.WORKER02;
 import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.NGINX_ETC;
@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @BeforeEach void setUp() {
         origConfigPath = NGINX_ETC;
         NGINX_ETC = nginxEtc;
-        configPath = nginxEtc.resolve("nginx-prod.conf");
+        configPath = nginxEtc.resolve("nginx.conf");
     }
 
     private void givenNginx(HostPort... workers) {
@@ -86,7 +86,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 
     private Ingress whenIngress() {
-        return Ingress.ingress(STAGE);
+        return Ingress.ingress(PROD);
     }
 
 
@@ -121,24 +121,24 @@ import static org.assertj.core.api.Assertions.tuple;
         assertThat(reverseProxies)
             .extracting(ReverseProxy::name, ReverseProxy::listen, ReverseProxy::getPort)
             .containsExactly(
-                tuple("worker-prod1", 8080, 10001),
-                tuple("worker-prod2", 8080, 10002)
+                tuple("worker01", 8080, 10001),
+                tuple("worker02", 8080, 10002)
             );
     }
 
     @Test void shouldFailToAddUnknownNodeToLoadBalancer() {
         givenNginx(WORKER01);
 
-        Throwable throwable = catchThrowable(() -> whenIngress().addToLoadBalancer("dummy-app", NODE2));
+        Throwable throwable = catchThrowable(() -> whenIngress().addToLoadBalancer("dummy-app", PROD02));
 
-        assertThat(throwable).isInstanceOf(IllegalStateException.class).hasMessage("no reverse proxy found for worker-prod2 in [worker-prod1]");
+        assertThat(throwable).isInstanceOf(IllegalStateException.class).hasMessage("no reverse proxy found for worker02 in [worker01]");
         verifyNotReloaded();
     }
 
     @Test void shouldAddNodeToLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().addToLoadBalancer("dummy-app", NODE2);
+        whenIngress().addToLoadBalancer("dummy-app", PROD02);
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
         verifyReloaded();
@@ -147,7 +147,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldIgnoreToRemoveNodeFromUnknownLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().removeFromLoadBalancer("unknown-app", NODE2);
+        whenIngress().removeFromLoadBalancer("unknown-app", PROD02);
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
         verifyNotReloaded();
@@ -156,16 +156,16 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldRemoveNodeFromLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().removeFromLoadBalancer("dummy-app", NODE2);
+        whenIngress().removeFromLoadBalancer("dummy-app", PROD02);
 
-        assertThat(actualNginxConfig()).isEqualTo(removeNode(nginxConfig(WORKER01, WORKER02), NODE2));
+        assertThat(actualNginxConfig()).isEqualTo(removeNode(nginxConfig(WORKER01, WORKER02), PROD02));
         verifyReloaded();
     }
 
     @Test void shouldRemoveLastNodeFromLoadBalancer() {
         givenNginx(WORKER01);
 
-        whenIngress().removeFromLoadBalancer("dummy-app", NODE1);
+        whenIngress().removeFromLoadBalancer("dummy-app", PROD01);
 
         assertThat(actualNginxConfig()).isEqualTo(addReverseProxy(NginxConfig.create(), WORKER01));
         verifyReloaded();
@@ -175,7 +175,7 @@ import static org.assertj.core.api.Assertions.tuple;
         givenNginx(WORKER01, WORKER02);
         ReloadMock.error = "dummy-error";
 
-        Throwable throwable = catchThrowable(() -> whenIngress().removeFromLoadBalancer("dummy-app", NODE1));
+        Throwable throwable = catchThrowable(() -> whenIngress().removeFromLoadBalancer("dummy-app", PROD01));
 
         assertThat(throwable).hasMessage("failed to reload load balancer: dummy-error");
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));

@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.NODE1;
+import static com.github.t1.kubee.TestData.PROD01;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,12 +31,12 @@ class DeployerGatewayTest {
     private static final String APP_NAME = "app-name";
     private static final String GROUP_ID = "com.github.t1";
     private static final String ARTIFACT_ID = "dummy";
-    private static final URI HOST = URI.create("http://worker-prod1:8080");
+    private static final URI HOST = URI.create("http://worker01:8080");
     private static final URI DEPLOYER_URI = HOST.resolve("/deployer");
     private static final URI VERSIONS_URI = HOST.resolve("/deployer/repository/versions?artifactId=" + ARTIFACT_ID + "&groupId=" + GROUP_ID);
     private static final List<String> VERSIONS = asList("1.0.1", "1.0.2", "1.0.3", "1.1.0", "2.0.0");
     private static final Deployment DEPLOYMENT = Deployment.builder()
-        .node(NODE1).name(APP_NAME).groupId(GROUP_ID).artifactId(ARTIFACT_ID)
+        .node(PROD01).name(APP_NAME).groupId(GROUP_ID).artifactId(ARTIFACT_ID)
         .type("war").version("1.0.2").build();
     private static final Audits DEPLOY_AUDITS = Audits.parseYaml("" +
         "audits:\n" +
@@ -93,7 +93,7 @@ class DeployerGatewayTest {
     void shouldFetchVersion() {
         given(yamlClient.GET(DEPLOYER_URI, DeployerResponse.class)).willReturn(deployables());
 
-        String version = gateway.fetchVersion(NODE1, APP_NAME);
+        String version = gateway.fetchVersion(PROD01, APP_NAME);
 
         assertThat(version).isEqualTo("1.0.2");
     }
@@ -102,7 +102,7 @@ class DeployerGatewayTest {
     void shouldFetchVersions() {
         given(yamlClient.GET(VERSIONS_URI, List.class)).willReturn(VERSIONS);
 
-        List<String> versions = gateway.fetchVersions(NODE1, GROUP_ID, ARTIFACT_ID);
+        List<String> versions = gateway.fetchVersions(PROD01, GROUP_ID, ARTIFACT_ID);
 
         assertThat(versions).containsExactlyElementsOf(VERSIONS);
     }
@@ -111,7 +111,7 @@ class DeployerGatewayTest {
     void shouldFetchDeployables() {
         given(yamlClient.GET(DEPLOYER_URI, DeployerResponse.class)).willReturn(deployables());
 
-        Stream<Deployment> deployments = gateway.fetchDeployables(NODE1);
+        Stream<Deployment> deployments = gateway.fetchDeployables(PROD01);
 
         assertThat(deployments).containsExactly(DEPLOYMENT);
     }
@@ -124,7 +124,7 @@ class DeployerGatewayTest {
             return DEPLOY_AUDITS;
         });
 
-        Audits audits = gateway.deploy(NODE1, APP_NAME, "1.0.3");
+        Audits audits = gateway.deploy(PROD01, APP_NAME, "1.0.3");
 
         assertThat(audits).isEqualTo(DEPLOY_AUDITS);
     }
@@ -137,7 +137,7 @@ class DeployerGatewayTest {
             return UNDEPLOY_AUDITS;
         });
 
-        Audits audits = gateway.undeploy(NODE1, APP_NAME);
+        Audits audits = gateway.undeploy(PROD01, APP_NAME);
 
         assertThat(audits).isEqualTo(UNDEPLOY_AUDITS);
     }

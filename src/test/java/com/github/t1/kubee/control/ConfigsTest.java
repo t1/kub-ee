@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URI;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.CLUSTERS;
+import static com.github.t1.kubee.TestData.ALL_CLUSTERS;
 import static com.github.t1.kubee.TestData.DEV;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -19,7 +19,7 @@ class ConfigsTest extends AbstractControllerTest {
     @Test void shouldGetClusters() {
         Stream<Cluster> clusters = controller.clusters();
 
-        assertThat(clusters).containsExactly(CLUSTERS);
+        assertThat(clusters).containsExactly(ALL_CLUSTERS);
     }
 
 

@@ -148,7 +148,7 @@ public class RestBoundaryIT extends AbstractIT {
             .artifactId("dummy")
             .type("war")
             .version(version)
-            .node(cluster.node(PROD.getName(), 1))
+            .node(cluster.node(PROD, 1))
             .name("dummy")
             .build();
     }

@@ -6,6 +6,14 @@ services:
     build: worker
     ports: [8080]
     networks: [kub-ee]
+  worker-qa:
+    build: worker
+    ports: [8080]
+    networks: [kub-ee]
+  worker:
+    build: worker
+    ports: [8080]
+    networks: [kub-ee]
   artifactory:
     image: rdohna/artifactory-mock
     ports: [8081]

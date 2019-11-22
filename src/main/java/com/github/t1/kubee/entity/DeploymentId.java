@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.tools.http.ProblemDetail.badRequest;
+import static java.lang.Integer.parseInt;
 
 /**
  * A String made out of these components delimited by colons:<ol>
@@ -31,7 +32,7 @@ public class DeploymentId {
     public Stage stage(List<Cluster> clusters) {
         String name = getStageName();
         return clusters.stream().flatMap(cluster -> asStream(cluster.stage(name))).findAny()
-                       .orElseThrow(() -> badRequest().detail("stage not found: " + name).exception());
+            .orElseThrow(() -> badRequest().detail("stage not found: " + name).exception());
     }
 
     private static <T> Stream<T> asStream(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<T> opt) {
@@ -43,12 +44,14 @@ public class DeploymentId {
         String clusterName = split[0];
         String slotName = split[1];
         String stageName = split[2];
-        int index = Integer.valueOf(split[3]);
+        int index = parseInt(split[3]);
 
-        return clusters.filter(c -> c.getSimpleName().equals(clusterName))
-                                  .filter(c -> c.getSlot().getName().equals(slotName))
-                                  .findFirst()
-                                  .orElseThrow(() -> new ClusterNotFoundException(clusterName)).node(stageName, index);
+        return clusters
+            .filter(c -> c.getSimpleName().equals(clusterName))
+            .filter(c -> c.getSlot().getName().equals(slotName))
+            .findFirst()
+            .orElseThrow(() -> new ClusterNotFoundException(clusterName))
+            .node(stageName, index);
     }
 
     private String[] split() {

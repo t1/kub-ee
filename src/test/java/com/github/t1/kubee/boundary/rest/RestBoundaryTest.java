@@ -1,6 +1,5 @@
 package com.github.t1.kubee.boundary.rest;
 
-import com.github.t1.kubee.TestData;
 import com.github.t1.kubee.boundary.rest.RestBoundary.DeployableNotFoundException;
 import com.github.t1.kubee.boundary.rest.RestBoundary.GetDeploymentResponse;
 import com.github.t1.kubee.control.ClusterReconditioner;
@@ -28,10 +27,12 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.TestData.ALL_STAGES;
 import static com.github.t1.kubee.TestData.CLUSTER;
 import static com.github.t1.kubee.TestData.DEPLOYMENT;
-import static com.github.t1.kubee.TestData.NODE1;
-import static com.github.t1.kubee.TestData.STAGE;
+import static com.github.t1.kubee.TestData.PROD;
+import static com.github.t1.kubee.TestData.PROD01;
+import static com.github.t1.kubee.TestData.SLOT_0;
 import static com.github.t1.kubee.TestData.VERSIONS_STATUS;
 import static com.github.t1.kubee.TestData.VERSION_101;
 import static com.github.t1.kubee.boundary.rest.RestBoundary.DeploymentMode.balance;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,7 +77,7 @@ class RestBoundaryTest {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
         given(controller.loadBalancers(any())).will(i -> {
             Stream<Stage> stages = i.getArgument(0);
-            assertThat(stages).containsExactly(STAGE);
+            assertThat(stages).containsExactly(ALL_STAGES);
             return Stream.of(LOAD_BALANCER);
         });
 
@@ -88,7 +90,7 @@ class RestBoundaryTest {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
         given(controller.reverseProxies(any())).will(i -> {
             Stream<Stage> stages = i.getArgument(0);
-            assertThat(stages).containsExactly(STAGE);
+            assertThat(stages).containsExactly(ALL_STAGES);
             return Stream.of(REVERSE_PROXY);
         });
 
@@ -127,15 +129,15 @@ class RestBoundaryTest {
 
         List<Slot> slots = boundary.getSlots();
 
-        assertThat(slots).containsExactly(TestData.SLOT_0);
+        assertThat(slots).containsExactly(SLOT_0);
     }
 
     @Test void shouldGetKnownSlot() {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
 
-        Slot slot = boundary.getSlot(TestData.SLOT_0.getName());
+        Slot slot = boundary.getSlot(SLOT_0.getName());
 
-        assertThat(slot).isEqualTo(TestData.SLOT_0);
+        assertThat(slot).isEqualTo(SLOT_0);
     }
 
     @Test void shouldGetUnknownSlot() {
@@ -152,15 +154,15 @@ class RestBoundaryTest {
 
         List<Stage> stages = boundary.getStages();
 
-        assertThat(stages).containsExactly(STAGE);
+        assertThat(stages).containsExactly(ALL_STAGES);
     }
 
     @Test void shouldGetKnownStage() {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
 
-        Stage stage = boundary.getStage(STAGE.getName());
+        Stage stage = boundary.getStage(PROD.getName());
 
-        assertThat(stage).isEqualTo(STAGE);
+        assertThat(stage).isEqualTo(PROD);
     }
 
     @Test void shouldGetUnknownStage() {
@@ -174,7 +176,9 @@ class RestBoundaryTest {
 
     @Test void shouldGetDeployments() {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
-        given(controller.fetchDeploymentsOn(NODE1)).willReturn(Stream.of(DEPLOYMENT));
+        // fetchDeployments is called multiple times and all but this one should return an empty stream
+        // but Mockito throws PotentialStubbingProblem if not lenient
+        lenient().when(controller.fetchDeploymentsOn(PROD01)).then(i -> Stream.of(DEPLOYMENT));
 
         List<Deployment> deployments = boundary.getDeployments();
 
@@ -183,8 +187,8 @@ class RestBoundaryTest {
 
     @Test void shouldGetKnownDeployment() {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
-        given(controller.fetchDeploymentsOn(NODE1)).willReturn(Stream.of(DEPLOYMENT));
-        given(controller.fetchVersions(NODE1, DEPLOYMENT)).willReturn(VERSIONS_STATUS);
+        given(controller.fetchDeploymentsOn(PROD01)).willReturn(Stream.of(DEPLOYMENT));
+        given(controller.fetchVersions(PROD01, DEPLOYMENT)).willReturn(VERSIONS_STATUS);
 
         GetDeploymentResponse deployments = boundary.getDeployment(DEPLOYMENT.id());
 
@@ -194,10 +198,10 @@ class RestBoundaryTest {
     @Test void shouldGetUnknownDeployment() {
         given(controller.clusters()).willReturn(Stream.of(CLUSTER));
 
-        Throwable throwable = catchThrowable(() -> boundary.getDeployment(new DeploymentId(NODE1.id() + ":unknown")));
+        Throwable throwable = catchThrowable(() -> boundary.getDeployment(new DeploymentId(PROD01.id() + ":unknown")));
 
         assertThat(throwable).isInstanceOf(DeployableNotFoundException.class)
-            .hasMessage("deployable 'unknown' not found on '" + NODE1 + "'");
+            .hasMessage("deployable 'unknown' not found on '" + PROD01 + "'");
     }
 
     @Test void shouldFailToPostDeploymentWithoutId() {

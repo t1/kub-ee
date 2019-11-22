@@ -1,144 +1,209 @@
 package com.github.t1.kubee.tools;
 
-import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.TestData;
 import com.github.t1.kubee.entity.Endpoint;
-import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.cli.Script;
 import com.github.t1.kubee.tools.cli.Script.Result;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import static java.lang.String.join;
+import static com.github.t1.kubee.TestData.LOCAL;
+import static com.github.t1.kubee.TestData.LOCAL_ENDPOINTS;
+import static com.github.t1.kubee.TestData.PROD;
+import static com.github.t1.kubee.TestData.PROD_ENDPOINTS;
+import static com.github.t1.kubee.TestData.QA;
+import static com.github.t1.kubee.TestData.QA_ENDPOINTS;
+import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Accessors(chain = true)
 public class ContainersFixture implements BeforeEachCallback, AfterEachCallback, Extension {
-    public static final Slot SLOT = Slot.builder().build();
-    public static final Stage LOCAL = Stage.builder().name("LOCAL").prefix("local-").count(1).build();
-    public static final Stage QA = Stage.builder().name("QA").suffix("-qa").count(2).build();
-    public static final Stage PROD = Stage.builder().name("PROD").count(3).build();
-    public static final Cluster CLUSTER = Cluster.builder()
-        .host("worker")
-        .slot(SLOT)
-        .stage(LOCAL).stage(QA).stage(PROD)
-        .build();
 
-    public static final Endpoint LOCAL_WORKER = new Endpoint("local-worker", 8080);
-    public static final Endpoint QA_WORKER1 = new Endpoint("worker-qa1", 8080);
-    public static final Endpoint QA_WORKER2 = new Endpoint("worker-qa2", 8080);
-    public static final Endpoint PROD_WORKER1 = new Endpoint("worker1", 8080);
-    public static final Endpoint PROD_WORKER2 = new Endpoint("worker2", 8080);
-    public static final Endpoint PROD_WORKER3 = new Endpoint("worker3", 8080);
-    public static final Endpoint PROD_WORKER4 = new Endpoint("worker4", 8080);
-    public static final Endpoint PROD_WORKER5 = new Endpoint("worker5", 8080);
-    private static final List<Endpoint> LOCAL_WORKERS = singletonList(LOCAL_WORKER);
-    private static final List<Endpoint> QA_WORKERS = asList(QA_WORKER1, QA_WORKER2);
-    private static final List<Endpoint> PROD_WORKERS = asList(PROD_WORKER1, PROD_WORKER2, PROD_WORKER3, PROD_WORKER4, PROD_WORKER5);
-    public static final List<Endpoint> ALL_WORKERS = asList(LOCAL_WORKER, QA_WORKER1, QA_WORKER2,
-        PROD_WORKER1, PROD_WORKER2, PROD_WORKER3);
+    @Setter @Getter private Path dockerComposeDir = Paths.get("src/test/docker/");
+
+    private final List<Container> containers = new ArrayList<>();
+    private final Map<String, Result> scaleResults = new HashMap<>();
 
     private final Script.Invoker originalProcessInvoker = Script.Invoker.INSTANCE;
-    private final Script.Invoker proc = mock(Script.Invoker.class);
-    @Setter @Getter private Path dockerComposeDir = Paths.get("src/test/docker/");
-    @Setter private int port = 80;
+    private final Script.Invoker invokerMock = new Script.Invoker() {
+        @Override public Result invoke(Path workingDirectory, String commandline) {
+            Parser parser = new Parser(commandline);
+            if (parser.eats("docker-compose ")) {
+                assertThat(workingDirectory).isEqualTo(dockerComposeDir);
+                if (parser.eats("ps "))
+                    return dockerComposePs(parser);
+                if (parser.eats("up "))
+                    return dockerComposeUp(parser);
+                throw new RuntimeException("docker compose command not stubbed: " + commandline);
+            }
+            if (parser.eats("docker ")) {
+                assertThat(workingDirectory).isNull();
+                if (parser.eats("ps "))
+                    return dockerPs(parser);
+                throw new RuntimeException("docker command not stubbed: " + commandline);
+            }
+            throw new RuntimeException("commandline not stubbed: " + commandline);
+        }
+
+        private Result dockerComposePs(Parser parser) {
+            assertThat(parser.eats("-q ")).isTrue();
+            String serviceName = parser.eatRest();
+            Stream<Container> containers = findContainersForService(serviceName);
+            String containerIds = containers.map(Container::getId).collect(joining("\n"));
+            return containerIds.isEmpty()
+                ? new Result(1, "ERROR: No such service: " + serviceName)
+                : new Result(0, containerIds);
+        }
+
+        private Result dockerComposeUp(Parser parser) {
+            assertThat(parser.eats("--detach --scale ")).isTrue();
+            String[] expression = parser.eatRest().split("=");
+            String serviceName = expression[0];
+            int target = parseInt(expression[1]);
+            return scale(serviceName, target);
+        }
+
+        private Result dockerPs(Parser parser) {
+            assertThat(parser.eats("--all ")).isTrue();
+            assertThat(parser.eats("--format {{.Ports}}\t{{.Names}} ")).isTrue();
+            assertThat(parser.eats("--filter id=")).isTrue();
+            Container container = findContainerWithId(parser.eatWord());
+            assertThat(parser.eats("--filter publish=8080")).isTrue();
+            assertThat(parser.done()).isTrue();
+            if (container.dockerPsResult != null)
+                return container.dockerPsResult;
+            else
+                return new Result(0, "0.0.0.0:" + container.getInternalPort() + "->" + container.getExposedPort() + "/tcp\t" +
+                    "docker_" + container.serviceName + "_" + container.index());
+        }
+    };
+
+    private Result scale(String serviceName, int target) {
+        Result preparedResult = scaleResults.get(serviceName);
+        if (preparedResult != null)
+            return preparedResult;
+        List<Container> containers = findContainersForService(serviceName).collect(toList());
+        List<Endpoint> endpoints = endpointsFor(serviceName);
+        for (int i = containers.size(); i < target; i++)
+            given(endpoints.get(i));
+        for (int i = target; i < containers.size(); i++)
+            ContainersFixture.this.containers.remove(containers.get(i));
+        return new Result(0, "");
+    }
+
+    private static int nextPort = 33000;
+
+    public void givenScaleResult(String serviceName, int exitValue, String output) {
+        scaleResults.put(serviceName, new Result(exitValue, output));
+    }
+
+    @Getter public class Container {
+        private final String id = UUID.randomUUID().toString();
+        private final int port = nextPort++;
+        @NonNull private final Endpoint endpoint;
+        @NonNull private final String serviceName;
+        private Result dockerPsResult;
+
+        public Container(@NonNull Endpoint endpoint) {
+            this.endpoint = endpoint;
+            this.serviceName = serviceName(endpoint);
+        }
+
+        @Override public String toString() {
+            return "[" + serviceName + ':' + port + " -> " + endpoint + ']';
+        }
+
+        public int index() { return endpointsFor(serviceName).indexOf(endpoint) + 1; }
+
+        public int getInternalPort() { return port; }
+
+        public int getExposedPort() { return endpoint.getPort(); }
+
+        public void dockerInfo(int exitValue, String message) {
+            dockerPsResult = new Result(exitValue, message);
+        }
+    }
+
+    private Container findContainerWithId(@NonNull String id) {
+        List<Container> containers = findContainers(container -> container.id.equals(id)).collect(toList());
+        assertThat(containers.size()).describedAs("duplicate container id").isLessThanOrEqualTo(1);
+        assertThat(containers).describedAs("container id not found").isNotEmpty();
+        return containers.get(0);
+    }
+
+    private Stream<Container> findContainersForService(String serviceName) {
+        return findContainers(container -> container.serviceName.equals(serviceName));
+    }
+
+    private Stream<Container> findContainers(Predicate<Container> filter) {
+        return containers.stream().filter(filter);
+    }
+
+    @Override public void beforeEach(ExtensionContext context) { Script.Invoker.INSTANCE = invokerMock; }
 
     @Override public void afterEach(ExtensionContext context) { Script.Invoker.INSTANCE = originalProcessInvoker; }
 
-    @Override public void beforeEach(ExtensionContext context) { Script.Invoker.INSTANCE = proc; }
 
-    public void givenEndpoints(Endpoint... workers) { givenEndpoints(asList(workers)); }
+    public void given(Endpoint... endpoints) { given(asList(endpoints)); }
 
-    public void givenEndpoints(List<Endpoint> endpoints) {
-        givenContainers(endpoints);
-        givenScaleInvocation();
+    public void given(List<Endpoint> endpoints) {
+        for (Endpoint endpoint : endpoints)
+            given(endpoint);
     }
 
-    public BDDMyOngoingStubbing<Result> givenDockerCompose(String args) {
-        return givenInvocationIn(dockerComposeDir, "docker-compose " + args);
-    }
-
-    public BDDMyOngoingStubbing<Result> givenDocker(String args) {
-        return givenInvocationIn(null, "docker " + args);
-    }
-
-    private BDDMyOngoingStubbing<Result> givenInvocationIn(Path dir, String commandline) {
-        return given(proc.invoke(dir, commandline));
-    }
-
-    private void givenContainers(List<Endpoint> endpoints) {
-        Map<Stage, List<String>> containerIds = new LinkedHashMap<>();
-        for (Endpoint endpoint : endpoints) {
-            String containerId = UUID.randomUUID().toString();
-            Stage stage = stageOf(endpoint);
-            List<String> ids = containerIds.computeIfAbsent(stage, s -> new ArrayList<>());
-            ids.add(containerId);
-            int i = ids.size(); // the actual index of the added container
-            String name = stage.serviceName(CLUSTER);
-            givenDocker("ps --all --format \"{{.Ports}}\t{{.Names}}\" --filter id=" + containerId + " --filter publish=" + port)
-                .willReturn(new Result(0, "0.0.0.0:" + endpoint.getPort() + "->" + port + "/tcp\tdocker_" + name + "_" + i));
-        }
-        CLUSTER.stages().forEach(stage -> givenProcessIdsInvocation(containerIds, stage));
-    }
-
-    private void givenProcessIdsInvocation(Map<Stage, List<String>> containerIds, Stage stage) {
-        List<String> ids = containerIds.get(stage);
-        givenDockerCompose("ps -q " + stage.serviceName(CLUSTER))
-            .willReturn(new Result(0, (ids == null) ? "" : join("\n", ids)));
-    }
-
-    /** when scaling, the running endpoints are re-stubbed */
-    private void givenScaleInvocation() {
-        for (Stage stage : CLUSTER.getStages()) {
-            for (int i = 0; i <= PROD_WORKERS.size(); i++) {
-                int scaleValue = i;
-                String serviceName = stage.serviceName(CLUSTER);
-                givenDockerCompose("up --detach --scale " + serviceName + "=" + scaleValue)
-                    .will(x -> {
-                        List<Endpoint> endpoints = endpointsFor(serviceName);
-                        givenContainers(endpoints.subList(0, scaleValue));
-                        return new Result(0, "dummy-scale-output");
-                    });
-            }
-        }
+    public Container given(Endpoint endpoint) {
+        Container container = new Container(endpoint);
+        containers.add(container);
+        return container;
     }
 
     private List<Endpoint> endpointsFor(String name) {
         switch (name) {
             case "local-worker":
-                return LOCAL_WORKERS;
-            case "worker-qa":
-                return QA_WORKERS;
+                return LOCAL_ENDPOINTS;
+            case "qa-worker":
+                return QA_ENDPOINTS;
             case "worker":
-                return PROD_WORKERS;
+                return PROD_ENDPOINTS;
         }
         throw new IllegalArgumentException("unknown stage " + name);
     }
 
+    private String serviceName(Endpoint endpoint) { return stageOf(endpoint).serviceName(TestData.CLUSTER); }
+
     private Stage stageOf(Endpoint endpoint) {
-        if (PROD_WORKERS.contains(endpoint))
+        if (PROD_ENDPOINTS.contains(endpoint))
             return PROD;
-        if (QA_WORKERS.contains(endpoint))
+        if (QA_ENDPOINTS.contains(endpoint))
             return QA;
-        if (LOCAL_WORKERS.contains(endpoint))
+        if (LOCAL_ENDPOINTS.contains(endpoint))
             return LOCAL;
         throw new IllegalArgumentException("no stage defined for " + endpoint);
+    }
+
+    public void verifyScaled(Stage stage, int scale) {
+        assertThat(findContainersForService(stage.serviceName(TestData.CLUSTER)))
+            .describedAs("stage " + stage + " to ")
+            .hasSize(scale);
     }
 }

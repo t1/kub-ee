@@ -2,6 +2,7 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.control.Controller.UnexpectedAuditException;
 import com.github.t1.kubee.entity.Audits;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.DeploymentId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito.BDDMyOngoingStubbing;
 
 import static com.github.t1.kubee.TestData.APPLICATION_NAME;
-import static com.github.t1.kubee.TestData.UNBALANCED_NODE;
+import static com.github.t1.kubee.TestData.CLUSTER_B2;
 import static com.github.t1.kubee.TestData.VERSION_100;
 import static com.github.t1.kubee.TestData.VERSION_102;
 import static com.github.t1.kubee.TestData.VERSION_103;
@@ -22,6 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class DeployTest extends AbstractControllerTest {
+    private static final ClusterNode UNBALANCED_NODE = CLUSTER_B2.node("PROD", 2);
+
     private String versionBefore = VERSION_100;
     private String versionAfter = VERSION_102;
 

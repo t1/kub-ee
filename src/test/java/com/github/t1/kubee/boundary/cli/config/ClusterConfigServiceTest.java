@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static com.github.t1.kubee.tools.ContainersFixture.PROD_WORKER1;
+import static com.github.t1.kubee.TestData.PROD_ENDPOINT1;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +39,7 @@ class ClusterConfigServiceTest {
     @BeforeEach void before() {
         ClusterConfigService.exit = code -> this.exitCode = code;
         ClusterConfigService.log = mockLogger;
-        containers.setDockerComposeDir(tmp).setPort(8080);
+        containers.setDockerComposeDir(tmp);
         clusterConfig = tmp.resolve("cluster-config.yaml");
         writeClusterConfig();
     }
@@ -60,7 +60,7 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldRunOnce() {
-        containers.givenEndpoints(PROD_WORKER1);
+        containers.given(PROD_ENDPOINT1);
 
         ClusterConfigService.main("--once", "--cluster-config=" + clusterConfig, "--docker-compose-dir=" + containers.getDockerComposeDir());
 
@@ -73,7 +73,7 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldRunUntilStop() {
-        containers.givenEndpoints(PROD_WORKER1);
+        containers.given(PROD_ENDPOINT1);
         ClusterConfigService service = new ClusterConfigService(clusterConfig, containers.getDockerComposeDir(), true);
 
         new Thread(() -> {

@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.CLUSTERS;
+import static com.github.t1.kubee.TestData.ALL_CLUSTERS;
 import static com.github.t1.kubee.TestData.CLUSTER_A1;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,16 +25,15 @@ public class ClusterTest {
     @Test void shouldReadYamlConfig() {
         List<Cluster> clusters = readClusterConfig();
 
-        assertThat(clusters).containsExactly(CLUSTERS);
+        assertThat(clusters).containsExactly(ALL_CLUSTERS);
     }
 
     @Test void shouldProduceAllUris() {
         Stream<URI> uris = CLUSTER_A1.stages().flatMap(stage -> stage.nodes(CLUSTER_A1)).map(ClusterNode::uri);
         assertThat(uris).containsExactly(
-            URI.create("http://server-a" + "dev01.server.lan:8180"),
-            URI.create("http://server-a" + "dev02.server.lan:8180"),
-            URI.create("http://qa" + "server-a01.server.lan:8180"),
-            URI.create("http://qa" + "server-a02.server.lan:8180"),
+            URI.create("http://server-adev.server.lan:8180"),
+            URI.create("http://qa-server-a1.server.lan:8180"),
+            URI.create("http://qa-server-a2.server.lan:8180"),
             URI.create("http://server-a01.server.lan:8180"),
             URI.create("http://server-a02.server.lan:8180"),
             URI.create("http://server-a03.server.lan:8180")

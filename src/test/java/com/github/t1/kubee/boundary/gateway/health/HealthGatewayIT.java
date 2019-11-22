@@ -36,7 +36,7 @@ public class HealthGatewayIT {
 
     @BeforeAll
     static void setUpClass() {
-        Slot slot = Slot.builder().name("slot-1").http(SERVICE.baseUri().getPort()).build();
+        Slot slot = Slot.named("slot-1").withHttp(SERVICE.baseUri().getPort());
         HealthConfig healthConfig = HealthConfig.builder().path("-system/check").build();
         DEV = Stage.builder().name("DEV").build();
         CLUSTER = Cluster.builder().host("localhost").slot(slot).stage(DEV).healthConfig(healthConfig).build();
@@ -48,13 +48,13 @@ public class HealthGatewayIT {
     @Test void shouldNotFetchHealthWithoutHealthConfig() {
         Cluster clusterWithoutConfig = CLUSTER.toBuilder().healthConfig(null).build();
 
-        boolean healthy = gateway.fetch(clusterWithoutConfig.node(DEV.getName(), 1), "application");
+        boolean healthy = gateway.fetch(clusterWithoutConfig.node(DEV, 1), "application");
 
         assertThat(healthy).isTrue();
     }
 
     @Test void shouldFetchHealth() {
-        boolean healthy = gateway.fetch(CLUSTER.node(DEV.getName(), 1), "application");
+        boolean healthy = gateway.fetch(CLUSTER.node(DEV, 1), "application");
         assertThat(healthy).isTrue();
     }
 
@@ -62,7 +62,7 @@ public class HealthGatewayIT {
         boolean healthy;
         try {
             HealthGatewayIT.healthy = false;
-            healthy = gateway.fetch(CLUSTER.node(DEV.getName(), 1), "application");
+            healthy = gateway.fetch(CLUSTER.node(DEV, 1), "application");
         } finally {
             HealthGatewayIT.healthy = true;
         }
