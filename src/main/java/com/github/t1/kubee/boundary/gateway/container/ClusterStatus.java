@@ -1,6 +1,7 @@
 package com.github.t1.kubee.boundary.gateway.container;
 
 import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.cli.Script;
@@ -29,7 +30,17 @@ public class ClusterStatus {
         this.clusterEndpoints = new ClusterEndpoints(cluster, dockerComposeDir);
     }
 
-    public Integer port(String host) {
+    @Override public String toString() { return "cluster [" + cluster.getHost() + "]: " + clusterEndpoints; }
+
+    public Integer exposedPort(ClusterNode node) {
+        return endpoints(node.getStage())
+            .filter(endpoint -> endpoint.getHost().equals(node.host()))
+            .findFirst()
+            .map(Endpoint::getPort)
+            .orElse(null);
+    }
+
+    public Integer exposedPort(String host) {
         return endpoints()
             .filter(endpoint -> endpoint.getHost().equals(host))
             .findFirst()
@@ -37,19 +48,25 @@ public class ClusterStatus {
             .orElse(null);
     }
 
+    public Stream<Endpoint> endpoints(Stage stage) {
+        return clusterEndpoints.get(stage).stream();
+    }
+
     public Stream<Endpoint> endpoints() {
         return cluster.stages().map(clusterEndpoints::get).flatMap(Collection::stream);
     }
 
-    public List<Endpoint> scale(Stage stage) {
+    public void scale(Stage stage) {
         List<Endpoint> currentEndpoints = this.clusterEndpoints.get(stage);
-        if (currentEndpoints.size() == stage.getCount())
-            return currentEndpoints;
+        if (currentEndpoints.size() == stage.getCount()) {
+            log.fine("'" + stage.getName() + "' is already scaled to " + stage.getCount());
+            return;
+        }
         String serviceName = stage.serviceName(cluster);
         log.info("Scale '" + serviceName + "' from " + currentEndpoints.size() + " to " + stage.getCount());
-        new Script("docker-compose up --detach --scale " + serviceName + "=" + stage.getCount())
+        new Script("docker-compose up --no-color --quiet-pull --detach --scale " + serviceName + "=" + stage.getCount())
             .workingDirectory(dockerComposeDir)
             .run();
-        return this.clusterEndpoints.refreshEndpointsFor(stage);
+        clusterEndpoints.refreshEndpointsFor(stage);
     }
 }

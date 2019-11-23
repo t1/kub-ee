@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 
 import javax.inject.Inject;
+import java.util.stream.Stream;
 
 import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
@@ -38,10 +39,12 @@ public class ClusterReconditioner implements Runnable {
     @Override public void run() { clusterStore.clusters().forEach(this::reconditionCluster); }
 
     private void reconditionCluster(Cluster cluster) {
+        log.fine("reconditioning of cluster '" + cluster.getHost() + "' start");
         ClusterStatus clusterStatus = clusterStatusGateway.clusterStatus(cluster);
         cluster.stages()
             .map(stage -> new StageReconditioner(cluster, stage, clusterStatus))
             .forEach(StageReconditioner::recondition);
+        log.fine("reconditioning of cluster '" + cluster.getHost() + "' done");
     }
 
     private class StageReconditioner {
@@ -58,34 +61,51 @@ public class ClusterReconditioner implements Runnable {
             this.ingress = Ingress.ingress(stage);
         }
 
+        private String what() { return "[" + cluster.getHost() + ":" + stage.getName() + "]"; }
+
         void recondition() {
+            log.fine("scale " + what());
             clusterStatus.scale(stage);
-            cluster.nodes().forEach(this::reconditionReverseProxy);
+
+            log.fine("recondition reverse proxies for " + what());
+            nodes().forEach(this::reconditionReverseProxy);
+
+            log.fine("recondition load balancers for " + what());
             ingress.loadBalancers().forEach(this::reconditionLoadBalancer);
+
+            log.fine("cleanup ingress for " + what());
             cleanupNext(stage.lastNodeIn(cluster));
 
             if (ingress.hasChanged()) {
+                log.fine("apply ingress for [" + cluster.getHost() + "]");
                 ingress.apply();
             }
         }
 
+        private Stream<ClusterNode> nodes() {
+            return cluster.nodes().filter(stage -> stage.getStage().equals(this.stage));
+        }
+
         private void reconditionReverseProxy(ClusterNode node) {
+            log.fine("recondition reverse proxy for [" + node + "]");
             if (!"docker-compose".equals(node.getStage().getProvider())) {
                 log.warning("unsupported provider '" + node.getStage().getProvider() + "' "
                     + "for stage '" + node.getStage().getName() + "' "
                     + "in cluster '" + node.getCluster().getSimpleName() + "." + node.getCluster().getDomainName());
                 return;
             }
-            Integer actualPort = clusterStatus.port(node.endpoint().getHost());
+            Integer actualPort = clusterStatus.exposedPort(node);
             if (actualPort == null)
                 throw new IllegalStateException("expected " + node + " to be running");
             ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
-            if (reverseProxy.getPort() != actualPort) {
+            if (reverseProxy.getPort() == actualPort)
+                log.fine("reverse proxy for [" + node + "] already on correct port: " + actualPort);
+            else
                 reverseProxy.setPort(actualPort);
-            }
         }
 
         private void reconditionLoadBalancer(LoadBalancer loadBalancer) {
+            log.fine("recondition load balancer for '" + loadBalancer.applicationName() + "' on " + what());
             new LoadBalancerReconditioner(loadBalancer).recondition();
         }
 
@@ -121,7 +141,7 @@ public class ClusterReconditioner implements Runnable {
                     if (getConfiguredDeploymentStatus(host) == unbalanced) {
                         loadBalancer.removeHost(host);
                     } else {
-                        Integer actualPort = clusterStatus.port(host);
+                        Integer actualPort = clusterStatus.exposedPort(host);
                         if (actualPort == null)
                             return; // will be removed in cleanup
                         if (endpoint.getPort() != actualPort) {

@@ -5,8 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static com.github.t1.kubee.TestData.CLUSTER;
-import static com.github.t1.kubee.TestData.PROD_ENDPOINT1;
-import static com.github.t1.kubee.TestData.PROD_ENDPOINT2;
+import static com.github.t1.kubee.TestData.PROD;
+import static com.github.t1.kubee.TestData.PROD01;
+import static com.github.t1.kubee.TestData.PROD02;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
@@ -23,11 +24,11 @@ class ClusterStatusGatewayTest {
     }
 
     @Test void shouldReadClusterStatus() {
-        containers.given(PROD_ENDPOINT1, PROD_ENDPOINT2);
+        containers.given(PROD01, PROD02);
         ClusterStatusGateway gateway = new ClusterStatusGateway(containers.getDockerComposeDir());
 
         ClusterStatus clusterStatus = gateway.clusterStatus(CLUSTER);
 
-        assertThat(clusterStatus.endpoints()).containsExactly(PROD_ENDPOINT1, PROD_ENDPOINT2);
+        assertThat(clusterStatus.endpoints()).containsExactlyElementsOf(containers.endpointsIn(PROD));
     }
 }

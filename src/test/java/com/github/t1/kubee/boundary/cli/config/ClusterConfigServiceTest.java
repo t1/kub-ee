@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static com.github.t1.kubee.TestData.PROD_ENDPOINT1;
+import static com.github.t1.kubee.TestData.PROD01;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,20 +60,18 @@ class ClusterConfigServiceTest {
     }
 
     @Test void shouldRunOnce() {
-        containers.given(PROD_ENDPOINT1);
+        containers.given(PROD01);
 
         ClusterConfigService.main("--once", "--cluster-config=" + clusterConfig, "--docker-compose-dir=" + containers.getDockerComposeDir());
 
         assertThat(exitCode).isEqualTo(0);
         assertThat(mockLogger.getMessages(INFO)).isEqualTo("" +
-            "Start ClusterConfigService for " + clusterConfig + "\n" +
-            "recondition start\n" +
-            "recondition done\n" +
-            "end loop");
+            "recondition from " + clusterConfig + " in " + containers.getDockerComposeDir() + "\n" +
+            "reconditioning done");
     }
 
     @Test void shouldRunUntilStop() {
-        containers.given(PROD_ENDPOINT1);
+        containers.given(PROD01);
         ClusterConfigService service = new ClusterConfigService(clusterConfig, containers.getDockerComposeDir(), true);
 
         new Thread(() -> {
@@ -89,9 +87,8 @@ class ClusterConfigServiceTest {
 
         assertThat(exitCode).isEqualTo(null);
         assertThat(mockLogger.getMessages(INFO)).isEqualTo("" +
-            "recondition start\n" +
-            "recondition done\n" +
-            "end loop");
+            "recondition from " + clusterConfig + " in " + containers.getDockerComposeDir() + "\n" +
+            "reconditioning done");
     }
 
     // TODO make the DeployerGateway work from the CLI, too (JAX-RS client is not on the classpath)

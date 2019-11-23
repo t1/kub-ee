@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.Value;
+import lombok.extern.java.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,13 +13,19 @@ import java.util.Scanner;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@RequiredArgsConstructor @ToString
+@RequiredArgsConstructor @ToString @Log
 public class Script {
     private final String commandline;
     private Path workingDirectory;
+    private int timeout = 10;
 
     public Script workingDirectory(Path workingDirectory) {
         this.workingDirectory = workingDirectory;
+        return this;
+    }
+
+    public Script timeout(int timeout) {
+        this.timeout = timeout;
         return this;
     }
 
@@ -29,7 +36,9 @@ public class Script {
     }
 
     public Result runWithoutCheck() {
-        Result result = Invoker.INSTANCE.invoke(workingDirectory, commandline);
+        log.fine(() -> "execute '" + commandline + "' in " + workingDirectory);
+        Result result = Invoker.INSTANCE.invoke(commandline, workingDirectory, timeout);
+        log.fine(() -> "-> " + result.getExitValue() + ": " + result.getOutput());
         if (result == null)
             throw new RuntimeException("running '" + commandline + "' returned null... probably a mocking error");
         return result;
@@ -37,7 +46,7 @@ public class Script {
 
     public void check(Result result) {
         if (result.getExitValue() != 0)
-            throw new RuntimeException("'" + commandline + "' returned error " + result.getExitValue() + ":\n"
+            throw new RuntimeException("'" + commandline + "' returned " + result.getExitValue() + ":\n"
                 + result.getOutput());
     }
 
@@ -52,9 +61,11 @@ public class Script {
     public static class Invoker {
         public static Invoker INSTANCE = new Invoker();
 
-        public Result invoke(Path workingDirectory, String commandline) {
+        public Result invoke(String commandline, Path workingDirectory, int timeout) {
             ProcessBuilder builder = build(workingDirectory, commandline);
-            Process process = run(commandline, builder);
+            Process process = run(timeout, builder);
+            if (process == null)
+                throw new RuntimeException("could not invoke `" + commandline + "` in time");
             return new Result(process.exitValue(), read(process.getInputStream()));
         }
 
@@ -66,12 +77,10 @@ public class Script {
         }
 
         @SneakyThrows({IOException.class, InterruptedException.class})
-        private Process run(String commandline, ProcessBuilder builder) {
+        private Process run(int timeout, ProcessBuilder builder) {
             Process process = builder.start();
-            boolean inTime = process.waitFor(10, SECONDS);
-            if (!inTime)
-                throw new RuntimeException("could not invoke `" + commandline + "` in time");
-            return process;
+            boolean inTime = process.waitFor(timeout, SECONDS);
+            return inTime ? process : null;
         }
 
         private String read(InputStream inputStream) {

@@ -3,6 +3,7 @@ package com.github.t1.kubee.boundary.cli.config;
 import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.control.ClusterReconditioner;
+import com.github.t1.kubee.tools.SmartFormatter;
 import lombok.AllArgsConstructor;
 
 import java.io.IOException;
@@ -31,6 +32,8 @@ import static java.util.logging.Level.SEVERE;
 @AllArgsConstructor
 public class ClusterConfigService {
     private static final String ONCE_ARG = "--once";
+    private static final String VERBOSE_ARG = "--verbose";
+    private static final String VERB_ARG = "-v";
     private static final String CLUSTER_CONFIG_ARG = "--cluster-config=";
     private static final String DOCKER_COMPOSE_CONFIG_ARG = "--docker-compose-dir=";
 
@@ -44,14 +47,20 @@ public class ClusterConfigService {
         Path clusterConfigPath = null;
         Path dockerComposeDir = null;
         boolean once = false;
+        boolean debug = false;
         for (String arg : args) {
             if (arg.equals(ONCE_ARG))
                 once = true;
-            if (arg.startsWith(CLUSTER_CONFIG_ARG))
+            else if (arg.equals(VERB_ARG) || arg.equals(VERBOSE_ARG))
+                debug = true;
+            else if (arg.startsWith(CLUSTER_CONFIG_ARG))
                 clusterConfigPath = Paths.get(arg.substring(CLUSTER_CONFIG_ARG.length()));
-            if (arg.startsWith(DOCKER_COMPOSE_CONFIG_ARG))
+            else if (arg.startsWith(DOCKER_COMPOSE_CONFIG_ARG))
                 dockerComposeDir = Paths.get(arg.substring(DOCKER_COMPOSE_CONFIG_ARG.length()));
         }
+
+        SmartFormatter.configure(debug);
+
         if (clusterConfigPath == null || dockerComposeDir == null) {
             log.severe("Usage:\n" +
                 "    `" + ONCE_ARG + "`: to run only once and exit. Otherwise: loop until stopped.\n" +
@@ -59,7 +68,6 @@ public class ClusterConfigService {
                 "    `" + DOCKER_COMPOSE_CONFIG_ARG + "<path>`: with the <path> to the directory containing the `docker-compose.yaml`\n");
             statusCode = 1;
         } else {
-            log.info("Start ClusterConfigService for " + clusterConfigPath);
             new ClusterConfigService(clusterConfigPath, dockerComposeDir, !once).loop();
         }
         exit.accept(statusCode);
@@ -103,17 +111,17 @@ public class ClusterConfigService {
             Thread.currentThread().interrupt();
             throw new RuntimeException("while watching " + clusterConfigPath, e);
         }
-        log.info("end loop");
+        log.fine("finished");
     }
 
     private void recondition() {
         try {
-            log.info("recondition start");
+            log.info("recondition from " + clusterConfigPath + " in " + dockerComposeDir);
             ClusterStore clusterStore = new ClusterStore(clusterConfigPath);
             ClusterStatusGateway clusterStatusGateway = new ClusterStatusGateway(dockerComposeDir);
             ClusterReconditioner reconditioner = new ClusterReconditioner(clusterStore, null, clusterStatusGateway);
             reconditioner.run();
-            log.info("recondition done");
+            log.info("reconditioning done");
         } catch (RuntimeException e) {
             log.warning("recondition failed " + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage()));
             log.log(SEVERE, "can't recondition", e);

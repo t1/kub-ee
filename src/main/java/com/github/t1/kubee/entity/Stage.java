@@ -70,7 +70,7 @@ public class Stage implements Comparable<Stage> {
 
     private IntStream indexes() { return IntStream.range(1, this.count + 1); }
 
-    String host(Cluster cluster, int index) { return nodeName(cluster, index) + domainName(cluster); }
+    public String host(Cluster cluster, int index) { return nodeName(cluster, index) + domainName(cluster); }
 
     private String nodeName(Cluster cluster, int index) {
         return (nodes != null) ? nodes.get(index - 1) : (serviceName(cluster) + formattedIndex(index));

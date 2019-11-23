@@ -1,12 +1,13 @@
 package com.github.t1.kubee.tools;
 
-import com.github.t1.kubee.TestData;
+import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.cli.Script;
 import com.github.t1.kubee.tools.cli.Script.Result;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -24,12 +25,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.TestData.LOCAL;
-import static com.github.t1.kubee.TestData.LOCAL_ENDPOINTS;
-import static com.github.t1.kubee.TestData.PROD;
-import static com.github.t1.kubee.TestData.PROD_ENDPOINTS;
-import static com.github.t1.kubee.TestData.QA;
-import static com.github.t1.kubee.TestData.QA_ENDPOINTS;
+import static com.github.t1.kubee.TestData.CLUSTER;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
@@ -46,7 +42,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
     private final Script.Invoker originalProcessInvoker = Script.Invoker.INSTANCE;
     private final Script.Invoker invokerMock = new Script.Invoker() {
-        @Override public Result invoke(Path workingDirectory, String commandline) {
+        @Override public Result invoke(String commandline, Path workingDirectory, int timeout) {
             Parser parser = new Parser(commandline);
             if (parser.eats("docker-compose ")) {
                 assertThat(workingDirectory).isEqualTo(dockerComposeDir);
@@ -76,6 +72,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         }
 
         private Result dockerComposeUp(Parser parser) {
+            assertThat(parser.eats("--no-color --quiet-pull ")).isTrue();
             assertThat(parser.eats("--detach --scale ")).isTrue();
             String[] expression = parser.eatRest().split("=");
             String serviceName = expression[0];
@@ -94,7 +91,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
                 return container.dockerPsResult;
             else
                 return new Result(0, "0.0.0.0:" + container.getInternalPort() + "->" + container.getExposedPort() + "/tcp\t" +
-                    "docker_" + container.serviceName + "_" + container.index());
+                    "docker_" + container.serviceName() + "_" + container.index());
         }
     };
 
@@ -103,9 +100,9 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         if (preparedResult != null)
             return preparedResult;
         List<Container> containers = findContainersForService(serviceName).collect(toList());
-        List<Endpoint> endpoints = endpointsFor(serviceName);
+        List<ClusterNode> nodes = nodesFor(serviceName);
         for (int i = containers.size(); i < target; i++)
-            given(endpoints.get(i));
+            given(nodes.get(i));
         for (int i = target; i < containers.size(); i++)
             ContainersFixture.this.containers.remove(containers.get(i));
         return new Result(0, "");
@@ -117,27 +114,41 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         scaleResults.put(serviceName, new Result(exitValue, output));
     }
 
-    @Getter public class Container {
+    public Endpoint[] thoseEndpointsIn(Stage stage, int expectedCount) {
+        List<Endpoint> endpoints = endpointsIn(stage);
+        assertThat(endpoints).hasSize(expectedCount);
+        return endpoints.toArray(new Endpoint[0]);
+    }
+
+    public List<Endpoint> endpointsIn(Stage stage) {
+        return in(stage)
+            .map(container -> new Endpoint(container.node.host(), container.port))
+            .collect(toList());
+    }
+
+    private Stream<Container> in(Stage stage) {
+        return containers.stream()
+            .filter(container -> container.node.getStage().equals(stage));
+    }
+
+    @RequiredArgsConstructor
+    @Getter public static class Container {
         private final String id = UUID.randomUUID().toString();
         private final int port = nextPort++;
-        @NonNull private final Endpoint endpoint;
-        @NonNull private final String serviceName;
+        @NonNull private final ClusterNode node;
         private Result dockerPsResult;
 
-        public Container(@NonNull Endpoint endpoint) {
-            this.endpoint = endpoint;
-            this.serviceName = serviceName(endpoint);
-        }
-
         @Override public String toString() {
-            return "[" + serviceName + ':' + port + " -> " + endpoint + ']';
+            return "[" + serviceName() + ':' + port + " -> " + node + ']';
         }
 
-        public int index() { return endpointsFor(serviceName).indexOf(endpoint) + 1; }
+        private String serviceName() { return node.serviceName(); }
+
+        public int index() { return node.getIndex(); }
 
         public int getInternalPort() { return port; }
 
-        public int getExposedPort() { return endpoint.getPort(); }
+        public int getExposedPort() { return node.endpoint().getPort(); }
 
         public void dockerInfo(int exitValue, String message) {
             dockerPsResult = new Result(exitValue, message);
@@ -152,7 +163,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
     }
 
     private Stream<Container> findContainersForService(String serviceName) {
-        return findContainers(container -> container.serviceName.equals(serviceName));
+        return findContainers(container -> container.serviceName().equals(serviceName));
     }
 
     private Stream<Container> findContainers(Predicate<Container> filter) {
@@ -164,45 +175,27 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
     @Override public void afterEach(ExtensionContext context) { Script.Invoker.INSTANCE = originalProcessInvoker; }
 
 
-    public void given(Endpoint... endpoints) { given(asList(endpoints)); }
+    public void given() {}
 
-    public void given(List<Endpoint> endpoints) {
-        for (Endpoint endpoint : endpoints)
-            given(endpoint);
+    public void given(ClusterNode... nodes) { given(asList(nodes)); }
+
+    public void given(List<ClusterNode> nodes) {
+        for (ClusterNode node : nodes)
+            given(node);
     }
 
-    public Container given(Endpoint endpoint) {
-        Container container = new Container(endpoint);
+    public Container given(ClusterNode node) {
+        Container container = new Container(node);
         containers.add(container);
         return container;
     }
 
-    private List<Endpoint> endpointsFor(String name) {
-        switch (name) {
-            case "local-worker":
-                return LOCAL_ENDPOINTS;
-            case "qa-worker":
-                return QA_ENDPOINTS;
-            case "worker":
-                return PROD_ENDPOINTS;
-        }
-        throw new IllegalArgumentException("unknown stage " + name);
-    }
-
-    private String serviceName(Endpoint endpoint) { return stageOf(endpoint).serviceName(TestData.CLUSTER); }
-
-    private Stage stageOf(Endpoint endpoint) {
-        if (PROD_ENDPOINTS.contains(endpoint))
-            return PROD;
-        if (QA_ENDPOINTS.contains(endpoint))
-            return QA;
-        if (LOCAL_ENDPOINTS.contains(endpoint))
-            return LOCAL;
-        throw new IllegalArgumentException("no stage defined for " + endpoint);
+    private List<ClusterNode> nodesFor(String name) {
+        return CLUSTER.findStage(name).nodes(CLUSTER).collect(toList());
     }
 
     public void verifyScaled(Stage stage, int scale) {
-        assertThat(findContainersForService(stage.serviceName(TestData.CLUSTER)))
+        assertThat(findContainersForService(stage.serviceName(CLUSTER)))
             .describedAs("stage " + stage + " to ")
             .hasSize(scale);
     }

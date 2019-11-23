@@ -10,9 +10,10 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import lombok.extern.java.Log;
 
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -21,22 +22,29 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
+@Log
 @RequiredArgsConstructor
 class ClusterEndpoints {
     private final @NonNull Cluster cluster;
     private final @NonNull Path dockerComposeDir;
 
-    private final Map<Stage, List<Endpoint>> actualEndpoints = new HashMap<>();
+    private final Map<Stage, List<Endpoint>> actualEndpoints = new LinkedHashMap<>();
+
+    @Override public String toString() { return actualEndpoints.toString(); }
 
     List<Endpoint> get(Stage stage) {
-        return actualEndpoints.computeIfAbsent(stage, this::refreshEndpointsFor);
+        if (actualEndpoints.containsKey(stage))
+            return actualEndpoints.get(stage);
+        return refreshEndpointsFor(stage);
     }
 
     List<Endpoint> refreshEndpointsFor(Stage stage) {
+        log.info("refresh endpoints for '" + stage.getName() + "'");
         List<Endpoint> endpoints = readProcessIdsFor(stage)
             .map(this::getEndpointFor)
             .collect(toList());
         actualEndpoints.put(stage, endpoints);
+        log.info("endpoints for '" + stage.getName() + "': " + endpoints);
         return endpoints;
     }
 
@@ -57,7 +65,8 @@ class ClusterEndpoints {
 
     private Endpoint getEndpointFor(String containerId) {
         DockerInfo docker = readDockerInfoFor(containerId, cluster.getSlot().getHttp());
-        return new ClusterNode(cluster, cluster.findStage(docker.name), docker.index).endpoint();
+        return new ClusterNode(cluster, cluster.findStage(docker.name), docker.index)
+            .endpoint().withPort(docker.port);
     }
 
     private DockerInfo readDockerInfoFor(String containerId, int publishPort) {
@@ -69,16 +78,16 @@ class ClusterEndpoints {
         if (ports.startsWith("\t"))
             throw new RuntimeException("container seems to be down: " + containerId);
         Pattern pattern = Pattern.compile("" +
-            "0\\.0\\.0\\.0:(?<internalPort>\\d+)->(?<exposedPort>\\d+)/tcp\t" +
+            "0\\.0\\.0\\.0:(?<exposedPort>\\d+)->(?<internalPort>\\d+)/tcp\t" +
             "docker_(?<name>.*?)_(?<index>\\d+)");
         Matcher matcher = pattern.matcher(ports);
         if (!matcher.matches())
             throw new RuntimeException("can't parse docker info from `" + ports + "`");
-        if (intGroup(matcher, "exposedPort") != publishPort)
-            throw new RuntimeException("container " + containerId + " exposes wrong port " + matcher.group("exposedPort")
+        if (intGroup(matcher, "internalPort") != publishPort)
+            throw new RuntimeException("container " + containerId + " uses wrong internal port " + matcher.group("internalPort")
                 + "; expected " + publishPort);
         return DockerInfo.builder()
-            .port(intGroup(matcher, "internalPort"))
+            .port(intGroup(matcher, "exposedPort"))
             .index(intGroup(matcher, "index"))
             .name(matcher.group("name"))
             .build();

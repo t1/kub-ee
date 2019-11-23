@@ -148,8 +148,9 @@ public class Ingress {
         }
 
         public void setPort(int port) {
-            log.info("Set port of ReverseProxy " + upstream.getName() + " to " + port);
+            log.info("set port of ReverseProxy " + upstream.getName() + " to " + port);
             List<HostPort> hostPorts = upstream.getHostPorts();
+            log.finer("upstream was " + hostPorts);
             if (hostPorts.size() > 1)
                 throw new IllegalStateException("expected no more than one endpoint in reverse proxy " + upstream.getName() + " but got " + hostPorts);
             if (hostPorts.isEmpty()) {

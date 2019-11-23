@@ -76,21 +76,30 @@ class ClusterReconditionerTest {
     };
 
     private class ClusterStatusMock extends ClusterStatus {
-        @Override public Integer port(String host) {
+        @Override public Integer exposedPort(String host) {
             for (Endpoint endpoint : containers)
                 if (endpoint.getHost().equals(host))
                     return endpoint.getPort();
             return null;
         }
 
+        @Override public String toString() { return "cluster-status-mock"; }
+
+        @Override public Integer exposedPort(ClusterNode node) {
+            return super.exposedPort(node); // this works just fine
+        }
+
+        @Override public Stream<Endpoint> endpoints(Stage stage) {
+            return containers.stream(); // we only have one stage here
+        }
+
         @Override public Stream<Endpoint> endpoints() { return containers.stream(); }
 
-        @Override public List<Endpoint> scale(Stage stage) {
+        @Override public void scale(Stage stage) {
             while (containers.size() > stage.getCount())
                 containers.remove(containers.size() - 1);
             for (int i = containers.size(); i < stage.getCount(); i++)
                 containers.add(WORKERS.get(i));
-            return null;
         }
     }
 

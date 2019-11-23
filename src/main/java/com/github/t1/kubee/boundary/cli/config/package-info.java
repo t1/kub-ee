@@ -2,7 +2,8 @@
     com.github.t1.kubee.boundary.gateway.clusters.ClusterStore.class,
     com.github.t1.kubee.boundary.gateway.container.ClusterStatus.class,
     com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway.class,
-    com.github.t1.kubee.control.ClusterReconditioner.class
+    com.github.t1.kubee.control.ClusterReconditioner.class,
+    com.github.t1.kubee.tools.SmartFormatter.class,
 })
 package com.github.t1.kubee.boundary.cli.config;
 

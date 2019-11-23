@@ -5,7 +5,6 @@ import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Cluster.HealthConfig;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
-import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Slot;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.entity.Version;
@@ -18,7 +17,6 @@ import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static com.github.t1.kubee.entity.VersionStatus.deployed;
 import static com.github.t1.kubee.entity.VersionStatus.undeployed;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 @UtilityClass
@@ -53,22 +51,16 @@ public class TestData {
         .build();
     public static final Stage[] ALL_STAGES = CLUSTER.getStages().toArray(new Stage[0]);
 
+    public static final ClusterNode LOCAL1 = LOCAL.nodeAt(CLUSTER, 1);
+
+    public static final ClusterNode QA1 = QA.nodeAt(CLUSTER, 1);
+    public static final ClusterNode QA2 = QA.nodeAt(CLUSTER, 2);
+
     public static final ClusterNode PROD01 = PROD.nodeAt(CLUSTER, 1);
     public static final ClusterNode PROD02 = PROD.nodeAt(CLUSTER, 2);
-
-    public static final Endpoint LOCAL_ENDPOINT = new Endpoint("local-worker", 8080);
-    public static final Endpoint QA_ENDPOINT1 = new Endpoint("qa-worker1", 8080);
-    public static final Endpoint QA_ENDPOINT2 = new Endpoint("qa-worker2", 8080);
-    public static final Endpoint PROD_ENDPOINT1 = new Endpoint("worker01", 8080);
-    public static final Endpoint PROD_ENDPOINT2 = new Endpoint("worker02", 8080);
-    public static final Endpoint PROD_ENDPOINT3 = new Endpoint("worker03", 8080);
-    public static final Endpoint PROD_ENDPOINT4 = new Endpoint("worker04", 8080);
-    public static final Endpoint PROD_ENDPOINT5 = new Endpoint("worker05", 8080);
-    public static final List<Endpoint> LOCAL_ENDPOINTS = singletonList(LOCAL_ENDPOINT);
-    public static final List<Endpoint> QA_ENDPOINTS = asList(QA_ENDPOINT1, QA_ENDPOINT2);
-    public static final List<Endpoint> PROD_ENDPOINTS = asList(PROD_ENDPOINT1, PROD_ENDPOINT2, PROD_ENDPOINT3, PROD_ENDPOINT4, PROD_ENDPOINT5);
-    public static final List<Endpoint> ALL_ENDPOINTS = asList(LOCAL_ENDPOINT, QA_ENDPOINT1, QA_ENDPOINT2,
-        PROD_ENDPOINT1, PROD_ENDPOINT2, PROD_ENDPOINT3);
+    public static final ClusterNode PROD03 = PROD.nodeAt(CLUSTER, 3);
+    public static final ClusterNode PROD04 = PROD.nodeAt(CLUSTER, 4);
+    public static final ClusterNode PROD05 = PROD.nodeAt(CLUSTER, 5);
 
     public static final String APPLICATION_NAME = "dummy-app";
     public static final String VERSION_100 = "1.0.0";
