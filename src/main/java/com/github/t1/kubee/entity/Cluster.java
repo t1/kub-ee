@@ -45,17 +45,17 @@ public class Cluster implements Comparable<Cluster> {
 
     public Stream<ClusterNode> nodes() { return stages().flatMap(stage -> stage.nodes(this)); }
 
-    public ClusterNode node(String stageName, int index) {
+    public ClusterNode node(String stageName, int number) {
         Stage stage = stage(stageName).orElseThrow(() -> new StageNotFoundException(stageName, getSimpleName()));
-        return node(stage, index);
+        return node(stage, number);
     }
 
-    public ClusterNode node(Stage stage, int index) {
+    public ClusterNode node(Stage stage, int number) {
         return stage
             .nodes(this)
-            .filter(node -> node.getIndex() == index)
+            .filter(node -> node.getNumber() == number)
             .findAny()
-            .orElseThrow(() -> new IllegalStateException("no node " + index + " on " + this));
+            .orElseThrow(() -> new IllegalStateException("no node " + number + " on " + this));
     }
 
     public static List<Cluster> readAllFrom(YamlDocument document, Consumer<String> warnings) {

@@ -56,7 +56,7 @@ class ClusterStatusTest {
     @Test void shouldGetPort2() {
         containers.given(PROD01, PROD02, PROD03);
 
-        Integer port = status.exposedPort(PROD02.host());
+        Integer port = status.exposedPort(PROD, PROD02.host());
 
         assertThat(port).isEqualTo(containers.endpointsIn(PROD).get(1).getPort());
     }
@@ -64,7 +64,7 @@ class ClusterStatusTest {
     @Test void shouldGetNullPortForUnknownHost() {
         containers.given(PROD01);
 
-        Integer port = status.exposedPort(PROD02.host());
+        Integer port = status.exposedPort(PROD, "unknown");
 
         assertThat(port).isNull();
     }

@@ -15,7 +15,7 @@ import static java.lang.Integer.parseInt;
  * <li>cluster name</li>
  * <li>slot name</li>
  * <li>stage name</li>
- * <li>node index</li>
+ * <li>node number</li>
  * <li>deployment name</li>
  * </ol>
  */
@@ -44,14 +44,14 @@ public class DeploymentId {
         String clusterName = split[0];
         String slotName = split[1];
         String stageName = split[2];
-        int index = parseInt(split[3]);
+        int number = parseInt(split[3]);
 
         return clusters
             .filter(c -> c.getSimpleName().equals(clusterName))
             .filter(c -> c.getSlot().getName().equals(slotName))
             .findFirst()
             .orElseThrow(() -> new ClusterNotFoundException(clusterName))
-            .node(stageName, index);
+            .node(stageName, number);
     }
 
     private String[] split() {

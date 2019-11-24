@@ -1,8 +1,6 @@
 package com.github.t1.kubee.boundary.gateway.ingress;
 
 import com.github.t1.kubee.TestData;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.nginx.HostPort;
 import com.github.t1.nginx.NginxConfig;
@@ -28,8 +26,9 @@ import static com.github.t1.kubee.TestData.PROD02;
 import static com.github.t1.kubee.TestData.PROXY_SETTINGS;
 import static com.github.t1.kubee.TestData.WORKER01;
 import static com.github.t1.kubee.TestData.WORKER02;
-import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.NGINX_ETC;
-import static com.github.t1.kubee.tools.Tools.toEndpoint;
+import static com.github.t1.kubee.boundary.gateway.ingress.IngressFactory.ingress;
+import static com.github.t1.kubee.boundary.gateway.ingress.NginxIngress.NGINX_ETC;
+import static com.github.t1.kubee.boundary.gateway.ingress.NginxIngress.toEndpoint;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -37,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent") class IngressTest {
+class NginxIngressTest {
     private Path origConfigPath;
     @TempDir Path nginxEtc;
     private Path configPath;
@@ -79,14 +78,9 @@ import static org.assertj.core.api.Assertions.tuple;
         return nginxConfig;
     }
 
-    private NginxConfig removeNode(NginxConfig config, ClusterNode node) {
-        config.upstream("dummy-app-lb").get().removeHost(node.host());
+    private NginxConfig removeNode(NginxConfig config, @SuppressWarnings("SameParameterValue") ClusterNode node) {
+        config.upstream("dummy-app-lb").orElseThrow(() -> new RuntimeException("not found")).removeHost(node.host());
         return config;
-    }
-
-
-    private Ingress whenIngress() {
-        return Ingress.ingress(PROD);
     }
 
 
@@ -106,7 +100,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldGetLoadBalancers() {
         givenNginx(WORKER01);
 
-        Stream<LoadBalancer> loadBalancers = whenIngress().loadBalancers();
+        Stream<? extends LoadBalancer> loadBalancers = ingress(PROD).loadBalancers();
 
         assertThat(loadBalancers)
             .extracting(LoadBalancer::applicationName, LoadBalancer::method, loadBalancer -> loadBalancer.endpoints().collect(toList()))
@@ -116,7 +110,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldGetReverseProxies() {
         givenNginx(WORKER01, WORKER02);
 
-        Stream<ReverseProxy> reverseProxies = whenIngress().reverseProxies();
+        Stream<ReverseProxy> reverseProxies = ingress(PROD).reverseProxies();
 
         assertThat(reverseProxies)
             .extracting(ReverseProxy::name, ReverseProxy::listen, ReverseProxy::getPort)
@@ -129,7 +123,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldFailToAddUnknownNodeToLoadBalancer() {
         givenNginx(WORKER01);
 
-        Throwable throwable = catchThrowable(() -> whenIngress().addToLoadBalancer("dummy-app", PROD02));
+        Throwable throwable = catchThrowable(() -> ingress(PROD).addToLoadBalancer("dummy-app", PROD02));
 
         assertThat(throwable).isInstanceOf(IllegalStateException.class).hasMessage("no reverse proxy found for worker02 in [worker01]");
         verifyNotReloaded();
@@ -138,7 +132,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldAddNodeToLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().addToLoadBalancer("dummy-app", PROD02);
+        ingress(PROD).addToLoadBalancer("dummy-app", PROD02);
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
         verifyReloaded();
@@ -147,7 +141,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldIgnoreToRemoveNodeFromUnknownLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().removeFromLoadBalancer("unknown-app", PROD02);
+        ingress(PROD).removeFromLoadBalancer("unknown-app", PROD02);
 
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));
         verifyNotReloaded();
@@ -156,7 +150,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldRemoveNodeFromLoadBalancer() {
         givenNginx(WORKER01, WORKER02);
 
-        whenIngress().removeFromLoadBalancer("dummy-app", PROD02);
+        ingress(PROD).removeFromLoadBalancer("dummy-app", PROD02);
 
         assertThat(actualNginxConfig()).isEqualTo(removeNode(nginxConfig(WORKER01, WORKER02), PROD02));
         verifyReloaded();
@@ -165,7 +159,7 @@ import static org.assertj.core.api.Assertions.tuple;
     @Test void shouldRemoveLastNodeFromLoadBalancer() {
         givenNginx(WORKER01);
 
-        whenIngress().removeFromLoadBalancer("dummy-app", PROD01);
+        ingress(PROD).removeFromLoadBalancer("dummy-app", PROD01);
 
         assertThat(actualNginxConfig()).isEqualTo(addReverseProxy(NginxConfig.create(), WORKER01));
         verifyReloaded();
@@ -175,7 +169,7 @@ import static org.assertj.core.api.Assertions.tuple;
         givenNginx(WORKER01, WORKER02);
         ReloadMock.error = "dummy-error";
 
-        Throwable throwable = catchThrowable(() -> whenIngress().removeFromLoadBalancer("dummy-app", PROD01));
+        Throwable throwable = catchThrowable(() -> ingress(PROD).removeFromLoadBalancer("dummy-app", PROD01));
 
         assertThat(throwable).hasMessage("failed to reload load balancer: dummy-error");
         assertThat(actualNginxConfig()).isEqualTo(nginxConfig(WORKER01, WORKER02));

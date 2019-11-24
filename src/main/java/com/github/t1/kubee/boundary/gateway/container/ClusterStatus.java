@@ -1,7 +1,6 @@
 package com.github.t1.kubee.boundary.gateway.container;
 
 import com.github.t1.kubee.entity.Cluster;
-import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.tools.cli.Script;
@@ -32,18 +31,10 @@ public class ClusterStatus {
 
     @Override public String toString() { return "cluster [" + cluster.getHost() + "]: " + clusterEndpoints; }
 
-    public Integer exposedPort(ClusterNode node) {
-        return endpoints(node.getStage())
-            .filter(endpoint -> endpoint.getHost().equals(node.host()))
-            .findFirst()
-            .map(Endpoint::getPort)
-            .orElse(null);
-    }
-
-    public Integer exposedPort(String host) {
-        return endpoints()
+    public Integer exposedPort(Stage stage, String host) {
+        return endpoints(stage)
             .filter(endpoint -> endpoint.getHost().equals(host))
-            .findFirst()
+            .findAny() // assuming there can't be only one
             .map(Endpoint::getPort)
             .orElse(null);
     }

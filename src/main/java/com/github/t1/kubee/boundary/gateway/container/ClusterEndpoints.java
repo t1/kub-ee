@@ -33,6 +33,7 @@ class ClusterEndpoints {
     @Override public String toString() { return actualEndpoints.toString(); }
 
     List<Endpoint> get(Stage stage) {
+        // not computeIfAbsent, as refreshEndpointsFor already add the new value
         if (actualEndpoints.containsKey(stage))
             return actualEndpoints.get(stage);
         return refreshEndpointsFor(stage);
@@ -65,7 +66,8 @@ class ClusterEndpoints {
 
     private Endpoint getEndpointFor(String containerId) {
         DockerInfo docker = readDockerInfoFor(containerId, cluster.getSlot().getHttp());
-        return new ClusterNode(cluster, cluster.findStage(docker.name), docker.index)
+        // TODO this shouldn't know about the logical names in the cluster layer
+        return new ClusterNode(cluster, cluster.findStage(docker.name), docker.number) // TODO simplify
             .endpoint().withPort(docker.port);
     }
 
@@ -79,7 +81,7 @@ class ClusterEndpoints {
             throw new RuntimeException("container seems to be down: " + containerId);
         Pattern pattern = Pattern.compile("" +
             "0\\.0\\.0\\.0:(?<exposedPort>\\d+)->(?<internalPort>\\d+)/tcp\t" +
-            "docker_(?<name>.*?)_(?<index>\\d+)");
+            "docker_(?<name>.*?)_(?<number>\\d+)");
         Matcher matcher = pattern.matcher(ports);
         if (!matcher.matches())
             throw new RuntimeException("can't parse docker info from `" + ports + "`");
@@ -88,7 +90,7 @@ class ClusterEndpoints {
                 + "; expected " + publishPort);
         return DockerInfo.builder()
             .port(intGroup(matcher, "exposedPort"))
-            .index(intGroup(matcher, "index"))
+            .number(intGroup(matcher, "number"))
             .name(matcher.group("name"))
             .build();
     }
@@ -97,7 +99,7 @@ class ClusterEndpoints {
 
     @Value @Builder
     private static class DockerInfo {
-        int index;
+        int number;
         int port;
         String name;
     }

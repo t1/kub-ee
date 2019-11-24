@@ -14,7 +14,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
 
 /**
- * This class hides the actual nginx reload mechanism
+ * This class hides the actual load balancer reload mechanism
  */
 @Log
 class IngressReloader {

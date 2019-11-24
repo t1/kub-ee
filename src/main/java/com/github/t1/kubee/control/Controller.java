@@ -15,23 +15,26 @@ import com.github.t1.kubee.entity.LoadBalancer;
 import com.github.t1.kubee.entity.ReverseProxy;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.entity.Version;
+import com.github.t1.kubee.tools.http.WebApplicationApplicationException;
+import com.github.t1.kubee.tools.http.YamlHttpClient.BadGatewayException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static com.github.t1.kubee.boundary.gateway.ingress.Ingress.ingress;
+import static com.github.t1.kubee.boundary.gateway.ingress.IngressFactory.ingress;
 import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.entity.VersionStatus.deployed;
 import static com.github.t1.kubee.entity.VersionStatus.undeployed;
-import static com.github.t1.kubee.tools.Tools.errorString;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -208,4 +211,28 @@ public class Controller {
     static class UnexpectedAuditException extends RuntimeException {
         UnexpectedAuditException(String message) { super(message);}
     }
+
+    private static String errorString(Throwable e) {
+        while (e.getCause() != null)
+            e = e.getCause();
+        String out = e.toString();
+        while (out.startsWith(ExecutionException.class.getName() + ": ")
+            || out.startsWith(ConnectException.class.getName() + ": ")
+            || out.startsWith(WebApplicationApplicationException.class.getName() + ": ")
+            || out.startsWith(RuntimeException.class.getName() + ": "))
+            out = out.substring(out.indexOf(": ") + 2);
+        if (out.endsWith(UNKNOWN_HOST_SUFFIX))
+            out = out.substring(0, out.length() - UNKNOWN_HOST_SUFFIX.length());
+        if (out.startsWith(NotFoundException.class.getName() + ": "))
+            out = "deployer not found";
+        if (out.startsWith(BadGatewayException.class.getName() + ": "))
+            out = "bad deployer gateway";
+        if (out.startsWith(UnknownHostException.class.getName() + ": "))
+            out = "unknown host";
+        if (out.equals("Connection refused (Connection refused)"))
+            out = "connection refused";
+        return out;
+    }
+
+    private static final String UNKNOWN_HOST_SUFFIX = ": nodename nor servname provided, or not known";
 }

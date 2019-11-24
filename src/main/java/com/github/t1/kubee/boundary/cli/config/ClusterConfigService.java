@@ -24,7 +24,7 @@ import static java.util.logging.Level.SEVERE;
 
 /**
  * Helper service to scale a docker-compose cluster of worker nodes whenever the <code>cluster-config.yaml</code>
- * file changes, which includes updating the config for and restarting <code>nginx</code>.<br>
+ * file changes, which includes updating the config for and restarting the load balancer.<br>
  * Start it like this:<br>
  * <code>java -cp target/classes com.github.t1.kubee.gateway.ingress.ClusterConfigService --cluster-config=&lt;path&gt;</code><br>
  * where &lt;path&gt; is the path to the <code>cluster-config.yaml</code> file to watch.

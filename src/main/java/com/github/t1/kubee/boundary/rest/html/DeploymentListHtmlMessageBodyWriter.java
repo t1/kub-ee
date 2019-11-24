@@ -137,11 +137,11 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             mergedNodes.forEach(node -> row
                 .th(htmlFor(node))
                 .className("node")
-                .attr("id", "node:" + node.getStage().getName() + ":" + node.getIndex()));
+                .attr("id", "node:" + node.getStage().getName() + ":" + node.getNumber()));
         }
 
         private String htmlFor(ClusterNode node) {
-            return node.getStage().formattedIndex(node.getIndex());
+            return node.getStage().formattedNumber(node.getNumber());
         }
 
         private void tableBody() {
@@ -180,7 +180,7 @@ public class DeploymentListHtmlMessageBodyWriter implements MessageBodyWriter<Li
             return div()
                 .className(DEPLOYMENT)
                 .className("not-deployed")
-                .id(cluster.id() + ":" + node.getStage().getName() + ":" + node.getIndex() + ":" + deployableName)
+                .id(cluster.id() + ":" + node.getStage().getName() + ":" + node.getNumber() + ":" + deployableName)
                 .html("-");
         }
 

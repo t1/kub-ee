@@ -5,15 +5,17 @@ import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
+import com.github.t1.kubee.boundary.gateway.ingress.IngressFactory;
+import com.github.t1.kubee.boundary.gateway.ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
+import com.github.t1.kubee.boundary.gateway.ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
 import com.github.t1.kubee.entity.Stage.StageBuilder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.junit.jupiter.api.Test;
 
@@ -76,18 +78,11 @@ class ClusterReconditionerTest {
     };
 
     private class ClusterStatusMock extends ClusterStatus {
-        @Override public Integer exposedPort(String host) {
-            for (Endpoint endpoint : containers)
-                if (endpoint.getHost().equals(host))
-                    return endpoint.getPort();
-            return null;
+        @Override public Integer exposedPort(Stage stage, String host) {
+            return super.exposedPort(stage, host); // works just fine
         }
 
         @Override public String toString() { return "cluster-status-mock"; }
-
-        @Override public Integer exposedPort(ClusterNode node) {
-            return super.exposedPort(node); // this works just fine
-        }
 
         @Override public Stream<Endpoint> endpoints(Stage stage) {
             return containers.stream(); // we only have one stage here
@@ -104,6 +99,11 @@ class ClusterReconditionerTest {
     }
 
     private void givenContainers(Endpoint... endpoints) { containers.addAll(asList(endpoints)); }
+
+    private void givenDeployedContainers(Endpoint... endpoints) {
+        givenContainers(endpoints);
+        givenDeployedVersions(endpoints);
+    }
 
     private void assertContainers(Endpoint... endpoints) { assertThat(containers).containsExactly(endpoints); }
     // </editor-fold>
@@ -132,11 +132,23 @@ class ClusterReconditionerTest {
 
         @Override public boolean hasReverseProxyFor(ClusterNode node) { return reverseProxies.containsKey(node); }
 
+        @Override public Stream<ReverseProxy> reverseProxies() {
+            throw new UnsupportedOperationException(); // TODO missing tests for this?
+        }
+
+        @Override public void addToLoadBalancer(String application, ClusterNode node) {
+            throw new UnsupportedOperationException(); // TODO missing tests for this?
+        }
+
         @Override public ReverseProxy getOrCreateReverseProxyFor(ClusterNode node) {
             return reverseProxies.computeIfAbsent(node, from -> new ReverseProxyMock(from.endpoint()));
         }
 
         @Override public Stream<LoadBalancer> loadBalancers() { return loadBalancer == null ? Stream.of() : Stream.of(loadBalancer); }
+
+        @Override public void removeFromLoadBalancer(String application, ClusterNode node) {
+            throw new UnsupportedOperationException(); // TODO missing tests for this?
+        }
     };
 
     // <editor-fold desc="Reverse Proxy">
@@ -158,18 +170,18 @@ class ClusterReconditionerTest {
         return reverseProxy;
     }
 
-    private class ReverseProxyMock extends ReverseProxy {
-        private Endpoint from;
+    @RequiredArgsConstructor
+    private static class ReverseProxyMock implements ReverseProxy {
+        private final Endpoint from;
         @Getter @Setter private int port = -1;
-
-        ReverseProxyMock(Endpoint from) {
-            ingress.super(null);
-            this.from = from;
-        }
 
         @Override public String toString() { return from + "->" + port; }
 
         @Override public String name() { return from.getHost(); }
+
+        @Override public Integer listen() {
+            throw new UnsupportedOperationException(); // TODO missing tests for this?
+        }
     }
 
     private ClusterNode findNode(String host) {
@@ -184,12 +196,8 @@ class ClusterReconditionerTest {
         this.loadBalancer = new LoadBalancerMock(new ArrayList<>(asList(endpoints)));
     }
 
-    private class LoadBalancerMock extends LoadBalancer {
-        LoadBalancerMock(List<Endpoint> endpoints) {
-            ingress.super();
-            this.endpoints = endpoints;
-        }
-
+    @RequiredArgsConstructor
+    private static class LoadBalancerMock implements LoadBalancer {
         @Getter final List<Endpoint> endpoints;
 
         @Override public String toString() { return applicationName() + ":" + endpoints; }
@@ -199,20 +207,22 @@ class ClusterReconditionerTest {
         @Override public String method() { return "least_conn"; }
 
         @Override public void updatePort(Endpoint endpoint, Integer newPort) {
-            int index = findEndpoint(endpoint.getHost());
+            int index = indexOf(endpoint.getHost());
             endpoints.set(index, endpoints.get(index).withPort(newPort));
         }
 
-        private int findEndpoint(String host) {
+        @Override public int indexOf(String host) {
             for (int i = 0; i < endpoints.size(); i++)
                 if (endpoints.get(i).getHost().equals(host))
                     return i;
-            return -1;
+            throw new IllegalArgumentException("host [" + host + "] not in " + endpoints);
         }
 
-        @Override public boolean hasHost(String host) { return findEndpoint(host) >= 0; }
+        @Override public boolean hasHost(String host) {
+            return endpoints().anyMatch(endpoint -> endpoint.getHost().equals(host));
+        }
 
-        @Override public void removeHost(String host) { endpoints.remove(findEndpoint(host)); }
+        @Override public void removeHost(String host) { endpoints.remove(indexOf(host)); }
 
         @Override public boolean hasEndpoint(Endpoint endpoint) { return endpoints.contains(endpoint); }
 
@@ -277,15 +287,9 @@ class ClusterReconditionerTest {
     // </editor-fold>
 
 
-    private void givenDeployedContainers(Endpoint... endpoints) {
-        givenContainers(endpoints);
-        givenDeployedVersions(endpoints);
-    }
-
-
     private void recondition() {
-        Function<Stage, Ingress> originalBuilder = Ingress.BUILDER;
-        Ingress.BUILDER = stage -> ingress;
+        Function<Stage, Ingress> originalBuilder = IngressFactory.BUILDER;
+        IngressFactory.BUILDER = stage -> ingress;
         try {
             ClusterReconditioner reconditioner = new ClusterReconditioner(
                 new ClusterStore() {
@@ -295,7 +299,7 @@ class ClusterReconditionerTest {
                 clusterStatusGateway);
             reconditioner.run();
         } finally {
-            Ingress.BUILDER = originalBuilder;
+            IngressFactory.BUILDER = originalBuilder;
         }
     }
 
@@ -542,6 +546,8 @@ class ClusterReconditionerTest {
         assertReverseProxies(WORKER01, WORKER02, WORKER03);
     }
 
+    // TODO status stopped
     // TODO multiple stages
+    // TODO multiple slots
     // TODO multiple clusters
 }

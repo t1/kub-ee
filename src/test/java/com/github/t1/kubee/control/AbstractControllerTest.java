@@ -4,6 +4,7 @@ import com.github.t1.kubee.boundary.gateway.clusters.ClusterStore;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.health.HealthGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
+import com.github.t1.kubee.boundary.gateway.ingress.IngressFactory;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.entity.Stage;
@@ -36,8 +37,8 @@ public abstract class AbstractControllerTest {
 
     @BeforeEach
     public void setUp() {
-        originalIngressBuilder = Ingress.BUILDER;
-        Ingress.BUILDER = stage -> ingress;
+        originalIngressBuilder = IngressFactory.BUILDER;
+        IngressFactory.BUILDER = stage -> ingress;
 
         this.clusterStore = controller.clusterStore = mock(ClusterStore.class);
         this.deployer = controller.deployer = mock(DeployerGateway.class);
@@ -48,6 +49,6 @@ public abstract class AbstractControllerTest {
 
     @AfterEach
     void tearDown() {
-        Ingress.BUILDER = originalIngressBuilder;
+        IngressFactory.BUILDER = originalIngressBuilder;
     }
 }

@@ -91,7 +91,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
                 return container.dockerPsResult;
             else
                 return new Result(0, "0.0.0.0:" + container.getInternalPort() + "->" + container.getExposedPort() + "/tcp\t" +
-                    "docker_" + container.serviceName() + "_" + container.index());
+                    "docker_" + container.serviceName() + "_" + container.number());
         }
     };
 
@@ -144,7 +144,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
         private String serviceName() { return node.serviceName(); }
 
-        public int index() { return node.getIndex(); }
+        public int number() { return node.getNumber(); }
 
         public int getInternalPort() { return port; }
 

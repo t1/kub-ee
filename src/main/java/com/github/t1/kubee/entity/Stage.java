@@ -64,16 +64,16 @@ public class Stage implements Comparable<Stage> {
     @Singular("status") Map<String, DeploymentStatus> status;
 
 
-    public Stream<ClusterNode> nodes(Cluster cluster) { return indexes().mapToObj(index -> nodeAt(cluster, index)); }
+    public Stream<ClusterNode> nodes(Cluster cluster) { return numbers().mapToObj(number -> nodeAt(cluster, number)); }
 
-    public ClusterNode nodeAt(Cluster cluster, int index) { return new ClusterNode(cluster, this, index); }
+    public ClusterNode nodeAt(Cluster cluster, int number) { return new ClusterNode(cluster, this, number); }
 
-    private IntStream indexes() { return IntStream.range(1, this.count + 1); }
+    private IntStream numbers() { return IntStream.range(1, this.count + 1); }
 
-    public String host(Cluster cluster, int index) { return nodeName(cluster, index) + domainName(cluster); }
+    public String host(Cluster cluster, int number) { return nodeName(cluster, number) + domainName(cluster); }
 
-    private String nodeName(Cluster cluster, int index) {
-        return (nodes != null) ? nodes.get(index - 1) : (serviceName(cluster) + formattedIndex(index));
+    private String nodeName(Cluster cluster, int number) {
+        return (nodes != null) ? nodes.get(number - 1) : (serviceName(cluster) + formattedNumber(number));
     }
 
     public String serviceName(Cluster cluster) {
@@ -85,10 +85,10 @@ public class Stage implements Comparable<Stage> {
             (cluster.getDomainName().isEmpty()) ? "" : "." + cluster.getDomainName();
     }
 
-    public String formattedIndex(int index) {
+    public String formattedNumber(int number) {
         return (indexLength == 0)
-            ? (count == 1) ? "" : Integer.toString(index)
-            : format("%0" + indexLength + "d", index);
+            ? (count == 1) ? "" : Integer.toString(number)
+            : format("%0" + indexLength + "d", number);
     }
 
     public Stage largerCount(Stage other) { return (getCount() > other.getCount()) ? this : other; }

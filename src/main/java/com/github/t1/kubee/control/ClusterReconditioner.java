@@ -5,8 +5,8 @@ import com.github.t1.kubee.boundary.gateway.container.ClusterStatus;
 import com.github.t1.kubee.boundary.gateway.container.ClusterStatusGateway;
 import com.github.t1.kubee.boundary.gateway.deployer.DeployerGateway;
 import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
+import com.github.t1.kubee.boundary.gateway.ingress.LoadBalancer;
+import com.github.t1.kubee.boundary.gateway.ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.DeploymentStatus;
@@ -20,6 +20,7 @@ import lombok.extern.java.Log;
 import javax.inject.Inject;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.boundary.gateway.ingress.IngressFactory.ingress;
 import static com.github.t1.kubee.entity.DeploymentStatus.running;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
 import static java.util.stream.Collectors.toList;
@@ -58,7 +59,7 @@ public class ClusterReconditioner implements Runnable {
             this.clusterStatus = clusterStatus;
             this.stage = stage;
 
-            this.ingress = Ingress.ingress(stage);
+            this.ingress = ingress(stage);
         }
 
         private String what() { return "[" + cluster.getHost() + ":" + stage.getName() + "]"; }
@@ -94,7 +95,7 @@ public class ClusterReconditioner implements Runnable {
                     + "in cluster '" + node.getCluster().getSimpleName() + "." + node.getCluster().getDomainName());
                 return;
             }
-            Integer actualPort = clusterStatus.exposedPort(node);
+            Integer actualPort = clusterStatus.exposedPort(stage, node.host());
             if (actualPort == null)
                 throw new IllegalStateException("expected " + node + " to be running");
             ReverseProxy reverseProxy = ingress.getOrCreateReverseProxyFor(node);
@@ -110,7 +111,7 @@ public class ClusterReconditioner implements Runnable {
         }
 
         private void cleanupNext(ClusterNode node) {
-            ClusterNode next = stage.nodeAt(cluster, (node == null) ? 1 : node.getIndex() + 1);
+            ClusterNode next = stage.nodeAt(cluster, (node == null) ? 1 : node.getNumber() + 1);
             boolean lookForMore = false;
 
             if (ingress.hasReverseProxyFor(next)) {
@@ -141,7 +142,7 @@ public class ClusterReconditioner implements Runnable {
                     if (getConfiguredDeploymentStatus(host) == unbalanced) {
                         loadBalancer.removeHost(host);
                     } else {
-                        Integer actualPort = clusterStatus.exposedPort(host);
+                        Integer actualPort = clusterStatus.exposedPort(stage, host);
                         if (actualPort == null)
                             return; // will be removed in cleanup
                         if (endpoint.getPort() != actualPort) {

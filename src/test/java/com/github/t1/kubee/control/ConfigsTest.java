@@ -1,7 +1,7 @@
 package com.github.t1.kubee.control;
 
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.LoadBalancer;
-import com.github.t1.kubee.boundary.gateway.ingress.Ingress.ReverseProxy;
+import com.github.t1.kubee.boundary.gateway.ingress.LoadBalancer;
+import com.github.t1.kubee.boundary.gateway.ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import org.junit.jupiter.api.Test;
 

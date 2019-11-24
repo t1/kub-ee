@@ -81,6 +81,6 @@ public class ClusterStore {
     }
 
     private String key(ClusterNode node, String deploymentName) {
-        return node.getIndex() + ":" + deploymentName;
+        return node.getNumber() + ":" + deploymentName;
     }
 }
