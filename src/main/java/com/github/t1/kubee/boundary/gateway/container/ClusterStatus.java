@@ -3,33 +3,30 @@ package com.github.t1.kubee.boundary.gateway.container;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
-import com.github.t1.kubee.tools.cli.Script;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.java.Log;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Log
 @NoArgsConstructor(force = true)
 public class ClusterStatus {
     private final @NonNull Cluster cluster;
-    private final @NonNull Path dockerComposeDir;
-    private final @NonNull ClusterEndpoints clusterEndpoints;
+    private final @NonNull DockerCommands dockerCommands;
 
     ClusterStatus(
         @NonNull Cluster cluster,
         @NonNull Path dockerComposeDir
     ) {
         this.cluster = cluster;
-        this.dockerComposeDir = dockerComposeDir;
-        this.clusterEndpoints = new ClusterEndpoints(cluster, dockerComposeDir);
+        this.dockerCommands = new DockerCommands(dockerComposeDir);
     }
 
-    @Override public String toString() { return "cluster [" + cluster.getHost() + "]: " + clusterEndpoints; }
+    @Override public String toString() { return "cluster [" + cluster.getHost() + "]: " + dockerCommands; }
 
     public Integer exposedPort(Stage stage, String host) {
         return endpoints(stage)
@@ -40,24 +37,30 @@ public class ClusterStatus {
     }
 
     public Stream<Endpoint> endpoints(Stage stage) {
-        return clusterEndpoints.get(stage).stream();
+        AtomicInteger nodeNumber = new AtomicInteger(1);
+        return dockerCommands
+            .getDockerPorts(serviceName(stage)).stream()
+            .map(port -> {
+                String host = stage.host(cluster, nodeNumber.getAndIncrement());
+                return new Endpoint(host, port);
+            });
     }
 
-    public Stream<Endpoint> endpoints() {
-        return cluster.stages().map(clusterEndpoints::get).flatMap(Collection::stream);
-    }
+    public Stream<Endpoint> endpoints() { return cluster.stages().flatMap(this::endpoints); }
 
     public void scale(Stage stage) {
-        List<Endpoint> currentEndpoints = this.clusterEndpoints.get(stage);
-        if (currentEndpoints.size() == stage.getCount()) {
+        String serviceName = serviceName(stage);
+        List<Integer> currentPorts = this.dockerCommands.getDockerPorts(serviceName);
+        if (currentPorts.size() == stage.getCount()) {
             log.fine("'" + stage.getName() + "' is already scaled to " + stage.getCount());
-            return;
+        } else {
+            log.info("Scale '" + serviceName + "' from " + currentPorts.size() + " to " + stage.getCount());
+            dockerCommands.scale(serviceName + "=" + stage.getCount());
+            dockerCommands.refreshEndpointsFor(serviceName);
         }
-        String serviceName = stage.serviceName(cluster);
-        log.info("Scale '" + serviceName + "' from " + currentEndpoints.size() + " to " + stage.getCount());
-        new Script("docker-compose up --no-color --quiet-pull --detach --scale " + serviceName + "=" + stage.getCount())
-            .workingDirectory(dockerComposeDir)
-            .run();
-        clusterEndpoints.refreshEndpointsFor(stage);
+    }
+
+    private String serviceName(Stage stage) {
+        return stage.serviceName(cluster);
     }
 }

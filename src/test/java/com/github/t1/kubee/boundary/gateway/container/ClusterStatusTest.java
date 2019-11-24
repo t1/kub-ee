@@ -20,7 +20,6 @@ import static com.github.t1.kubee.TestData.PROD05;
 import static com.github.t1.kubee.TestData.QA;
 import static com.github.t1.kubee.TestData.QA1;
 import static com.github.t1.kubee.TestData.QA2;
-import static com.github.t1.kubee.TestData.SLOT_0;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
@@ -184,9 +183,8 @@ class ClusterStatusTest {
         Throwable throwable = catchThrowable(() -> status.scale(LOCAL));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
-            .hasMessage("'docker ps --all --format {{.Ports}}\t{{.Names}}" +
-                " --filter id=" + container.getId()
-                + " --filter publish=" + SLOT_0.getHttp() + "' returned 1:\n" +
+            .hasMessage("'docker ps --all --format {{.Ports}}" +
+                " --filter id=" + container.getId() + "' returned 1:\n" +
                 "template: :1: unclosed action");
     }
 

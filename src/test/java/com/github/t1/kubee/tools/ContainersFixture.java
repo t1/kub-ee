@@ -82,16 +82,12 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
         private Result dockerPs(Parser parser) {
             assertThat(parser.eats("--all ")).isTrue();
-            assertThat(parser.eats("--format {{.Ports}}\t{{.Names}} ")).isTrue();
+            assertThat(parser.eats("--format {{.Ports}} ")).isTrue();
             assertThat(parser.eats("--filter id=")).isTrue();
-            Container container = findContainerWithId(parser.eatWord());
-            assertThat(parser.eats("--filter publish=8080")).isTrue();
+            Container container = findContainerWithId(parser.eatRest());
             assertThat(parser.done()).isTrue();
-            if (container.dockerPsResult != null)
-                return container.dockerPsResult;
-            else
-                return new Result(0, "0.0.0.0:" + container.getInternalPort() + "->" + container.getExposedPort() + "/tcp\t" +
-                    "docker_" + container.serviceName() + "_" + container.number());
+            return (container.dockerPsResult != null) ? container.dockerPsResult
+                : new Result(0, "0.0.0.0:" + container.getInternalPort() + "->8080/tcp");
         }
     };
 
@@ -144,11 +140,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
         private String serviceName() { return node.serviceName(); }
 
-        public int number() { return node.getNumber(); }
-
         public int getInternalPort() { return port; }
-
-        public int getExposedPort() { return node.endpoint().getPort(); }
 
         public void dockerInfo(int exitValue, String message) {
             dockerPsResult = new Result(exitValue, message);

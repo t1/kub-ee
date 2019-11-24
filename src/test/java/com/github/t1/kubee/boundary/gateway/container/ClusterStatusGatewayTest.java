@@ -1,13 +1,17 @@
 package com.github.t1.kubee.boundary.gateway.container;
 
+import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.tools.ContainersFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import java.util.List;
 
 import static com.github.t1.kubee.TestData.CLUSTER;
 import static com.github.t1.kubee.TestData.PROD;
 import static com.github.t1.kubee.TestData.PROD01;
 import static com.github.t1.kubee.TestData.PROD02;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
@@ -26,9 +30,10 @@ class ClusterStatusGatewayTest {
     @Test void shouldReadClusterStatus() {
         containers.given(PROD01, PROD02);
         ClusterStatusGateway gateway = new ClusterStatusGateway(containers.getDockerComposeDir());
-
         ClusterStatus clusterStatus = gateway.clusterStatus(CLUSTER);
 
-        assertThat(clusterStatus.endpoints()).containsExactlyElementsOf(containers.endpointsIn(PROD));
+        List<Endpoint> endpoints = clusterStatus.endpoints().collect(toList());
+
+        assertThat(endpoints).containsExactlyElementsOf(containers.endpointsIn(PROD));
     }
 }

@@ -13,18 +13,11 @@ class Parser {
         return true;
     }
 
-    public String eatWord() {
-        int i = text.indexOf(' ');
-        String result = text.substring(0, i);
-        text = text.substring(i + 1);
-        return result;
-    }
-
     public String eatRest() {
         String result = text;
         this.text = null;
         return result;
     }
 
-    public boolean done() { return text.isEmpty(); }
+    public boolean done() { return text == null || text.isEmpty(); }
 }
