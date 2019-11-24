@@ -2,12 +2,15 @@ package com.github.t1.kubee.control;
 
 import com.github.t1.kubee.entity.Version;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import static com.github.t1.kubee.TestData.DEPLOYMENT;
+import static com.github.t1.kubee.TestData.PROD01;
 import static com.github.t1.kubee.TestData.VERSIONS;
 import static com.github.t1.kubee.TestData.VERSION_100;
 import static com.github.t1.kubee.TestData.VERSION_101;
@@ -19,18 +22,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.when;
 
-class FetchVersionsTest extends AbstractControllerTest {
+class FetchVersionsTest {
+    @RegisterExtension ControllerTestExtension extension = new ControllerTestExtension();
+    private final Controller controller = extension.controller;
+
     @Test void shouldFetchNoVersion() {
-        List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
+        List<Version> versions = controller.fetchVersions(PROD01, DEPLOYMENT);
 
         assertThat(versions).isEmpty();
     }
 
     @Test void shouldFetchOneVersion() {
-        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+        when(controller.deployer.fetchVersions(PROD01, "app-group", "app-artifact"))
             .thenReturn(VERSIONS);
 
-        List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
+        List<Version> versions = controller.fetchVersions(PROD01, DEPLOYMENT);
 
         assertThat(versions).containsExactly(
             new Version(VERSION_100, undeployed),
@@ -41,37 +47,37 @@ class FetchVersionsTest extends AbstractControllerTest {
     }
 
     @Test void shouldFetchNotFoundVersionDummy() {
-        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+        when(controller.deployer.fetchVersions(PROD01, "app-group", "app-artifact"))
             .thenThrow(new NotFoundException("app not found"));
 
-        List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
+        List<Version> versions = controller.fetchVersions(PROD01, DEPLOYMENT);
 
         assertThat(versions).containsExactly(new Version(VERSION_101, deployed));
     }
 
     @Test void shouldFetchUnknownHostVersionDummy() {
-        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact"))
+        when(controller.deployer.fetchVersions(PROD01, "app-group", "app-artifact"))
             .thenThrow(new ProcessingException(new UnknownHostException("dummy")));
 
-        List<Version> versions = controller.fetchVersions(DEV01, DEPLOYMENT);
+        List<Version> versions = controller.fetchVersions(PROD01, DEPLOYMENT);
 
         assertThat(versions).containsExactly(new Version(VERSION_101, deployed));
     }
 
     @Test void shouldFailToFetchVersion() {
         RuntimeException dummy = new RuntimeException("dummy");
-        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact")).thenThrow(dummy);
+        when(controller.deployer.fetchVersions(PROD01, "app-group", "app-artifact")).thenThrow(dummy);
 
-        Throwable throwable = catchThrowable(() -> controller.fetchVersions(DEV01, DEPLOYMENT));
+        Throwable throwable = catchThrowable(() -> controller.fetchVersions(PROD01, DEPLOYMENT));
 
         assertThat(throwable).isSameAs(dummy);
     }
 
     @Test void shouldFailToFetchVersionFromProcessingException() {
         ProcessingException dummy = new ProcessingException(new RuntimeException("dummy"));
-        when(controller.deployer.fetchVersions(DEV01, "app-group", "app-artifact")).thenThrow(dummy);
+        when(controller.deployer.fetchVersions(PROD01, "app-group", "app-artifact")).thenThrow(dummy);
 
-        Throwable throwable = catchThrowable(() -> controller.fetchVersions(DEV01, DEPLOYMENT));
+        Throwable throwable = catchThrowable(() -> controller.fetchVersions(PROD01, DEPLOYMENT));
 
         assertThat(throwable).isSameAs(dummy);
     }

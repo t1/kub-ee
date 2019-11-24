@@ -1,9 +1,11 @@
 package com.github.t1.kubee.control;
 
+import com.github.t1.kubee.boundary.gateway.ingress.Ingress;
 import com.github.t1.kubee.boundary.gateway.ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.net.URI;
 import java.util.stream.Stream;
@@ -15,7 +17,12 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ConfigsTest extends AbstractControllerTest {
+class ConfigsTest {
+    @RegisterExtension ControllerTestExtension extension = new ControllerTestExtension();
+    private final Controller controller = extension.controller;
+    private final Ingress ingress = extension.ingress;
+
+
     @Test void shouldGetClusters() {
         Stream<Cluster> clusters = controller.clusters();
 

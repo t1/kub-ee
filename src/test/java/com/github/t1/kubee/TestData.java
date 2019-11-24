@@ -53,6 +53,8 @@ public class TestData {
 
     public static final ClusterNode LOCAL1 = LOCAL.nodeAt(CLUSTER, 1);
 
+    public static final ClusterNode DEV1 = DEV.nodeAt(CLUSTER, 1);
+
     public static final ClusterNode QA1 = QA.nodeAt(CLUSTER, 1);
     public static final ClusterNode QA2 = QA.nodeAt(CLUSTER, 2);
 
