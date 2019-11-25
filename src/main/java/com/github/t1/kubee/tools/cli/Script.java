@@ -36,9 +36,9 @@ public class Script {
     }
 
     public Result runWithoutCheck() {
-        log.fine(() -> "execute '" + commandline + "' in " + workingDirectory);
+        log.fine(() -> "execute '" + commandline + "'");
         Result result = Invoker.INSTANCE.invoke(commandline, workingDirectory, timeout);
-        log.fine(() -> "-> " + result.getExitValue() + ": " + result.getOutput());
+        log.fine(() -> result.getOutput() + "\n-> " + result.getExitValue());
         if (result == null)
             throw new RuntimeException("running '" + commandline + "' returned null... probably a mocking error");
         return result;

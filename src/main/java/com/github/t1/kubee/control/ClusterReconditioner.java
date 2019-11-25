@@ -40,17 +40,17 @@ public class ClusterReconditioner implements Runnable {
     @Override public void run() { clusterStore.clusters().forEach(this::reconditionCluster); }
 
     private void reconditionCluster(Cluster cluster) {
-        log.fine("reconditioning of cluster '" + cluster.getHost() + "' start");
+        log.fine("recondition cluster " + cluster.id());
         ClusterStatus clusterStatus = clusterStatusGateway.clusterStatus(cluster);
 
-        log.fine("scale " + cluster.id());
+        log.fine("scale cluster " + cluster.id());
         clusterStatus.scale();
 
         cluster.stages()
             .map(stage -> new StageReconditioner(cluster, stage, clusterStatus))
             .forEach(StageReconditioner::recondition);
 
-        log.fine("reconditioning of cluster '" + cluster.getHost() + "' done");
+        log.fine("reconditioned cluster " + cluster.id());
     }
 
     private class StageReconditioner {
@@ -81,7 +81,7 @@ public class ClusterReconditioner implements Runnable {
 
             if (ingress.hasChanged()) {
                 log.fine("apply ingress for [" + cluster.getHost() + "]");
-                ingress.apply();
+                ingress.apply(); // TODO only once even when one ingress is used for multiple stages
             }
         }
 

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Accessors(chain = true)
@@ -69,33 +71,34 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         private String dockerPsOutput() {
             return containers.stream()
                 .map(container -> ""
-                    + "docker_" + container.serviceName() + "_" + container.node.getNumber() + "\t"
-                    + "0.0.0.0:" + container.getInternalPort() + "->8080/tcp")
+                    + "docker_" + container.serviceName + "_" + container.nodeNumber + "\t"
+                    + "0.0.0.0:" + container.exposedPort + "->" + container.servicePort + "/tcp")
                 .collect(joining("\n"));
         }
 
         private Result dockerComposeUp(Parser parser) {
-            assertThat(parser.eats("--no-color --quiet-pull ")).isTrue();
-            assertThat(parser.eats("--detach ")).isTrue();
+            assertThat(parser.eats("--no-color --quiet-pull --detach ")).isTrue();
             if (scaleResult != null)
                 return scaleResult;
+            Set<String> otherServices = containers.stream().map(Container::getServiceName).collect(toSet());
             do
             {
                 assertThat(parser.eats("--scale ")).isTrue();
                 String[] expression = parser.eatWord().split("=");
                 String serviceName = expression[0];
                 int target = parseInt(expression[1]);
+                otherServices.remove(serviceName);
                 scale(serviceName, target);
             } while (!parser.done());
+            otherServices.forEach(serviceName -> scale(serviceName, 1));
             return new Result(0, "");
         }
     };
 
     private void scale(String serviceName, int target) {
         List<Container> containers = findContainersForService(serviceName).collect(toList());
-        List<ClusterNode> nodes = nodesFor(serviceName);
         for (int i = containers.size(); i < target; i++)
-            given(nodes.get(i));
+            given(nodesFor(serviceName).get(i));
         for (int i = target; i < containers.size(); i++)
             ContainersFixture.this.containers.remove(containers.get(i));
     }
@@ -118,32 +121,32 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
     public List<Endpoint> endpointsIn(Stage stage) {
         return in(stage)
-            .map(container -> new Endpoint(container.node.host(), container.port))
+            .map(container -> new Endpoint(container.alias, container.exposedPort))
             .collect(toList());
     }
 
     private Stream<Container> in(Stage stage) {
+        String serviceName = stage.serviceName(CLUSTER);
         return containers.stream()
-            .filter(container -> container.node.getStage().equals(stage));
+            .filter(container -> container.serviceName.equals(serviceName));
     }
 
     @RequiredArgsConstructor
     @Getter public static class Container {
         private final String id = UUID.randomUUID().toString();
-        private final int port = nextPort++;
-        @NonNull private final ClusterNode node;
+        @NonNull private final String alias;
+        private final int nodeNumber;
+        private final int exposedPort = nextPort++;
+        private final int servicePort;
+        @NonNull private final String serviceName;
 
         @Override public String toString() {
-            return "[" + serviceName() + ':' + port + " -> " + node + ']';
+            return "[" + serviceName + ':' + exposedPort + " -> " + servicePort + ']';
         }
-
-        private String serviceName() { return node.serviceName(); }
-
-        public int getInternalPort() { return port; }
     }
 
-    private Stream<Container> findContainersForService(String serviceName) {
-        return findContainers(container -> container.serviceName().equals(serviceName));
+    public Stream<Container> findContainersForService(String serviceName) {
+        return findContainers(container -> container.serviceName.equals(serviceName));
     }
 
     private Stream<Container> findContainers(Predicate<Container> filter) {
@@ -165,13 +168,17 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
     }
 
     public Container given(ClusterNode node) {
-        Container container = new Container(node);
+        return given(node.host(), node.getNumber(), node.port(), node.serviceName());
+    }
+
+    public Container given(String alias, int nodeNumber, int servicePort, String serviceName) {
+        Container container = new Container(alias, nodeNumber, servicePort, serviceName);
         containers.add(container);
         return container;
     }
 
-    private List<ClusterNode> nodesFor(String name) {
-        return CLUSTER.findStage(name).nodes(CLUSTER).collect(toList());
+    private List<ClusterNode> nodesFor(String serviceName) {
+        return CLUSTER.findStage(serviceName).nodes(CLUSTER).collect(toList());
     }
 
     public void verifyScaled(Stage stage, int scale) {

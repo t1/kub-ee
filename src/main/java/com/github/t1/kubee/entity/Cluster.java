@@ -69,16 +69,16 @@ public class Cluster implements Comparable<Cluster> {
 
     private String[] hostSplit() { return host.split("\\.", 2); }
 
-    public String id() { return getSimpleName() + ":" + ((slot.getName() == null) ? "" : slot.getName()); }
+    public String id() { return getSimpleName() + ":" + ((slot.getName() == null) ? slot.getHttp() : slot.getName()); }
 
     @Override public int compareTo(@NotNull Cluster that) {
         return Comparator.comparing(Cluster::getHost).thenComparing(Cluster::getSlot).compare(this, that);
     }
 
-    public Stage findStage(String name) {
+    public Stage findStage(String serviceName) {
         return stages()
-            .filter(stage -> stage.serviceName(this).equals(name))
-            .findFirst().orElseThrow(() -> new IllegalArgumentException("unknown stage '" + name + "'"));
+            .filter(stage -> stage.serviceName(this).equals(serviceName))
+            .findFirst().orElseThrow(() -> new IllegalArgumentException("no stage found for service '" + serviceName + "'"));
     }
 
     @RequiredArgsConstructor

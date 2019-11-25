@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import static com.github.t1.kubee.TestData.CLUSTER;
 import static com.github.t1.kubee.TestData.DEV;
+import static com.github.t1.kubee.TestData.DEV1;
 import static com.github.t1.kubee.TestData.LOCAL;
 import static com.github.t1.kubee.TestData.LOCAL1;
 import static com.github.t1.kubee.TestData.PROD;
@@ -119,6 +120,17 @@ class ClusterStatusTest {
         containers.verifyScaled(PROD, 3); // one up
     }
 
+    @Test void shouldScaleNothingStages() {
+        containers.given(LOCAL1, DEV1, QA1, QA2, PROD01, PROD02, PROD03);
+
+        status.scale();
+
+        containers.verifyScaled(LOCAL, 1);
+        containers.verifyScaled(DEV, 1);
+        containers.verifyScaled(QA, 2);
+        containers.verifyScaled(PROD, 3);
+    }
+
     @Test void shouldNotScaleOne() {
         containers.given(LOCAL1);
 
@@ -133,6 +145,17 @@ class ClusterStatusTest {
         status.scale();
 
         containers.verifyScaled(LOCAL, 1);
+    }
+
+    @Test void shouldNotScaleForeignService() {
+        containers.given("art1", 1, 8081, "artifactory");
+        containers.given("art2", 2, 8081, "artifactory");
+        containers.given(QA1);
+
+        status.scale();
+
+        containers.verifyScaled(QA, 2);
+        assertThat(containers.findContainersForService("artifactory")).hasSize(2);
     }
 
     @Test void shouldFailToScaleWhenDockerComposeScaleFails() {
@@ -182,7 +205,7 @@ class ClusterStatusTest {
     @Test void shouldFailToReadClusterStatusWhenDockerPsFails() {
         containers.givenDockerPsResult(1, "template: :1: unclosed action");
 
-        Throwable throwable = catchThrowable(status::scale);
+        Throwable throwable = catchThrowable(() -> status.endpoints(PROD));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
             .hasMessage("'docker ps --all --format {{.Names}}\t{{.Ports}}' returned 1:\n" +
