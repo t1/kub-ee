@@ -11,7 +11,7 @@
 
     <properties>
         <jackson.version>2.10.1</jackson.version>
-        <react.version>16.11.0</react.version>
+        <react.version>16.12.0</react.version>
     </properties>
 
     <build>
