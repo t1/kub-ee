@@ -18,9 +18,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -38,8 +36,8 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
     @Setter @Getter private Path dockerComposeDir = Paths.get("src/test/docker/");
 
     private final List<Container> containers = new ArrayList<>();
-    private final Map<String, Result> scaleResults = new HashMap<>();
-    public Result dockerPsResult;
+    private Result scaleResult = null;
+    private Result dockerPsResult = null;
 
     private final Script.Invoker originalProcessInvoker = Script.Invoker.INSTANCE;
     private final Script.Invoker invokerMock = new Script.Invoker() {
@@ -62,7 +60,7 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
         private Result dockerPs(Parser parser) {
             assertThat(parser.eats("--all ")).isTrue();
-            assertThat(parser.eats("--format {{.Names}}\t{{.Ports}}")).isTrue();
+            assertThat(parser.eatRest()).isEqualTo("--format {{.Names}}\t{{.Ports}}");
             assertThat(parser.done()).isTrue();
             return (dockerPsResult != null) ? dockerPsResult
                 : new Result(0, dockerPsOutput());
@@ -78,31 +76,38 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
         private Result dockerComposeUp(Parser parser) {
             assertThat(parser.eats("--no-color --quiet-pull ")).isTrue();
-            assertThat(parser.eats("--detach --scale ")).isTrue();
-            String[] expression = parser.eatRest().split("=");
-            String serviceName = expression[0];
-            int target = parseInt(expression[1]);
-            return scale(serviceName, target);
+            assertThat(parser.eats("--detach ")).isTrue();
+            if (scaleResult != null)
+                return scaleResult;
+            do
+            {
+                assertThat(parser.eats("--scale ")).isTrue();
+                String[] expression = parser.eatWord().split("=");
+                String serviceName = expression[0];
+                int target = parseInt(expression[1]);
+                scale(serviceName, target);
+            } while (!parser.done());
+            return new Result(0, "");
         }
     };
 
-    private Result scale(String serviceName, int target) {
-        Result preparedResult = scaleResults.get(serviceName);
-        if (preparedResult != null)
-            return preparedResult;
+    private void scale(String serviceName, int target) {
         List<Container> containers = findContainersForService(serviceName).collect(toList());
         List<ClusterNode> nodes = nodesFor(serviceName);
         for (int i = containers.size(); i < target; i++)
             given(nodes.get(i));
         for (int i = target; i < containers.size(); i++)
             ContainersFixture.this.containers.remove(containers.get(i));
-        return new Result(0, "");
     }
 
     private static int nextPort = 33000;
 
-    public void givenScaleResult(String serviceName, int exitValue, String output) {
-        scaleResults.put(serviceName, new Result(exitValue, output));
+    public void givenDockerPsResult(int exitValue, String output) {
+        dockerPsResult = new Result(exitValue, output);
+    }
+
+    public void givenScaleResult(int exitValue, String output) {
+        scaleResult = new Result(exitValue, output);
     }
 
     public Endpoint[] thoseEndpointsIn(Stage stage, int expectedCount) {

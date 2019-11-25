@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -42,8 +43,9 @@ class DockerCommands {
         return matcher;
     }
 
-    void scale(String scaleExpression) {
-        new Script("docker-compose up --no-color --quiet-pull --detach --scale " + scaleExpression)
+    void scale(List<String> scaleExpressions) {
+        new Script("docker-compose up --no-color --quiet-pull --detach --scale "
+            + String.join(" --scale ", scaleExpressions))
             .in(dockerComposeDir)
             .run();
     }

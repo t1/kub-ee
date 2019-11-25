@@ -10,6 +10,7 @@ import com.github.t1.kubee.boundary.gateway.ingress.LoadBalancer;
 import com.github.t1.kubee.boundary.gateway.ingress.ReloadMock;
 import com.github.t1.kubee.boundary.gateway.ingress.ReverseProxy;
 import com.github.t1.kubee.entity.Cluster;
+import com.github.t1.kubee.entity.Cluster.ClusterBuilder;
 import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.entity.Stage;
@@ -20,12 +21,15 @@ import lombok.Setter;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.github.t1.kubee.TestData.DEV;
+import static com.github.t1.kubee.TestData.PROD;
 import static com.github.t1.kubee.TestData.SLOT_0;
 import static com.github.t1.kubee.TestData.VERSION_101;
 import static com.github.t1.kubee.entity.DeploymentStatus.unbalanced;
@@ -36,29 +40,45 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 class ClusterReconditionerTest {
-    private static final Endpoint WORKER01 = new Endpoint("worker01", 10001);
-    private static final Endpoint WORKER02 = new Endpoint("worker02", 10002);
-    private static final Endpoint WORKER03 = new Endpoint("worker03", 10003);
-    private static final List<Endpoint> WORKERS = asList(WORKER01, WORKER02, WORKER03);
+    private static final Endpoint PROD01 = new Endpoint("worker01", 10001);
+    private static final Endpoint PROD02 = new Endpoint("worker02", 10002);
+    private static final Endpoint PROD03 = new Endpoint("worker03", 10003);
+
+    private static final Endpoint DEV01 = new Endpoint("worker-dev01", 20001);
+    private static final Endpoint DEV02 = new Endpoint("worker-dev02", 20002);
 
     private static final String APP_NAME = "dummy-app";
+
+    private static List<Endpoint> poolFor(String stageName) {
+        switch (stageName) {
+            case "DEV":
+                return asList(DEV01, DEV02);
+            case "PROD":
+                return asList(PROD01, PROD02, PROD03);
+            default:
+                throw new RuntimeException("no pool for " + stageName);
+        }
+    }
 
 
     // <editor-fold desc="Cluster Config">
     private Cluster cluster = null;
 
-    private void givenClusterWithNodeCount(int count) {
-        givenClusterWith(stage().count(count));
-    }
-
-    private void givenClusterWith(StageBuilder stage) {
+    private void givenCluster(StageBuilder... stages) {
         assertThat(cluster).isNull();
-        cluster = Cluster.builder().host("worker").slot(SLOT_0).stage(stage.build()).build();
+        ClusterBuilder builder = Cluster.builder().host("worker").slot(SLOT_0);
+        for (StageBuilder stage : stages)
+            builder.stage(stage.build());
+        cluster = builder.build();
     }
 
-    private StageBuilder stage() {
+    private StageBuilder dev() { return stage("DEV"); }
+
+    private StageBuilder prod() { return stage("PROD"); }
+
+    private StageBuilder stage(String name) {
         return Stage.builder()
-            .name("PROD")
+            .name(name)
             .provider("docker-compose")
             .indexLength(2)
             .loadBalancerConfig("reload", "custom")
@@ -68,7 +88,7 @@ class ClusterReconditionerTest {
 
 
     // <editor-fold desc="Cluster Status">
-    private final List<Endpoint> containers = new ArrayList<>();
+    private final Map<String, List<Endpoint>> containers = new LinkedHashMap<>();
 
     private final ClusterStatusGateway clusterStatusGateway = new ClusterStatusGateway() {
         @Override public ClusterStatus clusterStatus(Cluster cluster) {
@@ -85,27 +105,40 @@ class ClusterReconditionerTest {
         @Override public String toString() { return "cluster-status-mock"; }
 
         @Override public Stream<Endpoint> endpoints(Stage stage) {
-            return containers.stream(); // we only have one stage here
+            return containers.get(stage.getName()).stream();
         }
 
-        @Override public Stream<Endpoint> endpoints() { return containers.stream(); }
+        @Override public Stream<Endpoint> endpoints() {
+            return containers.values().stream().flatMap(Collection::stream);
+        }
 
-        @Override public void scale(Stage stage) {
-            while (containers.size() > stage.getCount())
-                containers.remove(containers.size() - 1);
-            for (int i = containers.size(); i < stage.getCount(); i++)
-                containers.add(WORKERS.get(i));
+        @Override public void scale() {
+            for (Stage stage : cluster.getStages()) {
+                List<Endpoint> endpoints = getEndpointsIn(stage);
+                while (endpoints.size() > stage.getCount())
+                    endpoints.remove(endpoints.size() - 1);
+                for (int i = endpoints.size(); i < stage.getCount(); i++)
+                    endpoints.add(poolFor(stage.getName()).get(i));
+            }
         }
     }
 
-    private void givenContainers(Endpoint... endpoints) { containers.addAll(asList(endpoints)); }
+    private void givenContainers(Stage stage, Endpoint... endpoints) {
+        getEndpointsIn(stage).addAll(asList(endpoints));
+    }
 
-    private void givenDeployedContainers(Endpoint... endpoints) {
-        givenContainers(endpoints);
+    private List<Endpoint> getEndpointsIn(Stage stage) {
+        return containers.computeIfAbsent(stage.getName(), s -> new ArrayList<>());
+    }
+
+    private void givenDeployedContainers(Stage stage, Endpoint... endpoints) {
+        givenContainers(stage, endpoints);
         givenDeployedVersions(endpoints);
     }
 
-    private void assertContainers(Endpoint... endpoints) { assertThat(containers).containsExactly(endpoints); }
+    private void assertContainers(Stage stage, Endpoint... endpoints) {
+        assertThat(containers.get(stage.getName())).containsExactly(endpoints);
+    }
     // </editor-fold>
 
 
@@ -240,7 +273,7 @@ class ClusterReconditionerTest {
     private void assertIngressNotApplied(Endpoint... endpoints) {
         assertIngressWasNotApplied();
         assertLoadBalancers(endpoints);
-        assertReverseProxies(endpoints);
+        assertReverseProxies(PROD, endpoints);
     }
 
     private void assertIngressWasNotApplied() {
@@ -251,7 +284,7 @@ class ClusterReconditionerTest {
     private void assertIngressApplied(Endpoint... endpoints) {
         assertIngressWasApplied();
         assertLoadBalancers(endpoints);
-        assertReverseProxies(endpoints);
+        assertReverseProxies(PROD, endpoints);
     }
 
     private void assertIngressWasApplied() {
@@ -262,10 +295,9 @@ class ClusterReconditionerTest {
         assertThat(loadBalancer.endpoints()).describedAs("load balancers").containsOnly(endpoints);
     }
 
-    private void assertReverseProxies(Endpoint... endpoints) {
-        assertThat(reverseProxies).describedAs("reverse proxies").hasSize(endpoints.length);
+    private void assertReverseProxies(Stage stage, Endpoint... endpoints) {
         for (int i = 0; i < endpoints.length; i++) {
-            ReverseProxy reverseProxy = reverseProxies.get(cluster.node("PROD", i + 1));
+            ReverseProxy reverseProxy = reverseProxies.get(cluster.node(stage.getName(), i + 1));
             assertThat(new Endpoint(reverseProxy.name(), reverseProxy.getPort()))
                 .describedAs("reverse proxy " + i).isEqualTo(endpoints[i]);
         }
@@ -305,245 +337,257 @@ class ClusterReconditionerTest {
 
 
     @Test void shouldDoNothingWithoutNodes() {
-        givenClusterWithNodeCount(0);
-        givenDeployedContainers();
+        givenCluster(prod().count(0));
+        givenDeployedContainers(PROD);
         givenIngress();
 
         recondition();
 
-        assertContainers();
+        assertContainers(PROD);
         assertIngressNotApplied();
     }
 
     @Test void shouldDoNothingWithOneNode() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressNotApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressNotApplied(PROD01);
     }
 
     @Test void shouldDoNothingWithTwoNodes() {
-        givenClusterWithNodeCount(2);
-        givenDeployedContainers(WORKER01, WORKER02);
-        givenIngress(WORKER01, WORKER02);
+        givenCluster(prod().count(2));
+        givenDeployedContainers(PROD, PROD01, PROD02);
+        givenIngress(PROD01, PROD02);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02);
-        assertIngressNotApplied(WORKER01, WORKER02);
+        assertContainers(PROD, PROD01, PROD02);
+        assertIngressNotApplied(PROD01, PROD02);
     }
 
     @Test void shouldUpdatePortOfWorker01() {
-        givenClusterWithNodeCount(1);
-        Endpoint movedEndpoint = WORKER01.withPort(20000);
-        givenDeployedContainers(movedEndpoint);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(1));
+        Endpoint movedEndpoint = PROD01.withPort(20000);
+        givenDeployedContainers(PROD, movedEndpoint);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(movedEndpoint);
+        assertContainers(PROD, movedEndpoint);
         assertIngressApplied(movedEndpoint);
     }
 
     @Test void shouldUpdatePortOfSecondWorkerOf3() {
-        givenClusterWithNodeCount(3);
-        Endpoint movedEndpoint = WORKER02.withPort(20000);
-        givenDeployedContainers(WORKER01, movedEndpoint, WORKER03);
-        givenIngress(WORKER01, WORKER02, WORKER03);
+        givenCluster(prod().count(3));
+        Endpoint movedEndpoint = PROD02.withPort(20000);
+        givenDeployedContainers(PROD, PROD01, movedEndpoint, PROD03);
+        givenIngress(PROD01, PROD02, PROD03);
 
         recondition();
 
-        assertContainers(WORKER01, movedEndpoint, WORKER03);
-        assertIngressApplied(WORKER01, movedEndpoint, WORKER03);
+        assertContainers(PROD, PROD01, movedEndpoint, PROD03);
+        assertIngressApplied(PROD01, movedEndpoint, PROD03);
     }
 
     @Test void shouldAddNodeToEmptyIngress() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01);
         givenIngress();
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressApplied(PROD01);
     }
 
     @Test void shouldAddNodeToIngressWithOne() {
-        givenClusterWithNodeCount(2);
-        givenDeployedContainers(WORKER01, WORKER02);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(2));
+        givenDeployedContainers(PROD, PROD01, PROD02);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02);
-        assertIngressApplied(WORKER01, WORKER02);
+        assertContainers(PROD, PROD01, PROD02);
+        assertIngressApplied(PROD01, PROD02);
     }
 
     @Test void shouldAddTwoNodeToIngressWithOne() {
-        givenClusterWithNodeCount(3);
-        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(3));
+        givenDeployedContainers(PROD, PROD01, PROD02, PROD03);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02, WORKER03);
-        assertIngressApplied(WORKER01, WORKER02, WORKER03);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
+        assertIngressApplied(PROD01, PROD02, PROD03);
     }
 
     @Test void shouldRemoveLastNodeFromIngress() {
-        givenClusterWithNodeCount(0);
-        givenDeployedContainers();
-        givenIngress(WORKER01);
+        givenCluster(prod().count(0));
+        givenDeployedContainers(PROD);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers();
+        assertContainers(PROD);
         assertIngressApplied();
     }
 
     @Test void shouldRemoveNodeFromIngressWithTwo() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01, WORKER02);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01, PROD02);
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressApplied(PROD01);
     }
 
     @Test void shouldRemoveTwoNodesFromIngress() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01, WORKER02, WORKER03);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01, PROD02, PROD03);
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressApplied(PROD01);
     }
 
 
     @Test void shouldScaleContainersFrom0to1() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers();
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD);
         givenIngress();
 
         recondition();
 
-        assertContainers(WORKER01);
+        assertContainers(PROD, PROD01);
         assertIngressWasApplied();
         assertLoadBalancers(); // not deployed, yet
-        assertReverseProxies(WORKER01);
+        assertReverseProxies(PROD, PROD01);
     }
 
     @Test void shouldScaleContainersFrom1to2() {
-        givenClusterWithNodeCount(2);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(2));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02);
+        assertContainers(PROD, PROD01, PROD02);
         assertIngressWasApplied();
-        assertLoadBalancers(WORKER01); // not deployed, yet
-        assertReverseProxies(WORKER01, WORKER02);
+        assertLoadBalancers(PROD01); // not deployed, yet
+        assertReverseProxies(PROD, PROD01, PROD02);
     }
 
     @Test void shouldScaleContainersFrom1to3() {
-        givenClusterWithNodeCount(3);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(3));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
         assertIngressWasApplied();
-        assertLoadBalancers(WORKER01);  // not deployed, yet
-        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+        assertLoadBalancers(PROD01);  // not deployed, yet
+        assertReverseProxies(PROD, PROD01, PROD02, PROD03);
     }
 
     @Test void shouldScaleContainersFrom1to0() {
-        givenClusterWithNodeCount(0);
-        givenDeployedContainers(WORKER01);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(0));
+        givenDeployedContainers(PROD, PROD01);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers();
+        assertContainers(PROD);
         assertIngressApplied();
     }
 
     @Test void shouldScaleContainersFrom2to1() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01, WORKER02);
-        givenIngress(WORKER01, WORKER02);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01, PROD02);
+        givenIngress(PROD01, PROD02);
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressApplied(PROD01);
     }
 
     @Test void shouldScaleContainersFrom3to1() {
-        givenClusterWithNodeCount(1);
-        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
-        givenIngress(WORKER01, WORKER02, WORKER03);
+        givenCluster(prod().count(1));
+        givenDeployedContainers(PROD, PROD01, PROD02, PROD03);
+        givenIngress(PROD01, PROD02, PROD03);
 
         recondition();
 
-        assertContainers(WORKER01);
-        assertIngressApplied(WORKER01);
+        assertContainers(PROD, PROD01);
+        assertIngressApplied(PROD01);
+    }
+
+    @Test void shouldScaleDevFrom2to1andProdFrom1to3() {
+        givenCluster(dev().suffix("-dev").count(1), prod().count(3));
+        givenDeployedContainers(DEV, DEV01, DEV02);
+        givenDeployedContainers(PROD, PROD01, PROD02, PROD03);
+        givenIngress(DEV01, DEV02, PROD01);
+
+        recondition();
+
+        assertContainers(DEV, DEV01);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
+        assertIngressWasApplied();
+        assertLoadBalancers(DEV01, PROD01, PROD02, PROD03);
+        assertReverseProxies(DEV, DEV01);
+        assertReverseProxies(PROD, PROD01, PROD02, PROD03);
     }
 
     @Test void shouldUnbalanceNode() {
-        givenClusterWith(stage()
-            .count(3)
-            .status("2:" + APP_NAME, unbalanced));
-        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
-        givenIngress(WORKER01, WORKER02, WORKER03);
+        givenCluster(prod().count(3).status("2:" + APP_NAME, unbalanced));
+        givenDeployedContainers(PROD, PROD01, PROD02, PROD03);
+        givenIngress(PROD01, PROD02, PROD03);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
         assertIngressWasApplied();
-        assertLoadBalancers(WORKER01, WORKER03);
-        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+        assertLoadBalancers(PROD01, PROD03);
+        assertReverseProxies(PROD, PROD01, PROD02, PROD03);
     }
 
     @Test void shouldUnbalanceLastNode() {
-        givenClusterWith(stage()
-            .count(3)
-            .status("1:" + APP_NAME, unbalanced));
-        givenDeployedContainers(WORKER01, WORKER02, WORKER03);
-        givenIngress(WORKER01);
+        givenCluster(prod().count(3).status("1:" + APP_NAME, unbalanced));
+        givenDeployedContainers(PROD, PROD01, PROD02, PROD03);
+        givenIngress(PROD01);
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
         assertIngressWasApplied();
-        assertLoadBalancers(WORKER02, WORKER03);
-        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+        assertLoadBalancers(PROD02, PROD03);
+        assertReverseProxies(PROD, PROD01, PROD02, PROD03);
     }
 
     @Test void shouldNotAddLoadBalancerNodeWhenApplicationIsNotDeployed() {
-        givenClusterWithNodeCount(3);
-        givenContainers(WORKER01, WORKER02, WORKER03);
-        givenDeployedVersions(WORKER01, WORKER03);
-        givenReverseProxyFor(WORKER01, WORKER02, WORKER03);
-        givenAppLoadBalancer(WORKER01, WORKER03);
+        givenCluster(prod().count(3));
+        givenContainers(PROD, PROD01, PROD02, PROD03);
+        givenDeployedVersions(PROD01, PROD03);
+        givenReverseProxyFor(PROD01, PROD02, PROD03);
+        givenAppLoadBalancer(PROD01, PROD03);
         this.ingressBefore = ingress.toString();
 
         recondition();
 
-        assertContainers(WORKER01, WORKER02, WORKER03);
+        assertContainers(PROD, PROD01, PROD02, PROD03);
         assertIngressWasNotApplied();
-        assertLoadBalancers(WORKER01, WORKER03);
-        assertReverseProxies(WORKER01, WORKER02, WORKER03);
+        assertLoadBalancers(PROD01, PROD03);
+        assertReverseProxies(PROD, PROD01, PROD02, PROD03);
     }
 
     // TODO status stopped

@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.extern.java.Log;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -33,7 +34,7 @@ public class ClusterStatus {
     public Integer exposedPort(Stage stage, String host) {
         return endpoints(stage)
             .filter(endpoint -> endpoint.getHost().equals(host))
-            .findAny() // assuming there can't be only one
+            .findAny() // assuming there can be only one
             .map(Endpoint::getPort)
             .orElse(null);
     }
@@ -50,15 +51,18 @@ public class ClusterStatus {
 
     public Stream<Endpoint> endpoints() { return cluster.stages().flatMap(this::endpoints); }
 
-    public void scale(Stage stage) {
-        String serviceName = serviceName(stage);
-        List<Integer> currentPorts = this.dockerCommands.getDockerPorts(serviceName).collect(toList());
-        if (currentPorts.size() == stage.getCount()) {
-            log.fine("'" + stage.getName() + "' is already scaled to " + stage.getCount());
-        } else {
-            log.info("Scale '" + serviceName + "' from " + currentPorts.size() + " to " + stage.getCount());
-            dockerCommands.scale(serviceName + "=" + stage.getCount());
+    public void scale() {
+        List<String> scaleExpressions = new ArrayList<>();
+        for (Stage stage : cluster.getStages()) {
+            String serviceName = serviceName(stage);
+            List<Integer> currentPorts = this.dockerCommands.getDockerPorts(serviceName).collect(toList());
+            if (currentPorts.size() == stage.getCount())
+                log.fine("'" + stage.getName() + "' is already scaled to " + stage.getCount());
+            else
+                log.info("Scale '" + serviceName + "' from " + currentPorts.size() + " to " + stage.getCount());
+            scaleExpressions.add(serviceName + "=" + stage.getCount());
         }
+        dockerCommands.scale(scaleExpressions);
     }
 
     private String serviceName(Stage stage) {

@@ -2,13 +2,13 @@ package com.github.t1.kubee.boundary.gateway.container;
 
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.tools.ContainersFixture;
-import com.github.t1.kubee.tools.cli.Script;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.stream.Stream;
 
 import static com.github.t1.kubee.TestData.CLUSTER;
+import static com.github.t1.kubee.TestData.DEV;
 import static com.github.t1.kubee.TestData.LOCAL;
 import static com.github.t1.kubee.TestData.LOCAL1;
 import static com.github.t1.kubee.TestData.PROD;
@@ -71,7 +71,7 @@ class ClusterStatusTest {
     @Test void shouldNotScaleThree() {
         containers.given(PROD01, PROD02, PROD03);
 
-        status.scale(PROD);
+        status.scale();
 
         containers.verifyScaled(PROD, 3);
     }
@@ -79,7 +79,7 @@ class ClusterStatusTest {
     @Test void shouldScaleOneUp() {
         containers.given(PROD01, PROD02);
 
-        status.scale(PROD);
+        status.scale();
 
         containers.verifyScaled(PROD, 3);
     }
@@ -87,7 +87,7 @@ class ClusterStatusTest {
     @Test void shouldScaleTwoUp() {
         containers.given(PROD01);
 
-        status.scale(PROD);
+        status.scale();
 
         containers.verifyScaled(PROD, 3);
     }
@@ -95,7 +95,7 @@ class ClusterStatusTest {
     @Test void shouldScaleOneDown() {
         containers.given(PROD01, PROD02, PROD03, PROD04);
 
-        status.scale(PROD);
+        status.scale();
 
         containers.verifyScaled(PROD, 3);
     }
@@ -103,24 +103,26 @@ class ClusterStatusTest {
     @Test void shouldScaleTwoDown() {
         containers.given(PROD01, PROD02, PROD03, PROD04, PROD05);
 
-        status.scale(PROD);
+        status.scale();
 
         containers.verifyScaled(PROD, 3);
     }
 
-    @Test void shouldScaleOneOfTwoStages() {
+    @Test void shouldScaleAllStages() {
         containers.given(QA1, PROD01, PROD02);
 
-        status.scale(PROD);
+        status.scale();
 
-        containers.verifyScaled(QA, 1); // as is
+        containers.verifyScaled(LOCAL, 1); // one up
+        containers.verifyScaled(DEV, 1); // one up
+        containers.verifyScaled(QA, 2); // one up
         containers.verifyScaled(PROD, 3); // one up
     }
 
     @Test void shouldNotScaleOne() {
         containers.given(LOCAL1);
 
-        status.scale(LOCAL);
+        status.scale();
 
         containers.verifyScaled(LOCAL, 1);
     }
@@ -128,19 +130,20 @@ class ClusterStatusTest {
     @Test void shouldScaleZeroToOne() {
         containers.given();
 
-        status.scale(LOCAL);
+        status.scale();
 
         containers.verifyScaled(LOCAL, 1);
     }
 
     @Test void shouldFailToScaleWhenDockerComposeScaleFails() {
         containers.given();
-        containers.givenScaleResult("local-worker", 1, "ERROR: Number of containers for service \"local-worker\" is not a number");
+        containers.givenScaleResult(1, "ERROR: Number of containers for service \"local-worker\" is not a number");
 
-        Throwable throwable = catchThrowable(() -> status.scale(LOCAL));
+        Throwable throwable = catchThrowable(status::scale);
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
-            .hasMessage("'docker-compose up --no-color --quiet-pull --detach --scale local-worker=1' returned 1:\n"
+            .hasMessage("'docker-compose up --no-color --quiet-pull --detach "
+                + "--scale local-worker=1 --scale workerdev=1 --scale qa-worker=2 --scale worker=3' returned 1:\n"
                 + "ERROR: Number of containers for service \"local-worker\" is not a number");
         containers.verifyScaled(LOCAL, 0);
     }
@@ -177,9 +180,9 @@ class ClusterStatusTest {
     }
 
     @Test void shouldFailToReadClusterStatusWhenDockerPsFails() {
-        containers.dockerPsResult = new Script.Result(1, "template: :1: unclosed action");
+        containers.givenDockerPsResult(1, "template: :1: unclosed action");
 
-        Throwable throwable = catchThrowable(() -> status.scale(LOCAL));
+        Throwable throwable = catchThrowable(status::scale);
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
             .hasMessage("'docker ps --all --format {{.Names}}\t{{.Ports}}' returned 1:\n" +

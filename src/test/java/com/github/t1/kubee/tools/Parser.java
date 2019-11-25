@@ -13,6 +13,15 @@ class Parser {
         return true;
     }
 
+    public String eatWord() {
+        int i = text.indexOf(' ');
+        if (i < 0) // last word
+            return eatRest();
+        String result = text.substring(0, i);
+        text = text.substring(i + 1);
+        return result;
+    }
+
     public String eatRest() {
         String result = text;
         this.text = null;

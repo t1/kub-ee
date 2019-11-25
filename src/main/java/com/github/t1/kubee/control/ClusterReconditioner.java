@@ -42,9 +42,14 @@ public class ClusterReconditioner implements Runnable {
     private void reconditionCluster(Cluster cluster) {
         log.fine("reconditioning of cluster '" + cluster.getHost() + "' start");
         ClusterStatus clusterStatus = clusterStatusGateway.clusterStatus(cluster);
+
+        log.fine("scale " + cluster.id());
+        clusterStatus.scale();
+
         cluster.stages()
             .map(stage -> new StageReconditioner(cluster, stage, clusterStatus))
             .forEach(StageReconditioner::recondition);
+
         log.fine("reconditioning of cluster '" + cluster.getHost() + "' done");
     }
 
@@ -65,9 +70,6 @@ public class ClusterReconditioner implements Runnable {
         private String what() { return "[" + cluster.getHost() + ":" + stage.getName() + "]"; }
 
         void recondition() {
-            log.fine("scale " + what());
-            clusterStatus.scale(stage);
-
             log.fine("recondition reverse proxies for " + what());
             nodes().forEach(this::reconditionReverseProxy);
 
@@ -143,9 +145,8 @@ public class ClusterReconditioner implements Runnable {
                         loadBalancer.removeHost(host);
                     } else {
                         Integer actualPort = clusterStatus.exposedPort(stage, host);
-                        if (actualPort == null)
-                            return; // will be removed in cleanup
-                        if (endpoint.getPort() != actualPort) {
+                        if (actualPort != null // will be removed in cleanup
+                            && endpoint.getPort() != actualPort) {
                             loadBalancer.updatePort(endpoint, actualPort);
                         }
                     }
