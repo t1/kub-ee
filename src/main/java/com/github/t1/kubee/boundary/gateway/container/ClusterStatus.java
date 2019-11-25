@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+
 @Log
 @NoArgsConstructor(force = true)
 public class ClusterStatus {
@@ -39,7 +41,7 @@ public class ClusterStatus {
     public Stream<Endpoint> endpoints(Stage stage) {
         AtomicInteger nodeNumber = new AtomicInteger(1);
         return dockerCommands
-            .getDockerPorts(serviceName(stage)).stream()
+            .getDockerPorts(serviceName(stage))
             .map(port -> {
                 String host = stage.host(cluster, nodeNumber.getAndIncrement());
                 return new Endpoint(host, port);
@@ -50,13 +52,12 @@ public class ClusterStatus {
 
     public void scale(Stage stage) {
         String serviceName = serviceName(stage);
-        List<Integer> currentPorts = this.dockerCommands.getDockerPorts(serviceName);
+        List<Integer> currentPorts = this.dockerCommands.getDockerPorts(serviceName).collect(toList());
         if (currentPorts.size() == stage.getCount()) {
             log.fine("'" + stage.getName() + "' is already scaled to " + stage.getCount());
         } else {
             log.info("Scale '" + serviceName + "' from " + currentPorts.size() + " to " + stage.getCount());
             dockerCommands.scale(serviceName + "=" + stage.getCount());
-            dockerCommands.refreshEndpointsFor(serviceName);
         }
     }
 

@@ -19,7 +19,7 @@ public class Script {
     private Path workingDirectory;
     private int timeout = 10;
 
-    public Script workingDirectory(Path workingDirectory) {
+    public Script in(Path workingDirectory) {
         this.workingDirectory = workingDirectory;
         return this;
     }

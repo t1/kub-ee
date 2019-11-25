@@ -2,7 +2,7 @@ package com.github.t1.kubee.boundary.gateway.container;
 
 import com.github.t1.kubee.entity.Endpoint;
 import com.github.t1.kubee.tools.ContainersFixture;
-import com.github.t1.kubee.tools.ContainersFixture.Container;
+import com.github.t1.kubee.tools.cli.Script;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -177,24 +177,12 @@ class ClusterStatusTest {
     }
 
     @Test void shouldFailToReadClusterStatusWhenDockerPsFails() {
-        Container container = containers.given(LOCAL1);
-        container.dockerInfo(1, "template: :1: unclosed action");
+        containers.dockerPsResult = new Script.Result(1, "template: :1: unclosed action");
 
         Throwable throwable = catchThrowable(() -> status.scale(LOCAL));
 
         assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
-            .hasMessage("'docker ps --all --format {{.Ports}}" +
-                " --filter id=" + container.getId() + "' returned 1:\n" +
+            .hasMessage("'docker ps --all --format {{.Names}}\t{{.Ports}}' returned 1:\n" +
                 "template: :1: unclosed action");
-    }
-
-    @Test void shouldFailToReadClusterStatusWhenDockerPsNotFound() {
-        Container container = containers.given(LOCAL1);
-        container.dockerInfo(0, "");
-
-        Throwable throwable = catchThrowable(() -> status.scale(LOCAL));
-
-        assertThat(throwable).isExactlyInstanceOf(RuntimeException.class)
-            .hasMessage("no docker status for container " + container.getId());
     }
 }

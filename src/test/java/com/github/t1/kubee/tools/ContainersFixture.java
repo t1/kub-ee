@@ -39,36 +39,41 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
 
     private final List<Container> containers = new ArrayList<>();
     private final Map<String, Result> scaleResults = new HashMap<>();
+    public Result dockerPsResult;
 
     private final Script.Invoker originalProcessInvoker = Script.Invoker.INSTANCE;
     private final Script.Invoker invokerMock = new Script.Invoker() {
         @Override public Result invoke(String commandline, Path workingDirectory, int timeout) {
             Parser parser = new Parser(commandline);
-            if (parser.eats("docker-compose ")) {
-                assertThat(workingDirectory).isEqualTo(dockerComposeDir);
-                if (parser.eats("ps "))
-                    return dockerComposePs(parser);
-                if (parser.eats("up "))
-                    return dockerComposeUp(parser);
-                throw new RuntimeException("docker compose command not stubbed: " + commandline);
-            }
             if (parser.eats("docker ")) {
                 assertThat(workingDirectory).isNull();
                 if (parser.eats("ps "))
                     return dockerPs(parser);
                 throw new RuntimeException("docker command not stubbed: " + commandline);
             }
+            if (parser.eats("docker-compose ")) {
+                assertThat(workingDirectory).isEqualTo(dockerComposeDir);
+                if (parser.eats("up "))
+                    return dockerComposeUp(parser);
+                throw new RuntimeException("docker compose command not stubbed: " + commandline);
+            }
             throw new RuntimeException("commandline not stubbed: " + commandline);
         }
 
-        private Result dockerComposePs(Parser parser) {
-            assertThat(parser.eats("-q ")).isTrue();
-            String serviceName = parser.eatRest();
-            Stream<Container> containers = findContainersForService(serviceName);
-            String containerIds = containers.map(Container::getId).collect(joining("\n"));
-            return containerIds.isEmpty()
-                ? new Result(1, "ERROR: No such service: " + serviceName)
-                : new Result(0, containerIds);
+        private Result dockerPs(Parser parser) {
+            assertThat(parser.eats("--all ")).isTrue();
+            assertThat(parser.eats("--format {{.Names}}\t{{.Ports}}")).isTrue();
+            assertThat(parser.done()).isTrue();
+            return (dockerPsResult != null) ? dockerPsResult
+                : new Result(0, dockerPsOutput());
+        }
+
+        private String dockerPsOutput() {
+            return containers.stream()
+                .map(container -> ""
+                    + "docker_" + container.serviceName() + "_" + container.node.getNumber() + "\t"
+                    + "0.0.0.0:" + container.getInternalPort() + "->8080/tcp")
+                .collect(joining("\n"));
         }
 
         private Result dockerComposeUp(Parser parser) {
@@ -78,16 +83,6 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
             String serviceName = expression[0];
             int target = parseInt(expression[1]);
             return scale(serviceName, target);
-        }
-
-        private Result dockerPs(Parser parser) {
-            assertThat(parser.eats("--all ")).isTrue();
-            assertThat(parser.eats("--format {{.Ports}} ")).isTrue();
-            assertThat(parser.eats("--filter id=")).isTrue();
-            Container container = findContainerWithId(parser.eatRest());
-            assertThat(parser.done()).isTrue();
-            return (container.dockerPsResult != null) ? container.dockerPsResult
-                : new Result(0, "0.0.0.0:" + container.getInternalPort() + "->8080/tcp");
         }
     };
 
@@ -132,7 +127,6 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         private final String id = UUID.randomUUID().toString();
         private final int port = nextPort++;
         @NonNull private final ClusterNode node;
-        private Result dockerPsResult;
 
         @Override public String toString() {
             return "[" + serviceName() + ':' + port + " -> " + node + ']';
@@ -141,17 +135,6 @@ public class ContainersFixture implements BeforeEachCallback, AfterEachCallback,
         private String serviceName() { return node.serviceName(); }
 
         public int getInternalPort() { return port; }
-
-        public void dockerInfo(int exitValue, String message) {
-            dockerPsResult = new Result(exitValue, message);
-        }
-    }
-
-    private Container findContainerWithId(@NonNull String id) {
-        List<Container> containers = findContainers(container -> container.id.equals(id)).collect(toList());
-        assertThat(containers.size()).describedAs("duplicate container id").isLessThanOrEqualTo(1);
-        assertThat(containers).describedAs("container id not found").isNotEmpty();
-        return containers.get(0);
     }
 
     private Stream<Container> findContainersForService(String serviceName) {
