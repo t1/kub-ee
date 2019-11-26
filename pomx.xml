@@ -9,6 +9,7 @@
     <properties>
         <jackson.version>2.10.1</jackson.version>
         <react.version>16.12.0</react.version>
+        <wildfly.swarm.version>2018.5.0</wildfly.swarm.version>
     </properties>
 
     <profile>com.github.t1:profile-t1:1.0.0-SNAPSHOT</profile>
@@ -145,6 +146,7 @@
             <jar>io.dropwizard:dropwizard-testing:1.3.17</jar>
             <jar>org.junit.vintage:junit-vintage-engine:${junit.version}</jar>
             <jar>com.github.t1:jax-rs-test-extension:1.0.0</jar>
+            <jar>org.wildfly.swarm:ejb:${wildfly.swarm.version}</jar>
         </test>
     </dependencies>
 </project>

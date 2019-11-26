@@ -6,13 +6,12 @@ import com.github.t1.kubee.boundary.gateway.deployer.DeployerMock;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.ClusterTest;
 import com.github.t1.kubee.entity.Stage;
-import com.github.t1.testtools.WildflySwarmTestRule;
-import io.dropwizard.testing.junit.DropwizardClientRule;
+import com.github.t1.testtools.WildflySwarmTestExtension;
+import io.dropwizard.testing.junit5.DropwizardClientExtension;
 import lombok.SneakyThrows;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeAll;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -32,18 +31,21 @@ public abstract class AbstractIT {
     protected static final Stage PROD = Stage.builder().name("PROD").path("application/").count(1).build();
     private static final Path CLUSTER_CONFIG_PATH = Paths.get("target/kub-ee-it-cluster-config.yaml");
 
-    @ClassRule public static final DropwizardClientRule WORKER_1
-        = new DropwizardClientRule(new DeployerMock("1.2.3"));
-    @ClassRule public static final DropwizardClientRule WORKER_2
-        = new DropwizardClientRule(new DeployerMock("1.2.4"));
+    // @RegisterExtension
+    public static final DropwizardClientExtension WORKER_1
+        = new DropwizardClientExtension(new DeployerMock("1.2.3"));
+    // @RegisterExtension
+    public static final DropwizardClientExtension WORKER_2
+        = new DropwizardClientExtension(new DeployerMock("1.2.4"));
 
     protected static Cluster CLUSTER_1;
     protected static Cluster CLUSTER_2;
 
-    @ClassRule public static final WildflySwarmTestRule MASTER = new WildflySwarmTestRule()
-        .withProperty("kub-ee.cluster-config", CLUSTER_CONFIG_PATH);
+    // @RegisterExtension
+    public static final WildflySwarmTestExtension MASTER = null; //new WildflySwarmTestExtension()
+    // .withProperty("kub-ee.cluster-config", CLUSTER_CONFIG_PATH);
 
-    @BeforeClass public static void setup() {
+    @BeforeAll public static void setup() {
         new Template(ClusterTest.class.getResourceAsStream("it-cluster-config.yaml"))
             .fill("slot-1-port", WORKER_1.baseUri().getPort())
             .fill("slot-2-port", WORKER_2.baseUri().getPort())

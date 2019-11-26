@@ -4,9 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.t1.kubee.AbstractIT;
 import com.github.t1.kubee.entity.Cluster;
 import com.github.t1.kubee.entity.Deployment;
-import com.github.t1.testtools.OrderedJUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -16,10 +15,9 @@ import static javax.ws.rs.core.MediaType.TEXT_HTML_TYPE;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(OrderedJUnitRunner.class)
-public class RestBoundaryIT extends AbstractIT {
-    @Test
-    public void shouldGetIndexAsJson() {
+@Disabled
+class RestBoundaryIT extends AbstractIT {
+    @Test void shouldGetIndexAsJson() {
         String response = kubEE().request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("{"
@@ -44,8 +42,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "}");
     }
 
-    @Test
-    public void shouldGetClustersAsJson() {
+    @Test void shouldGetClustersAsJson() {
         String response = kubEE().path("clusters").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo(""
@@ -64,8 +61,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "}]");
     }
 
-    @Test
-    public void shouldGetOneClusterAsJson() {
+    @Test void shouldGetOneClusterAsJson() {
         String response = kubEE().path("clusters").path("localhost")
             .request(APPLICATION_JSON_TYPE)
             .get(String.class);
@@ -80,8 +76,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "}");
     }
 
-    @Test
-    public void shouldGetSlotsAsJson() {
+    @Test void shouldGetSlotsAsJson() {
         String response = kubEE().path("slots").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("["
@@ -90,8 +85,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "]");
     }
 
-    @Test
-    public void shouldGetOneSlotAsJson() {
+    @Test void shouldGetOneSlotAsJson() {
         String response = kubEE().path("slots").path("1")
             .request(APPLICATION_JSON_TYPE)
             .get(String.class);
@@ -99,8 +93,7 @@ public class RestBoundaryIT extends AbstractIT {
         assertThat(response).isEqualTo("{\"name\":\"1\",\"http\":" + WORKER_1.baseUri().getPort() + ",\"https\":443}");
     }
 
-    @Test
-    public void shouldGetStagesAsJson() {
+    @Test void shouldGetStagesAsJson() {
         String response = kubEE().path("stages").request(APPLICATION_JSON_TYPE).get(String.class);
 
         assertThat(response).isEqualTo("[{"
@@ -114,8 +107,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "}]");
     }
 
-    @Test
-    public void shouldGetOneStageAsJson() {
+    @Test void shouldGetOneStageAsJson() {
         String response = kubEE().path("stages").path("PROD")
             .request(APPLICATION_JSON_TYPE)
             .get(String.class);
@@ -131,8 +123,7 @@ public class RestBoundaryIT extends AbstractIT {
             + "}");
     }
 
-    @Test
-    public void shouldGetDeploymentsAsJson() throws Exception {
+    @Test void shouldGetDeploymentsAsJson() throws Exception {
         String response = kubEE().path("deployments").request(APPLICATION_JSON_TYPE).get(String.class);
         List<Deployment> list = MAPPER.readValue(response, new TypeReference<List<Deployment>>() {});
 
@@ -153,8 +144,7 @@ public class RestBoundaryIT extends AbstractIT {
             .build();
     }
 
-    @Test
-    public void shouldGetDeploymentsAsHtml() {
+    @Test void shouldGetDeploymentsAsHtml() {
         Response response = kubEE().path("deployments").request(TEXT_HTML_TYPE).get();
 
         assertThat(response.getStatusInfo()).isEqualTo(OK);

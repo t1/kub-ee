@@ -7,6 +7,7 @@ import com.github.t1.testtools.WebDriverRule;
 import lombok.extern.java.Log;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebElement;
@@ -18,6 +19,7 @@ import static com.github.t1.kubee.web.VersionMenuItem.versionMenuItem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
 
+@Ignore
 @Log
 @RunWith(OrderedJUnitRunner.class)
 public class DeploymentsPageIT extends AbstractIT {
