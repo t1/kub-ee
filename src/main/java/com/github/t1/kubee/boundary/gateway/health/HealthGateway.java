@@ -16,14 +16,14 @@ import static javax.ws.rs.core.Response.Status.OK;
 public class HealthGateway {
     private final Client httpClient = ClientBuilder.newClient();
 
-    public boolean fetch(ClusterNode node, String name) {
+    public boolean fetch(ClusterNode node, String path) {
         HealthConfig healthConfig = node.getCluster().getHealthConfig();
         if (healthConfig == null || healthConfig.getPath() == null) {
             log.debug("no health config for {}", node);
             return true;
         }
 
-        URI uri = UriBuilder.fromUri(node.uri()).path(name).path(healthConfig.getPath()).build();
+        URI uri = UriBuilder.fromUri(node.uri()).path(path).path(healthConfig.getPath()).build();
         log.debug("get check from {}", uri);
         Response response = httpClient.target(uri).request().get();
         log.debug("got check response: {} {}:\n{}", response.getStatus(),
