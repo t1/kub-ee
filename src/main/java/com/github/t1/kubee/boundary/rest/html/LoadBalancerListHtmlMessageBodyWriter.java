@@ -28,20 +28,20 @@ public class LoadBalancerListHtmlMessageBodyWriter implements MessageBodyWriter<
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return genericType instanceof ParameterizedType
-                && ((ParameterizedType) genericType).getRawType().equals(List.class)
-                && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(LoadBalancer.class);
+            && ((ParameterizedType) genericType).getRawType().equals(List.class)
+            && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(LoadBalancer.class);
     }
 
     @Override
     public long getSize(List<LoadBalancer> loadBalancers, Class<?> type, Type genericType, Annotation[] annotations,
-            MediaType mediaType) {
+                        MediaType mediaType) {
         return -1;
     }
 
     @Override
     public void writeTo(List<LoadBalancer> loadBalancers, Class<?> type, Type genericType,
-            Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-            OutputStream entityStream) throws IOException, WebApplicationException {
+                        Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
         out.write(new LoadBalancersHtml(loadBalancers).toString());
         out.flush();

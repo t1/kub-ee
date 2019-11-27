@@ -7,8 +7,8 @@ import javax.ws.rs.core.Link;
 public class A extends Component {
     public A(Link link) {
         this.element = new Element("a")
-                .attr("rel", link.getRel())
-                .attr("href", link.getUri().toString())
-                .text(link.getTitle());
+            .attr("rel", link.getRel())
+            .attr("href", link.getUri().toString())
+            .text(link.getTitle());
     }
 }

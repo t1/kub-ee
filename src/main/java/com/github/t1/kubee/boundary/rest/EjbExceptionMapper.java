@@ -18,7 +18,7 @@ public class EjbExceptionMapper implements ExceptionMapper<EJBException> {
             if (cause instanceof WebApplicationException)
                 return ((WebApplicationException) cause).getResponse();
             @SuppressWarnings({"unchecked", "RedundantCast"}) ExceptionMapper<Throwable> mapper
-                    = (ExceptionMapper<Throwable>) providers.getExceptionMapper(cause.getClass());
+                = (ExceptionMapper<Throwable>) providers.getExceptionMapper(cause.getClass());
             if (mapper != null)
                 return mapper.toResponse(cause);
         }

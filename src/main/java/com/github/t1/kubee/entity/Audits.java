@@ -22,8 +22,8 @@ public class Audits {
 
     public Optional<Audit> findDeployment(String name) {
         return (audits == null)
-                ? Optional.empty()
-                : audits.stream().filter(audit -> audit.getName().equals(name)).findAny();
+            ? Optional.empty()
+            : audits.stream().filter(audit -> audit.getName().equals(name)).findAny();
     }
 
     @Value
@@ -91,9 +91,9 @@ public class Audits {
         Audits audits = new Audits();
         YamlDocument document = YamlDocument.from(new StringReader(yaml));
         document.asMapping()
-                .mapString("processState", audits::setProcessState)
-                .mapSequence("warnings", audits::setWarnings, Warning::from)
-                .mapSequence("audits", audits::setAudits, Audit::from);
+            .mapString("processState", audits::setProcessState)
+            .mapSequence("warnings", audits::setWarnings, Warning::from)
+            .mapSequence("audits", audits::setAudits, Audit::from);
         return audits;
     }
 }

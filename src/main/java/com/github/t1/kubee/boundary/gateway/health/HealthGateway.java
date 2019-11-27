@@ -27,7 +27,7 @@ public class HealthGateway {
         log.debug("get check from {}", uri);
         Response response = httpClient.target(uri).request().get();
         log.debug("got check response: {} {}:\n{}", response.getStatus(),
-                response.getStatusInfo().getReasonPhrase(), response.readEntity(String.class));
+            response.getStatusInfo().getReasonPhrase(), response.readEntity(String.class));
         return response.getStatus() == OK.getStatusCode();
     }
 }

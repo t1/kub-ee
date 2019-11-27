@@ -45,21 +45,21 @@ class VersionCell {
         assertThat(ul).has(cssClass("list-unstyled"));
 
         return ul.findElements(By.tagName("li")).stream()
-                 .map(VersionMenuItem::new)
-                 .collect(toList());
+            .map(VersionMenuItem::new)
+            .collect(toList());
     }
 
     static final Condition<VersionCell> open = xAllOf(
-            map(cssClass("open"), cell -> cell.dropdown, "dropdown"),
-            map(displayed, cell -> cell.menu, "menu"));
+        map(cssClass("open"), cell -> cell.dropdown, "dropdown"),
+        map(displayed, cell -> cell.menu, "menu"));
 
     static final Condition<VersionCell> closed = not(open);
 
     VersionMenuItem undeployMenuItem() {
         return menu().stream()
-                     .filter(item -> item.getText().equals("undeploy"))
-                     .findFirst()
-                     .orElseThrow(RuntimeException::new);
+            .filter(item -> item.getText().equals("undeploy"))
+            .findFirst()
+            .orElseThrow(RuntimeException::new);
     }
 
     void waitToBeUndeployed() {

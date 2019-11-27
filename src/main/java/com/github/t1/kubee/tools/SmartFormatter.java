@@ -65,7 +65,7 @@ public class SmartFormatter extends Formatter {
             return "";
         return Stream.of(printStackTrace(throwable).split("\n"))
             .map(this::colorStackTraceLine)
-            .collect(joining("\n", "","\n\n"));
+            .collect(joining("\n", "", "\n\n"));
     }
 
     private String colorStackTraceLine(String line) {

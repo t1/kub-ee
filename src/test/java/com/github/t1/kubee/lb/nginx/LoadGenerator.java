@@ -50,10 +50,8 @@ public class LoadGenerator implements Runnable {
     }
 
     private String fetch(WebTarget target) {
-        Response response = null;
-        try {
+        try (Response response = target.request("application/yaml").get()) {
             // response = completable(target.request().async().get()).get(10, MILLISECONDS);
-            response = target.request("application/yaml").get();
             // System.out.println(response.getHeaderString("Content-Type"));
             if (response.getStatusInfo().getFamily() == SUCCESSFUL)
                 return "success";
@@ -61,36 +59,36 @@ public class LoadGenerator implements Runnable {
             return "failed " + response.getStatus() + " " + response.getStatusInfo();
         } catch (Exception e) {
             return "failed: " + e.getMessage();
-        } finally {
-            if (response != null)
-                response.close();
         }
     }
 
     private static class Statistics {
-        private int count;
-        private long min = Integer.MAX_VALUE, avg = 0, max = 0;
+        private int count = 0;
+        private int sum = 0;
+        private long min = Integer.MAX_VALUE;
+        private long max = 0;
         private Map<String, Integer> results = new HashMap<>();
 
         private void add(Duration time, String result) {
             ++count;
             long t = time.toMillis();
+            sum += t;
             min = Math.min(min, t);
             max = Math.max(max, t);
-            results.merge(result, 1, (left, right) -> left + right);
+            results.merge(result, 1, Integer::sum);
         }
 
         @Override public String toString() {
             return ""
-                    + "count: " + count + "\n"
-                    + "min:   " + min + "\n"
-                    + "avg:   " + avg + "\n"
-                    + "max:   " + max + "\n"
-                    + "results:\n"
-                    + results.entrySet()
-                             .stream()
-                             .map(entry -> String.format("    %dx -> %s", entry.getValue(), entry.getKey()))
-                             .collect(joining("\n"));
+                + "count: " + count + "\n"
+                + "min:   " + min + "\n"
+                + "avg:   " + (sum / count) + "\n"
+                + "max:   " + max + "\n"
+                + "results:\n"
+                + results.entrySet()
+                .stream()
+                .map(entry -> String.format("    %dx -> %s", entry.getValue(), entry.getKey()))
+                .collect(joining("\n"));
         }
     }
 }

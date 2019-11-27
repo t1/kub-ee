@@ -17,7 +17,7 @@ class StaticFilesLoader {
     protected final String name;
     private final String prefix;
 
-    @SuppressWarnings({ "resource", "IOResourceOpenedButNotSafelyClosed" })
+    @SuppressWarnings({"resource", "IOResourceOpenedButNotSafelyClosed"})
     Response response(String filePath) {
         String path = prefix + filePath;
         log.debug("look for static file: {}: {}: {}", name, prefix, filePath);
@@ -41,25 +41,25 @@ class StaticFilesLoader {
         if (fileSuffix == null)
             return null;
         switch (fileSuffix) {
-        case ".css":
-            return valueOf("text/css");
-        case ".html":
-            return TEXT_HTML_TYPE;
+            case ".css":
+                return valueOf("text/css");
+            case ".html":
+                return TEXT_HTML_TYPE;
 
-        case ".gif":
-            return valueOf("image/gif");
-        case ".ico":
-            return valueOf("image/x-icon");
-        case ".jpeg":
-            return valueOf("image/jpeg");
-        case ".png":
-            return valueOf("image/png");
+            case ".gif":
+                return valueOf("image/gif");
+            case ".ico":
+                return valueOf("image/x-icon");
+            case ".jpeg":
+                return valueOf("image/jpeg");
+            case ".png":
+                return valueOf("image/png");
 
-        case ".raml":
-            return valueOf("application/raml+yaml");
+            case ".raml":
+                return valueOf("application/raml+yaml");
 
-        default:
-            return TEXT_PLAIN_TYPE;
+            default:
+                return TEXT_PLAIN_TYPE;
         }
     }
 

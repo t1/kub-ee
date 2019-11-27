@@ -41,10 +41,10 @@ class VersionCellHelperTest {
         assertThat(deployer).is(closed);
 
         assertThat(dummy.menu())
-                .hasSize(3)
-                .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
-                .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
-                .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
+            .hasSize(3)
+            .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
+            .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
+            .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
 
 
         deployer.clickToggle();
@@ -53,10 +53,10 @@ class VersionCellHelperTest {
         assertThat(dummy).is(closed);
 
         assertThat(deployer.menu())
-                .hasSize(3)
-                .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
-                .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
-                .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
+            .hasSize(3)
+            .has(versionMenuItem("minus", "1.3.3", "undeployed"), atIndex(0))
+            .has(versionMenuItem("ok-circle", "1.3.4", "deployed"), atIndex(1))
+            .has(versionMenuItem("refresh", "1.3.5", "undeploying"), atIndex(2));
     }
 
     private WebElement mockDeploymentElement(String id) {
@@ -75,9 +75,9 @@ class VersionCellHelperTest {
         when(dropdownMenu.findElement(argThat(byTagName("ul")))).thenReturn(ul);
 
         List<WebElement> items = asList(
-                mockVersionItem("minus", undeployed, "1.3.3"),
-                mockVersionItem("ok-circle", deployed, "1.3.4"),
-                mockVersionItem("refresh", undeploying, "1.3.5"));
+            mockVersionItem("minus", undeployed, "1.3.3"),
+            mockVersionItem("ok-circle", deployed, "1.3.4"),
+            mockVersionItem("refresh", undeploying, "1.3.5"));
         when(ul.findElements(argThat(byTagName("li")))).thenReturn(items);
 
         return deployment;

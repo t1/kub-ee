@@ -28,20 +28,20 @@ public class LinkListHtmlMessageBodyWriter implements MessageBodyWriter<List<Lin
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return genericType instanceof ParameterizedType
-                && ((ParameterizedType) genericType).getRawType().equals(List.class)
-                && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(Link.class);
+            && ((ParameterizedType) genericType).getRawType().equals(List.class)
+            && ((ParameterizedType) genericType).getActualTypeArguments()[0].equals(Link.class);
     }
 
     @Override
     public long getSize(List<Link> links, Class<?> type, Type genericType, Annotation[] annotations,
-            MediaType mediaType) {
+                        MediaType mediaType) {
         return -1;
     }
 
     @Override
     public void writeTo(List<Link> links, Class<?> type, Type genericType,
-            Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-            OutputStream entityStream) throws IOException, WebApplicationException {
+                        Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException, WebApplicationException {
         @SuppressWarnings("resource") OutputStreamWriter out = new OutputStreamWriter(entityStream);
         out.write(new LinksHtml(links).toString());
         out.flush();
@@ -57,8 +57,8 @@ public class LinkListHtmlMessageBodyWriter implements MessageBodyWriter<List<Lin
 
             header("Index");
             container()
-                    .with(new PageHeader("Links"))
-                    .with(this.list = new HtmlList());
+                .with(new PageHeader("Links"))
+                .with(this.list = new HtmlList());
             this.links.forEach(this::link);
         }
 

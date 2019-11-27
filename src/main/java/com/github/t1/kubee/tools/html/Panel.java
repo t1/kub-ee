@@ -15,7 +15,7 @@ public class Panel extends Component {
         Element panel = parent.element.appendElement("div").addClass("panel panel-default");
         if (heading != null)
             panel.appendElement("div").addClass("panel-heading")
-                 .appendElement("h3").addClass("panel-title").text(heading);
+                .appendElement("h3").addClass("panel-title").text(heading);
         // panel.appendElement("div").addClass("panel-body");
         this.element = panel;
         content.addTo(this);

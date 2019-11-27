@@ -13,8 +13,8 @@ public class Table extends Component {
 
     @Override protected void addTo(Component parent) {
         Element table = parent.element
-                .appendElement("div").addClass("table-responsive")
-                .appendElement("table").addClass("table table-striped");
+            .appendElement("div").addClass("table-responsive")
+            .appendElement("table").addClass("table table-striped");
         this.element = table.appendElement("t" + "body");
         if (id != null)
             table.attr("id", id);
