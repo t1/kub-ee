@@ -1,29 +1,19 @@
 package com.github.t1.kubee.boundary.gateway.deployer;
 
-import com.github.t1.testtools.WebArchiveBuilder;
-import com.github.t1.testtools.WildflySwarmTestExtension;
-import lombok.SneakyThrows;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import com.github.t1.jaxrsclienttest.JaxRsTestExtension;
+import com.github.t1.kubee.tools.http.YamlHttpClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled
 class DeployerGatewayIT {
-    // @RegisterExtension
-    public static WildflySwarmTestExtension swarm = null; //new WildflySwarmTestExtension();
-
-    @BeforeAll @SneakyThrows static void deployDeployerMock() {
-        swarm.deploy(new WebArchiveBuilder("deployer.war")
-            .with(DeployerMock.class, DeployerMockJaxRs.class)
-            .print().build());
-    }
+    @RegisterExtension static JaxRsTestExtension rest = new JaxRsTestExtension(new DeployerMock());
 
     @Test void shouldFetchDeployables() {
-        List<Deployable> deployables = new DeployerGateway().fetchDeploymentsFrom(swarm.baseUri());
+        List<Deployable> deployables = new DeployerGateway(new YamlHttpClient()).fetchDeploymentsFrom(rest.baseUri());
 
         assertThat(deployables).containsExactly(
             Deployable.builder()

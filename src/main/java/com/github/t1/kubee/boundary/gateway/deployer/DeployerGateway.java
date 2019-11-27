@@ -5,6 +5,7 @@ import com.github.t1.kubee.entity.ClusterNode;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient;
 import com.github.t1.log.Logged;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -21,10 +22,11 @@ import static java.util.stream.Collectors.toList;
 
 @Logged(level = INFO)
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = {@Inject})
 public class DeployerGateway {
     private static final int MAX_RETRIES = 10;
 
-    @Inject YamlHttpClient client;
+    private final YamlHttpClient client;
 
     public String fetchVersion(ClusterNode node, String deployableName) {
         return fetchDeploymentsFrom(node.deployerUri())

@@ -3,12 +3,7 @@ package com.github.t1.kubee.boundary.gateway.deployer;
 import com.github.t1.kubee.entity.Audits;
 import com.github.t1.kubee.entity.Deployment;
 import com.github.t1.kubee.tools.http.YamlHttpClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.ws.rs.core.Form;
 import java.net.URI;
@@ -24,9 +19,8 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.mock;
 
-@ExtendWith(MockitoExtension.class)
 class DeployerGatewayTest {
     private static final String APP_NAME = "app-name";
     private static final String GROUP_ID = "com.github.t1";
@@ -69,11 +63,9 @@ class DeployerGatewayTest {
         "  name: jolokia\n" +
         "processState: running");
 
-    @Mock YamlHttpClient yamlClient;
+    private final YamlHttpClient yamlClient = mock(YamlHttpClient.class);
 
-    @InjectMocks DeployerGateway gateway = new DeployerGateway();
-
-    @AfterEach void noMore() { verifyNoMoreInteractions(yamlClient); }
+    private final DeployerGateway gateway = new DeployerGateway(yamlClient);
 
     private DeployerResponse deployables() {
         DeployerResponse deployables = new DeployerResponse();
