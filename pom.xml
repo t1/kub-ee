@@ -259,9 +259,9 @@
     </licenses>
     <repositories>
         <repository>
-            <id>bintray</id>
-            <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <id>jcenter</id>
+            <name>jcenter</name>
+            <url>https://jcenter.bintray.com</url>
         </repository>
     </repositories>
     <scm>
@@ -282,8 +282,8 @@
                 <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
                 <maven.compiler.source>1.8</maven.compiler.source>
                 <maven.compiler.target>1.8</maven.compiler.target>
-                <junit.version>5.5.2</junit.version>
-                <mockito.version>3.1.0</mockito.version>
+                <junit.version>5.6.0</junit.version>
+                <mockito.version>3.2.4</mockito.version>
             </properties>
             <build>
                 <defaultGoal>verify</defaultGoal>
@@ -335,7 +335,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>3.0.0-M3</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.sonatype.ossindex.maven</groupId>
@@ -373,7 +373,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
                 <configuration>
                     <archive>
                         <addMavenDescriptor>false</addMavenDescriptor>
@@ -508,7 +508,7 @@
                 <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.29</version>
+            <version>1.7.30</version>
             <scope>provided</scope>
         </dependency>
                 <dependency>
