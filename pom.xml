@@ -10,7 +10,7 @@
     <name>Kub-EE</name>
 
     <properties>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
         <react.version>16.12.0</react.version>
         <wildfly.swarm.version>2018.5.0</wildfly.swarm.version>
     </properties>
