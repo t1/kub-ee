@@ -1,3 +1,6 @@
+[IMPORTANT]
+This project has been archived!!!
+
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=t1/kub-ee)](https://dependabot.com)
 
 # Kub-EE
